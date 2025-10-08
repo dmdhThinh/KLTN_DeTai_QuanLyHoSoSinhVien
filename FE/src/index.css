@@ -1,0 +1,59 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap');
+
+* { box-sizing: border-box; }
+html, body, #root { height: 100%; margin: 0; }
+
+/* Minimal CSS fallback if Tailwind not present */
+.bg-gradient-to-br {
+  background: linear-gradient(135deg, #6ee7b7 0%, #93c5fd 50%, #a5b4fc 100%);
+}
+
+.shadow-2xl { box-shadow: 0 25px 50px -12px rgba(0,0,0,.25); }
+.shadow-inner { box-shadow: inset 0 2px 4px 0 rgba(0,0,0,.06); }
+.rounded-2xl { border-radius: 1rem; }
+.rounded-full { border-radius: 9999px; }
+.p-8 { padding: 2rem; }
+.p-4 { padding: 1rem; }
+.w-full { width: 100%; }
+.max-w-md { max-width: 28rem; }
+.min-h-screen { min-height: 100vh; }
+.flex { display: flex; }
+.items-center { align-items: center; }
+.justify-center { justify-content: center; }
+.mb-4 { margin-bottom: 1rem; }
+.text-2xl { font-size: 1.5rem; }
+.font-semibold { font-weight: 600; }
+.text-gray-800 { color: #1f2937; }
+.bg-white\/95 { background: rgba(255,255,255,.95); }
+.w-20 { width: 5rem; }
+.h-20 { height: 5rem; }
+.text-indigo-500 { color: #6366f1; }
+.space-y-4 > :not([hidden]) ~ :not([hidden]) { margin-top: 1rem; }
+.relative { position: relative; }
+.absolute { position: absolute; }
+.inset-y-0 { top: 0; bottom: 0; }
+.right-3 { right: .75rem; }
+.rounded-xl { border-radius: .75rem; }
+.border { border: 1px solid #e5e7eb; }
+.border-gray-200 { border-color: #e5e7eb; }
+.bg-gray-50 { background: #f9fafb; }
+.outline-none { outline: none; }
+.px-4 { padding-left: 1rem; padding-right: 1rem; }
+.py-3 { padding-top: .75rem; padding-bottom: .75rem; }
+.pr-10 { padding-right: 2.5rem; }
+.transition { transition: all .2s ease; }
+.text-purple-800 { color: #5b21b6; }
+.text-gray-600 { color: #4b5563; }
+.bg-indigo-600 { background: #4f46e5; }
+.hover\:bg-indigo-700:hover { background: #4338ca; }
+.active\:bg-indigo-800:active { background: #3730a3; }
+.text-white { color: #fff; }
+.rounded-xl { border-radius: .75rem; }
+.py-3 { padding-top: .75rem; padding-bottom: .75rem; }
+.transition { transition: all .2s ease; }
+.font-semibold { font-weight: 600; }
+
+input { border: 1px solid #e5e7eb; border-radius: .75rem; }
+input:focus { border-color: #818cf8; box-shadow: 0 0 0 4px rgba(99,102,241,.15); background: white; }
+
+
