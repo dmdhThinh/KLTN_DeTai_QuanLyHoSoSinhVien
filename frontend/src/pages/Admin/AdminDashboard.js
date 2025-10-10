@@ -1,7 +1,7 @@
 // ==================== AdminDashboard.js ====================
 import React from 'react'
 import { useNavigate } from 'react-router-dom'
-import { clearAuth } from '../api'
+import { clearAuth } from '../../api'
 import {
   FaHome,
   FaUserCog,

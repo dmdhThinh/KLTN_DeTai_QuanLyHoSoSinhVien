@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react'
-import { getGiangVienId, getGiangVienById } from '../api'
+import { getGiangVienId, getGiangVienById } from '../../api'
 
 function StatTile({ title, value, action }) {
   return (

@@ -1,6 +1,6 @@
 import React from 'react'
 import { Navigate } from 'react-router-dom'
-import { getToken } from '../api'
+import { getToken } from '../api.js'
 
 export default function ProtectedRoute({ children }) {
   const token = getToken()
