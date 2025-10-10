@@ -1,10 +1,12 @@
 import React from 'react'
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
-import Login from './components/login'
-import StudentDashboard from './pages/StudentDashboard'
-import TeacherDashboard from './pages/TeacherDashboard'
-import AdminDashboard from './pages/AdminDashboard'
+import Login from './pages/login'
+import StudentDashboard from './pages/SinhVien/StudentDashboard'
+import TeacherDashboard from './pages/GiangVien/TeacherDashboard'
+import AdminDashboard from './pages/Admin/AdminDashboard'
+import LichHocLichThi from './pages/SinhVien/LichHocLichThi'
 import ProtectedRoute from './components/ProtectedRoute'
+
 
 function App() {
   return (
@@ -12,7 +14,10 @@ function App() {
       <Routes>
         <Route path="/" element={<Navigate to="/login" replace />} />
         <Route path="/login" element={<Login />} />
-        
+        <Route path="/student" element={<StudentDashboard />} />
+        <Route path="/teacher" element={<TeacherDashboard />} />
+        <Route path="/admin" element={<AdminDashboard />} />
+        <Route path="/lich" element={<LichHocLichThi />} />
         {/* ✅ Bảo vệ route bằng ProtectedRoute */}
         <Route
           path="/student"
@@ -38,9 +43,12 @@ function App() {
             </ProtectedRoute>
           }
         />
+      
       </Routes>
     </BrowserRouter>
   )
 }
 
 export default App
+
+

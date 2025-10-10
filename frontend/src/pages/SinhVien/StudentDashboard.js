@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react'
-import { getSinhVienById, getSinhVienId } from '../api'
+import { getSinhVienById, getSinhVienId } from '../../api'
 
 function StatCard({ title, value, variant, link }) {
   return (
@@ -93,8 +93,23 @@ export default function StudentDashboard() {
           <div className="col-lg-4 d-flex flex-column gap-3">
             <StatCard title="Nhắc nhở mới" value={0} link="Xem chi tiết" />
             <div className="row g-3">
-              <div className="col-6"><StatCard title="Lịch học" value={0} variant="bg-light" link="Xem chi tiết" /></div>
-              <div className="col-6"><StatCard title="Lịch thi" value={0} variant="bg-light" link="Xem chi tiết" /></div>
+              <div className="col-6">
+  <StatCard
+    title="Lịch học"
+    value={0}
+    variant="bg-light"
+    link={<a href="/lich?mode=hoc">Xem chi tiết</a>}
+  />
+</div>
+<div className="col-6">
+  <StatCard
+    title="Lịch thi"
+    value={0}
+    variant="bg-light"
+    link={<a href="/lich?mode=thi">Xem chi tiết</a>}
+  />
+</div>
+
             </div>
           </div>
         </div>
