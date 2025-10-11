@@ -50,6 +50,54 @@ export default function StudentList() {
       setTimeout(() => setMessage(''), 3000)
     }
   }
+// ✅ Import danh sách sinh viên
+const handleImport = async (e) => {
+  const file = e.target.files[0]
+  if (!file) return
+  const formData = new FormData()
+  formData.append('file', file)
+
+  try {
+    const res = await fetch('/api/import/students', {
+      method: 'POST',
+      body: formData
+    })
+    const data = await res.json()
+    if (!res.ok) throw new Error(data.message || 'Import thất bại')
+
+    let msg = data.message
+    if (data.lỗi && data.lỗi.length) {
+      msg += ` (${data.lỗi.length} dòng lỗi)`
+      console.warn('Chi tiết lỗi:', data.lỗi)
+    }
+    alert(msg)
+    loadStudents()
+  } catch (err) {
+    alert(err.message)
+  } finally {
+    e.target.value = '' // reset input
+  }
+}
+// ✅ Tải file mẫu
+const handleDownloadTemplate = async () => {
+  try {
+    const response = await fetch('/api/import/students/template')
+    if (!response.ok) throw new Error('Không thể tải file mẫu')
+    const blob = await response.blob()
+
+    // Tạo URL và tự động tải xuống
+    const url = window.URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.href = url
+    link.download = 'MauNhapSinhVien.xlsx'
+    document.body.appendChild(link)
+    link.click()
+    link.remove()
+    window.URL.revokeObjectURL(url)
+  } catch (err) {
+    alert(err.message)
+  }
+}
 
   return (
     <AdminLayout activeMenu="students" title="Danh sách sinh viên">
@@ -96,7 +144,28 @@ export default function StudentList() {
           />
           <button className="btn btn-outline-primary" type="submit">Tìm</button>
         </form>
-        <div className="ms-auto">
+        <div className="ms-auto d-flex gap-2 flex-wrap">
+          <button
+            className="btn btn-outline-secondary"
+            onClick={handleDownloadTemplate}
+          >
+            📄 Tải file mẫu
+          </button>
+
+          <button
+            className="btn btn-outline-success"
+            onClick={() => document.getElementById('fileInput').click()}
+          >
+            📥 Import danh sách
+          </button>
+          <input
+            id="fileInput"
+            type="file"
+            accept=".csv, .xlsx"
+            style={{ display: 'none' }}
+            onChange={handleImport}
+          />
+
           <button
             className="btn btn-primary"
             onClick={() => navigate('/admin/students/new')}
@@ -104,6 +173,7 @@ export default function StudentList() {
             ➕ Thêm sinh viên
           </button>
         </div>
+
       </div>
 
       {/* Bảng dữ liệu */}
