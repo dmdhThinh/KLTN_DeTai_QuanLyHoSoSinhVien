@@ -8,19 +8,24 @@ export default function StudentList() {
   const [students, setStudents] = useState([])
   const [loading, setLoading] = useState(true)
   const [query, setQuery] = useState('')
-  const [confirmDelete, setConfirmDelete] = useState(null)
+  const [page, setPage] = useState(1)
+  const [totalPages, setTotalPages] = useState(1)
   const [message, setMessage] = useState('')
+  const [confirmDelete, setConfirmDelete] = useState(null)
+  const limit = 10
 
   useEffect(() => {
     loadStudents()
-  }, [])
+  }, [page])
 
-  const loadStudents = async (q = '') => {
+  const loadStudents = async (q = query) => {
     setLoading(true)
     try {
-      const data = await apiFetch(`/api/sinhviens?q=${encodeURIComponent(q)}`)
-      setStudents(data || [])
-    } catch {
+      const data = await apiFetch(`/api/sinhviens?q=${encodeURIComponent(q)}&page=${page}&limit=${limit}&sort=desc`)
+      setStudents(data.data || [])
+      setTotalPages(data.pagination.totalPages || 1)
+    } catch (err) {
+      console.error(err)
       setStudents([])
     } finally {
       setLoading(false)
@@ -29,6 +34,7 @@ export default function StudentList() {
 
   const handleSearch = (e) => {
     e.preventDefault()
+    setPage(1)
     loadStudents(query)
   }
 
@@ -47,7 +53,6 @@ export default function StudentList() {
 
   return (
     <AdminLayout activeMenu="students" title="Danh sách sinh viên">
-      {/* Thông báo */}
       {message && (
         <div className="alert alert-info text-center py-2">{message}</div>
       )}
@@ -78,7 +83,7 @@ export default function StudentList() {
         </div>
       )}
 
-      {/* Thanh tìm kiếm và nút thêm */}
+      {/* Thanh tìm kiếm */}
       <div className="d-flex align-items-center mb-3">
         <form onSubmit={handleSearch} className="d-flex gap-2">
           <input
@@ -101,7 +106,7 @@ export default function StudentList() {
         </div>
       </div>
 
-      {/* Bảng danh sách sinh viên */}
+      {/* Bảng dữ liệu */}
       <div className="card shadow-sm">
         <div className="card-body p-0">
           {loading ? (
@@ -125,25 +130,25 @@ export default function StudentList() {
                 <tbody>
                   {students.map((sv, i) => (
                     <tr key={sv.id}>
-                      <td>{i + 1}</td>
+                      <td>{(page - 1) * limit + i + 1}</td>
                       <td>{sv.maSv}</td>
                       <td>{sv.hoTen}</td>
                       <td>{sv.ngaySinh}</td>
                       <td>{sv.gioiTinh}</td>
                       <td>{sv.khoaHoc}</td>
                       <td>
-                            <button
-                                className="btn btn-sm btn-outline-secondary me-2"
-                                onClick={() => navigate(`/admin/students/edit/${sv.id}`)}
-                            >
-                                ✏️ Sửa
-                            </button>
-                            <button
-                                className="btn btn-sm btn-outline-danger"
-                                onClick={() => setConfirmDelete(sv)}
-                            >
-                                Xoá
-                            </button>
+                        <button
+                          className="btn btn-sm btn-outline-secondary me-2"
+                          onClick={() => navigate(`/admin/students/edit/${sv.id}`)}
+                        >
+                          ✏️ Sửa
+                        </button>
+                        <button
+                          className="btn btn-sm btn-outline-danger"
+                          onClick={() => setConfirmDelete(sv)}
+                        >
+                          Xoá
+                        </button>
                       </td>
                     </tr>
                   ))}
@@ -151,6 +156,29 @@ export default function StudentList() {
               </table>
             </div>
           )}
+        </div>
+      </div>
+
+      {/* Phân trang */}
+      <div className="d-flex justify-content-between align-items-center mt-3">
+        <div className="text-muted small">
+          Trang {page} / {totalPages}
+        </div>
+        <div className="d-flex gap-2">
+          <button
+            className="btn btn-outline-secondary btn-sm"
+            disabled={page <= 1}
+            onClick={() => setPage((p) => p - 1)}
+          >
+            ← Trước
+          </button>
+          <button
+            className="btn btn-outline-secondary btn-sm"
+            disabled={page >= totalPages}
+            onClick={() => setPage((p) => p + 1)}
+          >
+            Sau →
+          </button>
         </div>
       </div>
     </AdminLayout>

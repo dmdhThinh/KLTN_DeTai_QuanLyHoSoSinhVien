@@ -57,30 +57,53 @@ export async function create(req, res) {
     return res.status(500).json({ message: 'Lỗi máy chủ' })
   }
 }
-// ======= LẤY DANH SÁCH SINH VIÊN =======
+// ======= LẤY DANH SÁCH SINH VIÊN CÓ PHÂN TRANG =======
 export async function getAll(req, res) {
   try {
     const search = req.query.q ? `%${req.query.q}%` : '%'
+    const page = Math.max(1, parseInt(req.query.page || 1))
+    const limit = Math.max(1, parseInt(req.query.limit || 10))
+    const offset = (page - 1) * limit
+    const sort = req.query.sort === 'asc' ? 'ASC' : 'DESC'
 
-    const [rows] = await pool.execute(
-      `SELECT id,
-              ma_sv AS maSv,
-              ho_ten AS hoTen,
-              ngay_sinh AS ngaySinh,
-              gioi_tinh AS gioiTinh,
-              khoa_hoc AS khoaHoc
+    // Đảm bảo an toàn trước khi chèn limit/offset
+    if (isNaN(limit) || isNaN(offset)) {
+      return res.status(400).json({ message: 'Limit hoặc offset không hợp lệ' })
+    }
+
+    // Đếm tổng số
+    const [countRows] = await pool.execute(
+      `SELECT COUNT(*) AS total
        FROM SinhVien
-       WHERE ma_sv LIKE :search OR ho_ten LIKE :search
-       ORDER BY id DESC`,
+       WHERE ma_sv LIKE :search OR ho_ten LIKE :search`,
       { search }
     )
 
-    return res.json(rows)
+    const total = countRows[0].total
+    const totalPages = Math.ceil(total / limit)
+
+    // ⚡ Viết LIMIT/OFFSET trực tiếp (vì MySQL không bind được chúng)
+    const query = `
+      SELECT id, ma_sv AS maSv, ho_ten AS hoTen, ngay_sinh AS ngaySinh,
+             gioi_tinh AS gioiTinh, khoa_hoc AS khoaHoc
+      FROM SinhVien
+      WHERE ma_sv LIKE :search OR ho_ten LIKE :search
+      ORDER BY id ${sort}
+      LIMIT ${limit} OFFSET ${offset}
+    `
+
+    const [rows] = await pool.execute(query, { search })
+
+    res.json({
+      data: rows,
+      pagination: { page, limit, total, totalPages }
+    })
   } catch (err) {
     console.error('❌ Lỗi getAll SinhVien:', err)
-    return res.status(500).json({ message: 'Lỗi máy chủ khi lấy danh sách sinh viên' })
+    res.status(500).json({ message: 'Lỗi máy chủ khi lấy danh sách sinh viên' })
   }
 }
+
 // ======= XOÁ SINH VIÊN =======
 export async function remove(req, res) {
   try {
