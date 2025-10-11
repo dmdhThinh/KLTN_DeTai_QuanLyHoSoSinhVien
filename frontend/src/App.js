@@ -10,6 +10,7 @@ import ProtectedRoute from './components/ProtectedRoute'
 import AddStudent from './pages/Admin/AddStudent'
 import StudentList from './pages/Admin/StudentList'
 import EditStudent from './pages/Admin/EditStudent'
+import PrivateRoute from './components/PrivateRoute'
 
 function App() {
   return (
@@ -21,15 +22,34 @@ function App() {
         {/* Bảo vệ các trang sau đăng nhập */}
         <Route
           path="/student"
-          element={<ProtectedRoute><StudentDashboard /></ProtectedRoute>}
+          element={<ProtectedRoute>
+           <PrivateRoute allowRoles={['Sinh viên']}>
+           <StudentDashboard />
+           </PrivateRoute>
+          </ProtectedRoute>}
         />
-        <Route
+       <Route
           path="/teacher"
-          element={<ProtectedRoute><TeacherDashboard /></ProtectedRoute>}
+          element={
+            <ProtectedRoute>
+              <PrivateRoute allowRoles={['Giảng viên']}>
+                <TeacherDashboard />
+              </PrivateRoute>
+            </ProtectedRoute>
+          }
         />
+
+
+
         <Route
           path="/admin"
-          element={<ProtectedRoute><AdminDashboard /></ProtectedRoute>}
+          element={
+            <ProtectedRoute>
+              <AdminDashboard />
+              <PrivateRoute allowRoles={['Admin']}></PrivateRoute>
+              <PrivateRoute></PrivateRoute>
+            </ProtectedRoute>
+          }
         />
         <Route
           path="/admin/students"
