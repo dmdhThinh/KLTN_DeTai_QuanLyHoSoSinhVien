@@ -1,7 +1,12 @@
 import { Router } from 'express'
-import { getById } from '../controllers/sinhVienController.js'
+import { getAll, getById, create, update, remove } from '../controllers/sinhVienController.js'
+
 const router = Router()
 
+router.get('/', getAll)
 router.get('/:id', getById)
+router.post('/', create)
+router.put('/:id', update) // ✅ cập nhật sinh viên
+router.delete('/:id', remove)
 
 export default router

@@ -1,39 +1,33 @@
-// ==================== AdminDashboard.js ====================
+// src/pages/Admin/AdminDashboard.js
 import React from 'react'
 import { useNavigate } from 'react-router-dom'
 import { clearAuth } from '../../api'
 import {
-  FaHome,
-  FaUserCog,
-  FaUserGraduate,
-  FaChalkboardTeacher,
-  FaUniversity,
-  FaBook,
-  FaMoneyBillWave,
-  FaBell,
-  FaChartBar,
-  FaSignOutAlt
+  FaHome, FaUserCog, FaUserGraduate, FaChalkboardTeacher, FaUniversity,
+  FaBook, FaMoneyBillWave, FaBell, FaChartBar, FaSignOutAlt
 } from 'react-icons/fa'
 
-function Tile({ title, value, action }) {
+function Tile({ title, value, action, onAction }) {
   return (
     <div className="bg-white rounded-3 shadow-sm p-3 h-100">
       <div className="text-muted small mb-2">{title}</div>
       <div className="fs-2 fw-semibold">{value}</div>
-      {action && <button className="btn btn-primary btn-sm mt-2">{action}</button>}
+      {action && (
+        <button className="btn btn-primary btn-sm mt-2" onClick={onAction}>
+          {action}
+        </button>
+      )}
     </div>
   )
 }
 
 export default function AdminDashboard() {
   const navigate = useNavigate()
-
   const handleLogout = () => {
     clearAuth()
     setTimeout(() => navigate('/login', { replace: true }), 100)
   }
 
-  // 🧭 Danh sách menu có icon
   const menuItems = [
     { title: 'Tổng quan', icon: <FaHome /> },
     { title: 'Quản lý tài khoản', icon: <FaUserCog /> },
@@ -68,11 +62,7 @@ export default function AdminDashboard() {
 
         <div className="px-3 text-uppercase text-white-50 small mt-3">Khác</div>
         <div className="p-2">
-          {/* ✅ Đăng xuất có icon */}
-          <button
-            onClick={handleLogout}
-            className="btn btn-outline-danger w-100 text-start d-flex align-items-center gap-2"
-          >
+          <button onClick={handleLogout} className="btn btn-outline-danger w-100 text-start d-flex align-items-center gap-2">
             <FaSignOutAlt className="fs-5" />
             <span>Đăng xuất</span>
           </button>
@@ -81,21 +71,14 @@ export default function AdminDashboard() {
 
       {/* Main content */}
       <main className="flex-grow-1">
-        {/* Top bar */}
         <div className="d-flex align-items-center gap-3 p-3 border-bottom bg-white">
           <div className="fw-semibold">
             Bảng điều khiển <span className="badge bg-primary ms-2">Admin</span>
           </div>
-          <div
-            className="ms-auto d-flex align-items-center gap-3"
-            style={{ maxWidth: 520, width: '100%' }}
-          >
+          <div className="ms-auto d-flex align-items-center gap-3" style={{ maxWidth: 520, width: '100%' }}>
             <input className="form-control" placeholder="Nhập từ khóa tìm kiếm..." />
             <div className="text-muted small">Xin chào, admin01</div>
-            <div
-              className="rounded-circle bg-light border"
-              style={{ width: 32, height: 32 }}
-            ></div>
+            <div className="rounded-circle bg-light border" style={{ width: 32, height: 32 }}></div>
           </div>
         </div>
 
@@ -106,13 +89,21 @@ export default function AdminDashboard() {
             <div className="col-lg-4"><Tile title="Tổng số giảng viên" value={0} /></div>
             <div className="col-lg-4"><Tile title="Tổng số học phần" value={0} /></div>
 
-            <div className="col-lg-4"><Tile title="Quản lý tài khoản" value="" action="Mở" /></div>
-            <div className="col-lg-4"><Tile title="Quản lý sinh viên" value="" action="Mở" /></div>
-            <div className="col-lg-4"><Tile title="Khoa - Ngành - Lớp" value="" action="Mở" /></div>
-            <div className="col-lg-4"><Tile title="Học phần" value="" action="Mở" /></div>
-            <div className="col-lg-4"><Tile title="Học phí" value="" action="Mở" /></div>
-            <div className="col-lg-4"><Tile title="Thông báo" value="" action="Mở" /></div>
-            <div className="col-lg-4"><Tile title="Báo cáo thống kê" value="" action="Mở" /></div>
+            <div className="col-lg-4"><Tile title="Quản lý tài khoản" value="" action="Mở" onAction={()=>{}} /></div>
+            <div className="col-lg-4">
+              <Tile
+                title="Quản lý sinh viên"
+                value=""
+                action="Mở"
+                onAction={() => navigate('/admin/students')}
+
+              />
+            </div>
+            <div className="col-lg-4"><Tile title="Khoa - Ngành - Lớp" value="" action="Mở" onAction={()=>{}} /></div>
+            <div className="col-lg-4"><Tile title="Học phần" value="" action="Mở" onAction={()=>{}} /></div>
+            <div className="col-lg-4"><Tile title="Học phí" value="" action="Mở" onAction={()=>{}} /></div>
+            <div className="col-lg-4"><Tile title="Thông báo" value="" action="Mở" onAction={()=>{}} /></div>
+            <div className="col-lg-4"><Tile title="Báo cáo thống kê" value="" action="Mở" onAction={()=>{}} /></div>
           </div>
         </div>
       </main>
