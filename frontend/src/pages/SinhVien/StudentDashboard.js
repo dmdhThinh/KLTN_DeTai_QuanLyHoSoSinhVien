@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react'
 import { getSinhVienById, getSinhVienId } from '../../api'
+import Header from '../../components/Header'
 
 function StatCard({ title, value, variant, link }) {
   return (
@@ -24,11 +25,8 @@ export default function StudentDashboard() {
 
   return (
     <div className="p-4 p-md-5">
-      {/* Top bar */}
-      <div className="d-flex justify-content-between align-items-center mb-3">
-        <input className="form-control w-auto" style={{minWidth: 260}} placeholder="Tìm kiếm..." />
-        <div className="small">Trang chủ • Tin tức • User</div>
-      </div>
+     <Header />
+     
 
       {/* Main content card */}
       <div className="bg-white rounded-4 shadow p-4">
