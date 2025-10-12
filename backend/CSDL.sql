@@ -1,7 +1,4 @@
--- Tạo database
-CREATE DATABASE IF NOT EXISTS QuanLySinhVien
-  CHARACTER SET utf8mb4
-  COLLATE utf8mb4_unicode_ci;
+
 
 USE QuanLySinhVien;
 
@@ -292,3 +289,65 @@ INSERT INTO ThamGiaHoatDong (sinh_vien_id, hoat_dong_id, vai_tro) VALUES
 -- 17. Yêu cầu tư vấn
 INSERT INTO YeuCauTuVan (sinh_vien_id, co_van_id, noi_dung, trang_thai) VALUES
 (1, 1, 'Em muốn được tư vấn về kế hoạch học tập.', 'Chờ phản hồi');
+
+
+CREATE TABLE HocPhan (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  ma_hoc_phan VARCHAR(50) NOT NULL UNIQUE,
+  ten_hoc_phan VARCHAR(255) NOT NULL,
+  so_tin_chi INT DEFAULT 3,
+  mo_ta TEXT,
+  khoa_id INT,
+  FOREIGN KEY (khoa_id) REFERENCES Khoa(id)
+);
+
+
+CREATE TABLE LopHocPhan (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  ma_lop_hoc_phan VARCHAR(50) NOT NULL,
+  hoc_phan_id INT NOT NULL,
+  giang_vien_id INT NOT NULL,
+  lop_id INT NOT NULL,                     -- 🔹 lớp sinh viên học môn này
+  hoc_ky VARCHAR(20) DEFAULT 'HK1/2025',
+  nam_hoc VARCHAR(10) DEFAULT '2025-2026', -- 🔹 thêm năm học cho dễ lọc
+  trang_thai ENUM('Đang học','Đã kết thúc','Chưa mở') DEFAULT 'Đang học',
+  FOREIGN KEY (hoc_phan_id) REFERENCES HocPhan(id),
+  FOREIGN KEY (giang_vien_id) REFERENCES GiangVien(id),
+  FOREIGN KEY (lop_id) REFERENCES Lop(id)
+);
+
+-- Bảng lịch học
+
+CREATE TABLE LichHoc (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  lop_hoc_phan_id INT NOT NULL,
+  thu INT NOT NULL,                         -- Thứ trong tuần (2-8)
+  ca ENUM('sáng','chiều','tối') NOT NULL,
+  tiet_bat_dau INT NOT NULL,
+  tiet_ket_thuc INT NOT NULL,
+  phong VARCHAR(50),
+  co_so VARCHAR(50),
+  ngay_hoc DATE NULL,                       -- 🔹 nếu có ngày học cụ thể
+  loai ENUM('lythuyet','thuchanh','tructuyen','thi') DEFAULT 'lythuyet',
+  ghi_chu VARCHAR(255) NULL,
+  FOREIGN KEY (lop_hoc_phan_id) REFERENCES LopHocPhan(id)
+);
+
+-- Môn học
+INSERT INTO HocPhan (ma_hoc_phan, ten_hoc_phan, so_tin_chi, khoa_id)
+VALUES ('HP001', 'Lập trình WWW (Java)', 3, 1);
+
+-- Lớp học phần cho lớp CNTT01
+INSERT INTO LopHocPhan (ma_lop_hoc_phan, hoc_phan_id, giang_vien_id, lop_id, hoc_ky, nam_hoc)
+VALUES ('DHKTPM18BTT', 1, 2, 1, 'HK1', '2025-2026');
+
+-- Lịch học cụ thể
+INSERT INTO LichHoc (lop_hoc_phan_id, thu, ca, tiet_bat_dau, tiet_ket_thuc, phong, co_so, loai)
+VALUES
+(1, 2, 'sáng', 1, 3, 'V7.02', 'Cơ sở 1', 'lythuyet'),
+(1, 4, 'chiều', 7, 9, 'H8.03', 'Cơ sở 1', 'thuchanh');
+
+
+
+
+

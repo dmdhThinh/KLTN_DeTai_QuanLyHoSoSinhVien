@@ -6,7 +6,6 @@ import StudentDashboard from './pages/SinhVien/StudentDashboard'
 import TeacherDashboard from './pages/GiangVien/TeacherDashboard'
 import AdminDashboard from './pages/Admin/AdminDashboard'
 import LichHocLichThi from './pages/SinhVien/LichHocLichThi'
-import ProtectedRoute from './components/ProtectedRoute'
 import AddStudent from './pages/Admin/AddStudent'
 import StudentList from './pages/Admin/StudentList'
 import EditStudent from './pages/Admin/EditStudent'
@@ -16,55 +15,69 @@ function App() {
   return (
     <BrowserRouter>
       <Routes>
+        {/* Trang mặc định */}
         <Route path="/" element={<Navigate to="/login" replace />} />
         <Route path="/login" element={<Login />} />
 
-        {/* Bảo vệ các trang sau đăng nhập */}
+        {/* Sinh viên */}
         <Route
           path="/student"
-          element={<ProtectedRoute>
-           <PrivateRoute allowRoles={['Sinh viên']}>
-           <StudentDashboard />
-           </PrivateRoute>
-          </ProtectedRoute>}
-        />
-       <Route
-          path="/teacher"
           element={
-            <ProtectedRoute>
-              <PrivateRoute allowRoles={['Giảng viên']}>
-                <TeacherDashboard />
-              </PrivateRoute>
-            </ProtectedRoute>
+            <PrivateRoute allowRoles={['Sinh viên']}>
+              <StudentDashboard />
+            </PrivateRoute>
           }
         />
 
+        {/* Giảng viên */}
+        <Route
+          path="/teacher"
+          element={
+            <PrivateRoute allowRoles={['Giảng viên']}>
+              <TeacherDashboard />
+            </PrivateRoute>
+          }
+        />
 
-
+        {/* Quản trị */}
         <Route
           path="/admin"
           element={
-            <ProtectedRoute>
+            <PrivateRoute allowRoles={['Quản trị']}>
               <AdminDashboard />
-              <PrivateRoute allowRoles={['Admin']}></PrivateRoute>
-              <PrivateRoute></PrivateRoute>
-            </ProtectedRoute>
+            </PrivateRoute>
           }
         />
         <Route
           path="/admin/students"
-          element={<ProtectedRoute><StudentList /></ProtectedRoute>}
+          element={
+            <PrivateRoute allowRoles={['Quản trị']}>
+              <StudentList />
+            </PrivateRoute>
+          }
         />
         <Route
           path="/admin/students/new"
-          element={<ProtectedRoute><AddStudent /></ProtectedRoute>}
+          element={
+            <PrivateRoute allowRoles={['Quản trị']}>
+              <AddStudent />
+            </PrivateRoute>
+          }
         />
         <Route
           path="/admin/students/edit/:id"
-          element={<ProtectedRoute><EditStudent /></ProtectedRoute>}
+          element={
+            <PrivateRoute allowRoles={['Quản trị']}>
+              <EditStudent />
+            </PrivateRoute>
+          }
         />
-        {/* Lịch có thể để public hoặc bảo vệ tùy ý; giữ nguyên */}
+
+        {/* Lịch học, lịch thi */}
         <Route path="/lich" element={<LichHocLichThi />} />
+
+        {/* Trang không tồn tại → về login */}
+        <Route path="*" element={<Navigate to="/login" replace />} />
       </Routes>
     </BrowserRouter>
   )
