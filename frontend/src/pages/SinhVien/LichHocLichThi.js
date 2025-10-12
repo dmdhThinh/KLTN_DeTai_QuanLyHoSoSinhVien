@@ -1,11 +1,12 @@
 import React, { useEffect, useState } from 'react'
 import { getSinhVienId, apiFetch } from '../../api'
-import {  useLocation } from 'react-router-dom'
+import { useLocation } from 'react-router-dom'
 import dayjs from 'dayjs'
 import 'dayjs/locale/vi'
 import Header from '../../components/Header'
 import '../../styles/SinhVien/LichHocLichThi.css'
 
+// 🧭 Hàm lấy thứ 2 đầu tuần
 function getMonday(date) {
   const d = new Date(date)
   const day = d.getDay()
@@ -16,6 +17,7 @@ function getMonday(date) {
 export default function LichHocLichThi() {
   const [lich, setLich] = useState([])
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(null)
   const [weekStart, setWeekStart] = useState(getMonday(new Date()))
   const { search } = useLocation()
   const mode = new URLSearchParams(search).get('mode') || 'hoc'
@@ -26,26 +28,59 @@ export default function LichHocLichThi() {
     return {
       label: i < 6 ? `Thứ ${i + 2}` : 'Chủ nhật',
       date: dayjs(d).format('DD/MM/YYYY'),
-      dateObj: d
+      dateObj: d,
     }
   })
+
   const caHoc = ['Sáng', 'Chiều', 'Tối']
 
+  // 🧠 Gọi API lịch học hoặc lịch thi
   useEffect(() => {
     const id = getSinhVienId()
-    if (!id) return
+    if (!id) {
+      setLoading(false)
+      setError('Không tìm thấy thông tin sinh viên!')
+      return
+    }
+
+    setLoading(true)
+    setError(null)
+
     const from = dayjs(weekStart).format('YYYY-MM-DD')
+
     apiFetch(`/api/lich/${mode}?sinhVienId=${id}&from=${from}`)
-      .then((data) => setLich(data || []))
-      .catch(() => setLich([]))
+      .then((data) => {
+        setLich(Array.isArray(data) ? data : [])
+      })
+      .catch((err) => {
+        console.error('❌ Lỗi khi tải lịch:', err)
+        setError('Không thể tải dữ liệu lịch học.')
+        setLich([])
+      })
       .finally(() => setLoading(false))
   }, [mode, weekStart])
 
-  if (loading) return <div className="text-center mt-5">Đang tải...</div>
+  // 🕐 Loading
+  if (loading)
+    return (
+      <div className="text-center mt-5 fw-semibold">
+        ⏳ Đang tải dữ liệu...
+      </div>
+    )
+
+  // ⚠️ Lỗi
+  
 
   return (
     <div className="page-lichhoc">
       <Header />
+      {/* Thông báo lỗi (hiển thị trên trang) */}
+{error && (
+  <div className="text-center text-danger fw-semibold mt-3">
+    {error}
+  </div>
+)}
+
 
       <div className="title-lg">Lịch học, lịch thi theo tuần</div>
 
@@ -64,39 +99,42 @@ export default function LichHocLichThi() {
           value={dayjs(weekStart).format('YYYY-MM-DD')}
           onChange={(e) => setWeekStart(getMonday(e.target.value))}
         />
-        <button className="btn btn-sm btn-primary" onClick={() => setWeekStart(getMonday(new Date()))}>
+        <button
+          className="btn btn-sm btn-primary"
+          onClick={() => setWeekStart(getMonday(new Date()))}
+        >
           Hiện tại
         </button>
         <button className="btn btn-sm btn-outline-primary">In lịch</button>
         <button
           className="btn btn-sm btn-outline-secondary"
-          onClick={() => setWeekStart(prev => {
-            const d = new Date(prev)
+          onClick={() => {
+            const d = new Date(weekStart)
             d.setDate(d.getDate() - 7)
-            return getMonday(d)
-          })}
+            setWeekStart(getMonday(d))
+          }}
         >
           Trở về
         </button>
         <button
           className="btn btn-sm btn-outline-secondary"
-          onClick={() => setWeekStart(prev => {
-            const d = new Date(prev)
+          onClick={() => {
+            const d = new Date(weekStart)
             d.setDate(d.getDate() + 7)
-            return getMonday(d)
-          })}
+            setWeekStart(getMonday(d))
+          }}
         >
           Tiếp →
         </button>
       </div>
 
-      {/* Bảng */}
+      {/* Bảng lịch */}
       <div className="lichhoc-table table-responsive">
         <table className="align-middle text-center m-0">
           <thead>
             <tr>
               <th>Ca học</th>
-              {days.map(d => (
+              {days.map((d) => (
                 <th key={d.label}>
                   <div>{d.label}</div>
                   <div>{d.date}</div>
@@ -105,11 +143,13 @@ export default function LichHocLichThi() {
             </tr>
           </thead>
           <tbody>
-            {caHoc.map(ca => (
+            {caHoc.map((ca) => (
               <tr key={ca}>
                 <td className="ca-cell">{ca}</td>
                 {days.map((_, i) => {
-                  const cell = lich.find(x => x.thu === i + 2 && x.ca?.toLowerCase() === ca.toLowerCase())
+                  const cell = lich.find(
+                    (x) => x.thu === i + 2 && x.ca?.toLowerCase() === ca.toLowerCase()
+                  )
                   return (
                     <td key={i}>
                       {cell ? (
@@ -139,13 +179,23 @@ export default function LichHocLichThi() {
         </div>
       )}
 
-      {/* Chú thích */}
+      {/* Ghi chú */}
       <div className="legend">
-        <div className="legend-item"><span style={{ background: '#bdbdbd' }}></span> Lịch học lý thuyết</div>
-        <div className="legend-item"><span style={{ background: '#8fd14f', border: '1px solid #388e3c' }}></span> Lịch học thực hành</div>
-        <div className="legend-item"><span style={{ background: '#b3e5fc', border: '1px solid #0288d1' }}></span> Lịch học trực tuyến</div>
-        <div className="legend-item"><span style={{ background: '#fff9c4', border: '1px solid #fbc02d' }}></span> Lịch thi</div>
-        <div className="legend-item"><span style={{ background: '#ef5350', border: '1px solid #b71c1c' }}></span> Lịch tạm ngưng</div>
+        <div className="legend-item">
+          <span style={{ background: '#bdbdbd' }}></span> Lịch học lý thuyết
+        </div>
+        <div className="legend-item">
+          <span style={{ background: '#8fd14f', border: '1px solid #388e3c' }}></span> Lịch học thực hành
+        </div>
+        <div className="legend-item">
+          <span style={{ background: '#b3e5fc', border: '1px solid #0288d1' }}></span> Lịch học trực tuyến
+        </div>
+        <div className="legend-item">
+          <span style={{ background: '#fff9c4', border: '1px solid #fbc02d' }}></span> Lịch thi
+        </div>
+        <div className="legend-item">
+          <span style={{ background: '#ef5350', border: '1px solid #b71c1c' }}></span> Lịch tạm ngưng
+        </div>
       </div>
     </div>
   )

@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react'
-import { getSinhVienById, getSinhVienId } from '../../api'
+import { getSinhVienById, getSinhVienId, apiFetch } from '../../api'
 import Header from '../../components/Header'
 
 function StatCard({ title, value, variant, link }) {
@@ -16,37 +16,64 @@ function StatCard({ title, value, variant, link }) {
 
 export default function StudentDashboard() {
   const [sv, setSv] = useState(null)
+  const [lichHocCount, setLichHocCount] = useState(0)
+  const [lichThiCount, setLichThiCount] = useState(0)
 
   useEffect(() => {
     const id = getSinhVienId()
     if (!id) return
-    getSinhVienById(id).then(setSv).catch(() => {})
+
+    // Lấy thông tin sinh viên
+    getSinhVienById(id)
+      .then(setSv)
+      .catch(() => {})
+
+    // Lấy số lượng lịch học
+    apiFetch(`/api/lich/hoc?sinhVienId=${id}`)
+      .then((data) => {
+        if (Array.isArray(data)) setLichHocCount(data.length)
+      })
+      .catch(() => setLichHocCount(0))
+
+    // Lấy số lượng lịch thi
+    apiFetch(`/api/lich/thi?sinhVienId=${id}`)
+      .then((data) => {
+        if (Array.isArray(data)) setLichThiCount(data.length)
+      })
+      .catch(() => setLichThiCount(0))
   }, [])
 
   return (
-    <div className="p-4 p-md-5">
-     <Header />
-     
+    <div>
+      <Header />
 
-      {/* Main content card */}
       <div className="bg-white rounded-4 shadow p-4">
         <div className="row g-4">
           {/* Left: Profile summary */}
           <div className="col-lg-8">
             <div className="border rounded-3 p-4 h-100">
               <div className="row g-4">
-                {/* Avatar + name */}
                 <div className="col-md-4 d-flex gap-3 align-items-center">
-                  <div className="rounded-circle bg-light border d-flex align-items-center justify-content-center" style={{width:64,height:64}}>
-                    <img alt="Avatar" src={sv?.anhThe || ''} onError={(e)=>{ e.currentTarget.style.display='none' }} />
+                  <div
+                    className="rounded-circle bg-light border d-flex align-items-center justify-content-center"
+                    style={{ width: 64, height: 64 }}
+                  >
+                    <img
+                      alt="Avatar"
+                      src={sv?.anhThe || ''}
+                      onError={(e) => {
+                        e.currentTarget.style.display = 'none'
+                      }}
+                    />
                   </div>
                   <div>
                     <div className="fs-5 fw-semibold">{sv?.hoTen || '—'}</div>
-                    <button className="btn btn-link p-0 small">Xem chi tiết</button>
+                    <button className="btn btn-link p-0 small">
+                      Xem chi tiết
+                    </button>
                   </div>
                 </div>
 
-                {/* Info grid */}
                 <div className="col-md-8">
                   <div className="row row-cols-2 g-3 small">
                     <div>
@@ -55,7 +82,7 @@ export default function StudentDashboard() {
                     </div>
                     <div>
                       <div className="text-muted">Lớp học</div>
-                      <div className="fw-semibold">{sv?.lop }</div>
+                      <div className="fw-semibold">{sv?.lop || '-'}</div>
                     </div>
                     <div>
                       <div className="text-muted">Giới tính</div>
@@ -71,7 +98,7 @@ export default function StudentDashboard() {
                     </div>
                     <div>
                       <div className="text-muted">Ngành</div>
-                      <div className="fw-semibold">{sv?.nganh  }</div>
+                      <div className="fw-semibold">{sv?.nganh || '-'}</div>
                     </div>
                     <div className="col-12">
                       <div className="text-muted">Nơi sinh</div>
@@ -87,32 +114,31 @@ export default function StudentDashboard() {
             </div>
           </div>
 
-          {/* Right: Reminders + small stats */}
+          {/* Right: Stats */}
           <div className="col-lg-4 d-flex flex-column gap-3">
             <StatCard title="Nhắc nhở mới" value={0} link="Xem chi tiết" />
             <div className="row g-3">
               <div className="col-6">
-  <StatCard
-    title="Lịch học"
-    value={0}
-    variant="bg-light"
-    link={<a href="/lich?mode=hoc">Xem chi tiết</a>}
-  />
-</div>
-<div className="col-6">
-  <StatCard
-    title="Lịch thi"
-    value={0}
-    variant="bg-light"
-    link={<a href="/lich?mode=thi">Xem chi tiết</a>}
-  />
-</div>
-
+                <StatCard
+                  title="Lịch học"
+                  value={lichHocCount}
+                  variant="bg-light"
+                  link={<a href="/lich?mode=hoc">Xem chi tiết</a>}
+                />
+              </div>
+              <div className="col-6">
+                <StatCard
+                  title="Lịch thi"
+                  value={lichThiCount}
+                  variant="bg-light"
+                  link={<a href="/lich?mode=thi">Xem chi tiết</a>}
+                />
+              </div>
             </div>
           </div>
         </div>
 
-        {/* Horizontal actions */}
+        {/* Bottom buttons */}
         <div className="d-flex gap-2 gap-md-3 mt-4 overflow-auto pb-2">
           {[
             'Lịch theo tuần',
@@ -135,5 +161,3 @@ export default function StudentDashboard() {
     </div>
   )
 }
-
-
