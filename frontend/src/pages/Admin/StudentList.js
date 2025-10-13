@@ -203,7 +203,7 @@ const handleDownloadTemplate = async () => {
                       <td>{(page - 1) * limit + i + 1}</td>
                       <td>{sv.maSv}</td>
                       <td>{sv.hoTen}</td>
-                      <td>{sv.ngaySinh}</td>
+                      <td>{sv.ngaySinh ? new Date(sv.ngaySinh).toLocaleDateString('vi-VN') : ''}</td>
                       <td>{sv.gioiTinh}</td>
                       <td>{sv.khoaHoc}</td>
                       <td>
