@@ -346,7 +346,17 @@ INSERT INTO LichHoc (lop_hoc_phan_id, thu, ca, tiet_bat_dau, tiet_ket_thuc, phon
 VALUES
 (1, 2, 'sáng', 1, 3, 'V7.02', 'Cơ sở 1', 'lythuyet'),
 (1, 4, 'chiều', 7, 9, 'H8.03', 'Cơ sở 1', 'thuchanh');
+/*
 
+ALTER TABLE LopHocPhan
+ADD COLUMN ngay_bat_dau DATE NULL,
+ADD COLUMN ngay_ket_thuc DATE NULL,
+ADD COLUMN so_tuan_hoc INT DEFAULT 15;
+
+UPDATE LopHocPhan
+SET ngay_bat_dau = '2025-09-15', ngay_ket_thuc = '2025-12-30', so_tuan_hoc = 15
+WHERE id = 1;
+*/
 
 
 

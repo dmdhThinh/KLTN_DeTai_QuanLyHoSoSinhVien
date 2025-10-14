@@ -1,61 +1,124 @@
 // src/api.js
-const TOKEN_KEY = 'token'
-const SV_ID_KEY = 'sinhVienId'
-const GV_ID_KEY = 'giangVienId'
-const ROLE_KEY = 'role'
 const API_BASE = process.env.REACT_APP_API_BASE || ''
-
-export function saveAuth({ token, sinhVienId, giangVienId, role }) {
-  if (token) localStorage.setItem(TOKEN_KEY, token)
-  if (sinhVienId != null) localStorage.setItem(SV_ID_KEY, String(sinhVienId))
-  if (giangVienId != null) localStorage.setItem(GV_ID_KEY, String(giangVienId))
-  if (role) localStorage.setItem(ROLE_KEY, role)
+const SESSION_ROLE_KEY = 'current_role'
+const SESSION_ID_KEY = 'current_user_id'
+// Mỗi role có key riêng biệt
+const TOKEN_KEYS = {
+  'Sinh viên': 'token_sv',
+  'Giảng viên': 'token_gv',
+  'Quản trị': 'token_admin',
+}
+const ROLE_KEYS = {
+  'Sinh viên': 'role_sv',
+  'Giảng viên': 'role_gv',
+  'Quản trị': 'role_admin',
 }
 
-export function clearAuth() {
+const SV_ID_KEY = 'sinhVienId'
+const GV_ID_KEY = 'giangVienId'
+
+// 🧩 Lưu auth theo role
+export function saveAuth({ token, sinhVienId, giangVienId, role }) {
+  if (!role || !token) return
+
+  // Lưu token và role theo vai trò
+  localStorage.setItem(TOKEN_KEYS[role], token)
+  localStorage.setItem(ROLE_KEYS[role], role)
+
+  // 🔹 Lưu role & id riêng trong sessionStorage cho từng tab
+  sessionStorage.setItem(SESSION_ROLE_KEY, role)
+  if (role === 'Sinh viên' && sinhVienId)
+    sessionStorage.setItem(SESSION_ID_KEY, sinhVienId)
+  if (role === 'Giảng viên' && giangVienId)
+    sessionStorage.setItem(SESSION_ID_KEY, giangVienId)
+}
+
+
+// 🧩 Xóa token theo role (chỉ role đó)
+export function clearAuth(role) {
   try {
-    localStorage.removeItem(TOKEN_KEY)
-    localStorage.removeItem(SV_ID_KEY)
-    localStorage.removeItem(GV_ID_KEY)
-    localStorage.removeItem(ROLE_KEY)
+    if (role && TOKEN_KEYS[role]) {
+      localStorage.removeItem(TOKEN_KEYS[role])
+      localStorage.removeItem(ROLE_KEYS[role])
+      if (role === 'Sinh viên') localStorage.removeItem(SV_ID_KEY)
+      if (role === 'Giảng viên') localStorage.removeItem(GV_ID_KEY)
+    }
+    sessionStorage.removeItem(SESSION_ROLE_KEY)
+    sessionStorage.removeItem(SESSION_ID_KEY)
   } catch (_) {}
 }
 
-export function getToken() { return localStorage.getItem(TOKEN_KEY) }
-export function getSinhVienId() { const v = localStorage.getItem(SV_ID_KEY); return v ? parseInt(v,10) : null }
-export function getGiangVienId() { const v = localStorage.getItem(GV_ID_KEY); return v ? parseInt(v,10) : null }
-export function getRole() { return localStorage.getItem(ROLE_KEY) }
+// 🧩 Lấy token đúng role hiện tại
+export function getToken() {
+  const role = getRole()
+  return role ? localStorage.getItem(TOKEN_KEYS[role]) : null
+}
 
+// 🧩 Lấy vai trò hiện tại (ưu tiên role_admin > role_gv > role_sv)
+
+// 🧩 Lấy vai trò hiện tại
+export function getRole() {
+  // Ưu tiên lấy theo session (mỗi tab riêng biệt)
+  const sessionRole = sessionStorage.getItem(SESSION_ROLE_KEY)
+  if (sessionRole) return sessionRole
+
+  // fallback nếu tab chưa lưu sessionRole
+  return (
+    localStorage.getItem(ROLE_KEYS['Sinh viên']) ||
+    localStorage.getItem(ROLE_KEYS['Giảng viên']) ||
+    localStorage.getItem(ROLE_KEYS['Quản trị']) ||
+    null
+  )
+}
+
+export function getSinhVienId() {
+  const v = sessionStorage.getItem(SESSION_ID_KEY)
+  return v ? parseInt(v, 10) : null
+}
+
+export function getGiangVienId() {
+  const v = sessionStorage.getItem(SESSION_ID_KEY)
+  return v ? parseInt(v, 10) : null
+}
+
+// 🧠 Fetch API — luôn dùng token tương ứng role hiện tại
 export async function apiFetch(path, options = {}) {
-  const headers = { 'Content-Type': 'application/json', ...(options.headers || {}) }
   const token = getToken()
+  const headers = { 'Content-Type': 'application/json', ...(options.headers || {}) }
   if (token) headers['Authorization'] = `Bearer ${token}`
-  const url = `${API_BASE}${path}`
-  const res = await fetch(url, { ...options, headers })
+
+  const res = await fetch(`${API_BASE}${path}`, { ...options, headers })
   if (!res.ok) {
     let msg = 'Request failed'
-    try { const t = await res.json(); msg = t?.message || msg } catch {}
+    try {
+      const t = await res.json()
+      msg = t?.message || msg
+    } catch {}
     throw new Error(msg)
   }
   if (res.status === 204) return null
   return res.json()
 }
 
+// === Login, get info, CRUD ===
 export async function login(username, password) {
-  return apiFetch('/api/auth/login', { method: 'POST', body: JSON.stringify({ username, password }) })
+  return apiFetch('/api/auth/login', {
+    method: 'POST',
+    body: JSON.stringify({ username, password }),
+  })
 }
 
 export async function getSinhVienById(id) {
   return apiFetch(`/api/sinhviens/${id}`)
 }
+
 export async function getGiangVienById(id) {
   return apiFetch(`/api/giangviens/${id}`)
 }
 
-// ====== NEW: tạo sinh viên ======
 export async function createSinhVien(payload) {
   return apiFetch('/api/sinhviens', {
     method: 'POST',
-    body: JSON.stringify(payload)
+    body: JSON.stringify(payload),
   })
 }

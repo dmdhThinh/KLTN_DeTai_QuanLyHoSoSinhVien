@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react'
 import { getSinhVienById, getSinhVienId, apiFetch } from '../../api'
 import Header from '../../components/Header'
-
+import dayjs from 'dayjs'
 function StatCard({ title, value, variant, link }) {
   return (
     <div className={`border rounded-3 p-3 ${variant || ''}`}>
@@ -12,6 +12,13 @@ function StatCard({ title, value, variant, link }) {
       <div className="fs-2 fw-semibold mt-1">{value}</div>
     </div>
   )
+}
+// 🧭 Hàm lấy thứ 2 đầu tuần
+function getMonday(date) {
+  const d = new Date(date)
+  const day = d.getDay()
+  const diff = d.getDate() - day + (day === 0 ? -6 : 1)
+  return new Date(d.setDate(diff))
 }
 
 export default function StudentDashboard() {
@@ -28,17 +35,21 @@ export default function StudentDashboard() {
       .then(setSv)
       .catch(() => {})
 
-    // Lấy số lượng lịch học
-    apiFetch(`/api/lich/hoc?sinhVienId=${id}`)
+      // 🗓️ Xác định tuần hiện tại
+    const weekStart = getMonday(new Date())
+    const from = dayjs(weekStart).format('YYYY-MM-DD')
+
+    // 🧩 Lấy số lượng lịch học trong tuần
+    apiFetch(`/api/lich/hoc?sinhVienId=${id}&from=${from}`)
       .then((data) => {
-        if (Array.isArray(data)) setLichHocCount(data.length)
+        setLichHocCount(Array.isArray(data) ? data.length : 0)
       })
       .catch(() => setLichHocCount(0))
 
-    // Lấy số lượng lịch thi
-    apiFetch(`/api/lich/thi?sinhVienId=${id}`)
+    // 🧩 Lấy số lượng lịch thi trong tuần
+    apiFetch(`/api/lich/thi?sinhVienId=${id}&from=${from}`)
       .then((data) => {
-        if (Array.isArray(data)) setLichThiCount(data.length)
+        setLichThiCount(Array.isArray(data) ? data.length : 0)
       })
       .catch(() => setLichThiCount(0))
   }, [])
