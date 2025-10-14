@@ -17,6 +17,8 @@ export default function AdminLayout({ title, children }) {
     if (path === '/admin') return 'overview';
     if (path.startsWith('/admin/students')) return 'students';
     if (path.startsWith('/admin/khoa')) return 'departments';
+    if (path.startsWith('/admin/nganh')) return 'majors';
+    
     // Thêm các trường hợp khác nếu cần
     return '';
   };
@@ -33,6 +35,7 @@ export default function AdminLayout({ title, children }) {
       case 'overview': navigate('/admin'); break;
       case 'students': navigate('/admin/students'); break;
       case 'departments': navigate('/admin/khoa'); break;
+      case 'majors': navigate('/admin/nganh'); break;
       // Thêm các case khác nếu cần
       default: break;
     }
@@ -43,7 +46,8 @@ export default function AdminLayout({ title, children }) {
     { key: 'accounts', title: 'Quản lý tài khoản', icon: <FaUserCog /> },
     { key: 'students', title: 'Quản lý sinh viên', icon: <FaUserGraduate /> },
     { key: 'teachers', title: 'Quản lý giảng viên', icon: <FaChalkboardTeacher /> },
-    { key: 'departments', title: 'Khoa - Ngành - Lớp', icon: <FaUniversity /> },
+    { key: 'departments', title: 'Quản lý khoa', icon: <FaUniversity /> },
+    { key: 'majors', title: 'Quản lý ngành', icon: <FaUniversity />,  },
     { key: 'courses', title: 'Học phần', icon: <FaBook /> },
     { key: 'fees', title: 'Học phí', icon: <FaMoneyBillWave /> },
     { key: 'noti', title: 'Thông báo', icon: <FaBell /> },

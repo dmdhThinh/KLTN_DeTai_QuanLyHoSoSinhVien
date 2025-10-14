@@ -24,6 +24,7 @@ export default function StudentList() {
       const data = await apiFetch(`/api/sinhviens?q=${encodeURIComponent(q)}&page=${page}&limit=${limit}&sort=desc`)
       setStudents(data.data || [])
       setTotalPages(data.pagination.totalPages || 1)
+      console.log('API Response:', data)
     } catch (err) {
       console.error(err)
       setStudents([])
@@ -45,6 +46,7 @@ export default function StudentList() {
       setConfirmDelete(null)
       loadStudents()
       setTimeout(() => setMessage(''), 3000)
+      console.log('API Response:',id)
     } catch (err) {
       setMessage('Xoá thất bại: ' + err.message)
       setTimeout(() => setMessage(''), 3000)

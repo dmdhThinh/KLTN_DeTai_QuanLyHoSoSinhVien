@@ -31,18 +31,23 @@ export default function KhoaList() {
   }
 
   // 🔎 Lọc danh sách theo từ khóa
-  const handleSearch = (e) => {
-    const keyword = e.target.value.toLowerCase()
-    setSearch(keyword)
-    if (!keyword.trim()) {
-      setFiltered(list)
-    } else {
-      const filteredList = list.filter((khoa) =>
-        khoa.tenKhoa.toLowerCase().includes(keyword)
-      )
-      setFiltered(filteredList)
-    }
+const handleSearch = (e) => {
+  setSearch(e.target.value)
+}
+
+const handleSubmit = (e) => {
+  e.preventDefault()
+  const keyword = search.toLowerCase()
+  if (!keyword.trim()) {
+    setFiltered(list)
+  } else {
+    const filteredList = list.filter((khoa) =>
+      khoa.tenKhoa.toLowerCase().includes(keyword)
+    )
+    setFiltered(filteredList)
   }
+}
+
 
   const handleDelete = async (id) => {
     try {
@@ -90,14 +95,19 @@ export default function KhoaList() {
 
       {/* Thanh công cụ */}
       <div className="d-flex align-items-center mb-3 flex-wrap gap-2">
-        <input
-          type="text"
-          className="form-control"
-          placeholder="Tìm theo tên khoa..."
-          value={search}
-          onChange={handleSearch}
-          style={{ maxWidth: 280 }}
-        />
+          <form onSubmit={handleSubmit} className="d-flex align-items-center gap-2 flex-wrap">
+            <input
+                type="text"
+                className="form-control"
+                placeholder="Tìm theo tên khoa..."
+                value={search}
+                onChange={handleSearch}
+                style={{ width: 220 }}
+            />    
+            <button className="btn btn-outline-primary" type="submit">
+                 Tìm kiếm
+            </button>
+          </form>
         <div className="ms-auto">
           <button
             className="btn btn-primary"
