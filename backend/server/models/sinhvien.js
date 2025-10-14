@@ -24,6 +24,7 @@ export async function getSinhVienDetailById(id) {
     LEFT JOIN Lop   l ON l.id = sv.lop_id
     WHERE sv.id = :id
     LIMIT 1
+    
   `
   const [rows] = await pool.execute(sql, { id })
   return rows[0] || null
@@ -32,7 +33,7 @@ export async function getSinhVienDetailById(id) {
 // ====== Thêm mới dùng cho trang Admin ======
 export async function isMaSvExists(maSv) {
   const [rows] = await pool.execute(
-    'SELECT id FROM SinhVien WHERE ma_sv = :maSv LIMIT 1',
+    'SELECT id FROM SinhVien WHERE ma_sv = :maSv LIMIT 1 ORDER BY id ASC',
     { maSv }
   )
   return rows.length > 0

@@ -5,14 +5,21 @@ import Login from './pages/login'
 import StudentDashboard from './pages/SinhVien/StudentDashboard'
 import TeacherDashboard from './pages/GiangVien/TeacherDashboard'
 import AdminDashboard from './pages/Admin/AdminDashboard'
+
 import LichHocLichThi from './pages/SinhVien/LichHocLichThi'
 import AddStudent from './pages/Admin/AddStudent'
 import StudentList from './pages/Admin/StudentList'
 import EditStudent from './pages/Admin/EditStudent'
 import PrivateRoute from './components/PrivateRoute'
+
 import KhoaList from './pages/Admin/KhoaList'
 import AddKhoa from './pages/Admin/AddKhoa'
 import EditKhoa from './pages/Admin/EditKhoa'
+
+import NganhList from './pages/Admin/NganhList'
+import AddNganh from  './pages/Admin/AddNganh'
+import EditNganh from  './pages/Admin/EditNganh'
+
 function App() {
   return (
     <BrowserRouter>
@@ -82,6 +89,10 @@ function App() {
         <Route path="/admin/khoa" element={<PrivateRoute allowRoles={['Quản trị']}><KhoaList /></PrivateRoute>} />
         <Route path="/admin/khoa/new" element={<PrivateRoute allowRoles={['Quản trị']}><AddKhoa /></PrivateRoute>} />
         <Route path="/admin/khoa/edit/:id" element={<PrivateRoute allowRoles={['Quản trị']}><EditKhoa /></PrivateRoute>} />
+
+        <Route path="/admin/nganh" element={<PrivateRoute allowRoles={['Quản trị']}><NganhList /></PrivateRoute>} />
+        <Route path="/admin/nganh/new" element={<PrivateRoute allowRoles={['Quản trị']}><AddNganh /></PrivateRoute>} />
+        <Route path="/admin/nganh/edit/:id" element={<PrivateRoute allowRoles={['Quản trị']}><EditNganh /></PrivateRoute>} />
 
         {/* Trang không tồn tại → về login */}
         <Route path="*" element={<Navigate to="/login" replace />} />

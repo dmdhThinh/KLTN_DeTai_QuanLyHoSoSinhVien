@@ -4,7 +4,7 @@ import { pool } from '../config/db.js'
 // ===== LẤY DANH SÁCH KHOA =====
 export async function getAllKhoa() {
   const [rows] = await pool.execute(
-    'SELECT id, ten_khoa AS tenKhoa FROM Khoa ORDER BY id DESC'
+    'SELECT id, ten_khoa AS tenKhoa FROM Khoa ORDER BY id ASC'
   )
   return rows
 }
