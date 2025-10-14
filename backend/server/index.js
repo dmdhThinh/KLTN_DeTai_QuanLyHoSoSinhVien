@@ -6,7 +6,7 @@ import sinhvienRoutes from './routes/sinhVien.js'
 import giangvienRoutes from './routes/giangVien.js'
 import importRoutes from './routes/import.js'
 import lichRoutes from './routes/lich.js'
-
+import khoaRoutes from './routes/khoa.js'
 dotenv.config()
 const app = express()
 
@@ -18,6 +18,7 @@ app.use('/api/auth', authRoutes)
 app.use('/api/sinhviens', sinhvienRoutes)
 app.use('/api/giangviens', giangvienRoutes)
 app.use('/api/lich', lichRoutes) 
+app.use('/api/khoa', khoaRoutes)
 // Import routes
 app.use('/api/import', importRoutes)
 // Health check

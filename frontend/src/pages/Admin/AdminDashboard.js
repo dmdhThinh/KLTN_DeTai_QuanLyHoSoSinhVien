@@ -24,16 +24,16 @@ function Tile({ title, value, action, onAction }) {
 export default function AdminDashboard() {
   const navigate = useNavigate()
   const handleLogout = () => {
-    clearAuth()
+    clearAuth('Quản trị')
     setTimeout(() => navigate('/login', { replace: true }), 100)
   }
 
   const menuItems = [
-    { title: 'Tổng quan', icon: <FaHome /> },
+    { title: 'Tổng quan', icon: <FaHome />, path: '/admin' },
     { title: 'Quản lý tài khoản', icon: <FaUserCog /> },
-    { title: 'Quản lý sinh viên', icon: <FaUserGraduate /> },
+    { title: 'Quản lý sinh viên', icon: <FaUserGraduate />, path: '/admin/students' },
     { title: 'Quản lý giảng viên', icon: <FaChalkboardTeacher /> },
-    { title: 'Khoa - Ngành - Lớp', icon: <FaUniversity /> },
+    { title: 'Khoa - Ngành - Lớp', icon: <FaUniversity />, path: '/admin/khoa' },
     { title: 'Học phần', icon: <FaBook /> },
     { title: 'Học phí', icon: <FaMoneyBillWave /> },
     { title: 'Thông báo', icon: <FaBell /> },
@@ -50,9 +50,12 @@ export default function AdminDashboard() {
 
         <div className="px-3 text-uppercase text-white-50 small mt-3">Menu</div>
         <ul className="list-unstyled m-0 p-2">
-          {menuItems.map(({ title, icon }) => (
+          {menuItems.map(({ title, icon, path }) => (
             <li key={title} className="mb-2">
-              <button className="btn btn-dark w-100 text-start d-flex align-items-center gap-2">
+              <button
+                className="btn btn-dark w-100 text-start d-flex align-items-center gap-2"
+                onClick={() => path && navigate(path)}
+              >
                 <span className="fs-5">{icon}</span>
                 <span>{title}</span>
               </button>
@@ -89,21 +92,7 @@ export default function AdminDashboard() {
             <div className="col-lg-4"><Tile title="Tổng số giảng viên" value={0} /></div>
             <div className="col-lg-4"><Tile title="Tổng số học phần" value={0} /></div>
 
-            <div className="col-lg-4"><Tile title="Quản lý tài khoản" value="" action="Mở" onAction={()=>{}} /></div>
-            <div className="col-lg-4">
-              <Tile
-                title="Quản lý sinh viên"
-                value=""
-                action="Mở"
-                onAction={() => navigate('/admin/students')}
-
-              />
-            </div>
-            <div className="col-lg-4"><Tile title="Khoa - Ngành - Lớp" value="" action="Mở" onAction={()=>{}} /></div>
-            <div className="col-lg-4"><Tile title="Học phần" value="" action="Mở" onAction={()=>{}} /></div>
-            <div className="col-lg-4"><Tile title="Học phí" value="" action="Mở" onAction={()=>{}} /></div>
-            <div className="col-lg-4"><Tile title="Thông báo" value="" action="Mở" onAction={()=>{}} /></div>
-            <div className="col-lg-4"><Tile title="Báo cáo thống kê" value="" action="Mở" onAction={()=>{}} /></div>
+          
           </div>
         </div>
       </main>

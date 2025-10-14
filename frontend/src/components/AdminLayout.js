@@ -1,33 +1,42 @@
-// src/components/AdminLayout.js
-import React from 'react'
-import { useNavigate } from 'react-router-dom'
-import { clearAuth } from '../api'
+import React from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
+import { clearAuth } from '../api';
 import {
   FaHome, FaUserCog, FaUserGraduate, FaChalkboardTeacher,
   FaUniversity, FaBook, FaMoneyBillWave, FaBell,
   FaChartBar, FaSignOutAlt
-} from 'react-icons/fa'
+} from 'react-icons/fa';
 
-/**
- * Layout tổng quát cho khu vực Admin:
- * gồm Sidebar (menu), Header (top bar), và nội dung chính (children)
- */
-export default function AdminLayout({ activeMenu, title, children }) {
-  const navigate = useNavigate()
+export default function AdminLayout({ title, children }) {
+  const navigate = useNavigate();
+  const location = useLocation(); // Lấy thông tin URL hiện tại
+
+  // Xác định activeMenu dựa trên pathname
+  const getActiveMenu = () => {
+    const path = location.pathname;
+    if (path === '/admin') return 'overview';
+    if (path.startsWith('/admin/students')) return 'students';
+    if (path.startsWith('/admin/khoa')) return 'departments';
+    // Thêm các trường hợp khác nếu cần
+    return '';
+  };
+
+  const activeMenu = getActiveMenu();
 
   const handleLogout = () => {
-    clearAuth()
-    navigate('/login', { replace: true })
-  }
+    clearAuth('Quản trị');
+    navigate('/login', { replace: true });
+  };
 
   const handleNavigate = (key) => {
     switch (key) {
-      case 'overview': navigate('/admin'); break
-      case 'students': navigate('/admin/students'); break
-
-      default: break
+      case 'overview': navigate('/admin'); break;
+      case 'students': navigate('/admin/students'); break;
+      case 'departments': navigate('/admin/khoa'); break;
+      // Thêm các case khác nếu cần
+      default: break;
     }
-  }
+  };
 
   const menuItems = [
     { key: 'overview', title: 'Tổng quan', icon: <FaHome /> },
@@ -39,7 +48,7 @@ export default function AdminLayout({ activeMenu, title, children }) {
     { key: 'fees', title: 'Học phí', icon: <FaMoneyBillWave /> },
     { key: 'noti', title: 'Thông báo', icon: <FaBell /> },
     { key: 'stats', title: 'Báo cáo thống kê', icon: <FaChartBar /> },
-  ]
+  ];
 
   return (
     <div className="d-flex" style={{ minHeight: '100vh', background: '#f5f7fb' }}>
@@ -98,5 +107,5 @@ export default function AdminLayout({ activeMenu, title, children }) {
         <div className="p-4">{children}</div>
       </main>
     </div>
-  )
+  );
 }
