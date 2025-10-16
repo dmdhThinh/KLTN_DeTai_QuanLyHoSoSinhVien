@@ -20,6 +20,14 @@ import NganhList from './pages/Admin/NganhList'
 import AddNganh from  './pages/Admin/AddNganh'
 import EditNganh from  './pages/Admin/EditNganh'
 
+import LopList from './pages/Admin/LopList'
+import AddLop from  './pages/Admin/AddLop'
+import EditLop from  './pages/Admin/EditLop'
+
+import LichList from './pages/Admin/LichList'
+import AddLich from  './pages/Admin/AddLich'
+import EditLich from  './pages/Admin/EditLich'
+
 function App() {
   return (
     <BrowserRouter>
@@ -93,6 +101,14 @@ function App() {
         <Route path="/admin/nganh" element={<PrivateRoute allowRoles={['Quản trị']}><NganhList /></PrivateRoute>} />
         <Route path="/admin/nganh/new" element={<PrivateRoute allowRoles={['Quản trị']}><AddNganh /></PrivateRoute>} />
         <Route path="/admin/nganh/edit/:id" element={<PrivateRoute allowRoles={['Quản trị']}><EditNganh /></PrivateRoute>} />
+
+        <Route path="/admin/lop" element={<PrivateRoute allowRoles={['Quản trị']}><LopList /></PrivateRoute>} />
+        <Route path="/admin/lop/new" element={<PrivateRoute allowRoles={['Quản trị']}><AddLop /></PrivateRoute>} />
+        <Route path="/admin/lop/edit/:id" element={<PrivateRoute allowRoles={['Quản trị']}><EditLop /></PrivateRoute>} />
+
+        <Route path="/admin/lich" element={<PrivateRoute allowRoles={['Quản trị']}><LichList /></PrivateRoute>} />
+        <Route path="/admin/lich/new" element={<PrivateRoute allowRoles={['Quản trị']}><AddLich /></PrivateRoute>} />
+        <Route path="/admin/lich/edit/:id" element={<PrivateRoute allowRoles={['Quản trị']}><EditLich /></PrivateRoute>} />
 
         {/* Trang không tồn tại → về login */}
         <Route path="*" element={<Navigate to="/login" replace />} />

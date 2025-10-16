@@ -6,9 +6,12 @@ import sinhvienRoutes from './routes/sinhVien.js'
 import giangvienRoutes from './routes/giangVien.js'
 import importRoutes from './routes/import.js'
 import lichRoutes from './routes/lich.js'
+
 import khoaRoutes from './routes/khoa.js'
 import nganhRoutes from './routes/nganh.js'
+import lopRoutes from './routes/lop.js'
 
+import lichAdminRoutes from './routes/lichAdmin.js'
 
 
 dotenv.config()
@@ -22,8 +25,12 @@ app.use('/api/auth', authRoutes)
 app.use('/api/sinhviens', sinhvienRoutes)
 app.use('/api/giangviens', giangvienRoutes)
 app.use('/api/lich', lichRoutes) 
+
 app.use('/api/khoa', khoaRoutes)
 app.use('/api/nganh', nganhRoutes)
+app.use('/api/lop', lopRoutes)
+
+app.use('/api/lich-admin', lichAdminRoutes)
 // Import routes
 app.use('/api/import', importRoutes)
 // Health check

@@ -4,7 +4,8 @@ import { clearAuth } from '../api';
 import {
   FaHome, FaUserCog, FaUserGraduate, FaChalkboardTeacher,
   FaUniversity, FaBook, FaMoneyBillWave, FaBell,
-  FaChartBar, FaSignOutAlt
+  FaChartBar, FaSignOutAlt,
+  FaCalendar
 } from 'react-icons/fa';
 
 export default function AdminLayout({ title, children }) {
@@ -18,6 +19,9 @@ export default function AdminLayout({ title, children }) {
     if (path.startsWith('/admin/students')) return 'students';
     if (path.startsWith('/admin/khoa')) return 'departments';
     if (path.startsWith('/admin/nganh')) return 'majors';
+    if (path.startsWith('/admin/lop')) return 'classes';
+    if (path.startsWith('/admin/lich')) return 'calendar';
+
     
     // Thêm các trường hợp khác nếu cần
     return '';
@@ -36,6 +40,8 @@ export default function AdminLayout({ title, children }) {
       case 'students': navigate('/admin/students'); break;
       case 'departments': navigate('/admin/khoa'); break;
       case 'majors': navigate('/admin/nganh'); break;
+      case 'classes': navigate('/admin/lop'); break;
+      case 'calendar': navigate('/admin/lich'); break;
       // Thêm các case khác nếu cần
       default: break;
     }
@@ -48,6 +54,8 @@ export default function AdminLayout({ title, children }) {
     { key: 'teachers', title: 'Quản lý giảng viên', icon: <FaChalkboardTeacher /> },
     { key: 'departments', title: 'Quản lý khoa', icon: <FaUniversity /> },
     { key: 'majors', title: 'Quản lý ngành', icon: <FaUniversity />,  },
+    { key: 'classes', title: 'Quản lý lớp', icon: <FaUniversity />,  },
+    { key: 'calendar', title: 'Quản lý lịch học', icon: <FaCalendar />,  },
     { key: 'courses', title: 'Học phần', icon: <FaBook /> },
     { key: 'fees', title: 'Học phí', icon: <FaMoneyBillWave /> },
     { key: 'noti', title: 'Thông báo', icon: <FaBell /> },
