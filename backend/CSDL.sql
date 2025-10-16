@@ -314,7 +314,18 @@ CREATE TABLE LopHocPhan (
   FOREIGN KEY (hoc_phan_id) REFERENCES HocPhan(id),
   FOREIGN KEY (giang_vien_id) REFERENCES GiangVien(id),
   FOREIGN KEY (lop_id) REFERENCES Lop(id)
+  
 );
+CREATE TABLE LichHocNgoaiLe (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  lich_hoc_id INT NOT NULL,          -- tham chiếu mẫu trong LichHoc
+  ngay_hoc DATE NOT NULL,            -- buổi học cụ thể
+  phong VARCHAR(50) NULL,
+  co_so VARCHAR(50) NULL,
+  ghi_chu VARCHAR(255) NULL,
+  FOREIGN KEY (lich_hoc_id) REFERENCES LichHoc(id)
+);
+
 
 -- Bảng lịch học
 
@@ -346,6 +357,7 @@ INSERT INTO LichHoc (lop_hoc_phan_id, thu, ca, tiet_bat_dau, tiet_ket_thuc, phon
 VALUES
 (1, 2, 'sáng', 1, 3, 'V7.02', 'Cơ sở 1', 'lythuyet'),
 (1, 4, 'chiều', 7, 9, 'H8.03', 'Cơ sở 1', 'thuchanh');
+
 /*
 
 ALTER TABLE LopHocPhan
@@ -356,7 +368,10 @@ ADD COLUMN so_tuan_hoc INT DEFAULT 15;
 UPDATE LopHocPhan
 SET ngay_bat_dau = '2025-09-15', ngay_ket_thuc = '2025-12-30', so_tuan_hoc = 15
 WHERE id = 1;
+ALTER TABLE Nganh
+ADD COLUMN ma_nganh VARCHAR(20) AFTER id;
 */
+
 
 
 

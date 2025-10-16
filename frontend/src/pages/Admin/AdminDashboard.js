@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom'
 import { clearAuth } from '../../api'
 import {
   FaHome, FaUserCog, FaUserGraduate, FaChalkboardTeacher, FaUniversity,
-  FaBook, FaMoneyBillWave, FaBell, FaChartBar, FaSignOutAlt
+  FaBook, FaMoneyBillWave, FaBell, FaChartBar, FaSignOutAlt, FaCalendar
 } from 'react-icons/fa'
 
 function Tile({ title, value, action, onAction }) {
@@ -35,6 +35,8 @@ export default function AdminDashboard() {
     { title: 'Quản lý giảng viên', icon: <FaChalkboardTeacher /> },
     { title: 'Quản lý khoa', icon: <FaUniversity />, path: '/admin/khoa' },
     { title: 'Quản lý ngành', icon: <FaUniversity />, path: '/admin/nganh' },
+    { title: 'Quản lý lớp', icon: <FaUniversity />, path: '/admin/lop' },
+    { title: 'Quản lý lịch học', icon: <FaCalendar />, path: '/admin/lich' },
     { title: 'Học phần', icon: <FaBook /> },
     { title: 'Học phí', icon: <FaMoneyBillWave /> },
     { title: 'Thông báo', icon: <FaBell /> },
