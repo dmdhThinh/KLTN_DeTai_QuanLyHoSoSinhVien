@@ -147,19 +147,51 @@ export default function LichHocLichThi() {
               <tr key={ca}>
                 <td className="ca-cell">{ca}</td>
                 {days.map((_, i) => {
-                  const cell = lich.find(
-                    (x) => x.thu === i + 2 && x.ca?.toLowerCase() === ca.toLowerCase()
-                  )
+                  const cell = lich.find((x) => {
+  // Nếu là lịch học lặp hàng tuần
+  if (x.thu && !x.ngayHoc) {
+    return Number(x.thu) === i + 2 && x.ca?.toLowerCase() === ca.toLowerCase()
+  }
+
+  // Nếu là lịch học/thi có ngày cụ thể
+  if (x.ngayHoc) {
+    return (
+      dayjs(x.ngayHoc).format('DD/MM/YYYY') === days[i].date &&
+      x.ca?.toLowerCase() === ca.toLowerCase()
+    )
+  }
+
+  return false
+})
+
                   return (
                     <td key={i}>
                       {cell ? (
                         <div className={`monhoc-box ${cell.loai}`}>
-                          <div className="fw-semibold">{cell.monHoc}</div>
-                          <div className="small text-muted">{cell.lopHocPhan}</div>
-                          <div className="small">Tiết: {cell.tiet}</div>
-                          <div className="small">Phòng: {cell.phong}</div>
-                          <div className="small">GV: {cell.giangVien}</div>
-                        </div>
+  <div className="fw-semibold">
+    {cell.tenHocPhan || cell.monHoc}
+  </div>
+  <div className="small text-muted">
+    {cell.maLopHocPhan || cell.lopHocPhan}
+  </div>
+
+  {cell.loai === 'thi' ? (
+    <>
+      <div className="small">Phòng: {cell.phong}</div>
+      <div className="small">GV: {cell.tenGiangVien || cell.giangVien}</div>
+      <div className="small text-danger fw-semibold">(Thi)</div>
+    </>
+  ) : (
+    <>
+      <div className="small">
+        Tiết: {cell.tietBatDau || cell.tiet?.split('-')[0]} -{' '}
+        {cell.tietKetThuc || cell.tiet?.split('-')[1]}
+      </div>
+      <div className="small">Phòng: {cell.phong}</div>
+      <div className="small">GV: {cell.tenGiangVien || cell.giangVien}</div>
+    </>
+  )}
+</div>
                       ) : (
                         <div style={{ height: 60 }}></div>
                       )}

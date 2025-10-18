@@ -119,30 +119,5 @@ export async function deleteLichAdmin(id) {
   return result.affectedRows > 0
 }
 
-// Thêm hoặc cập nhật buổi học ngoại lệ (1 ngày cụ thể)
-export async function upsertLichHocNgoaiLe({ lich_hoc_id, ngay_hoc, phong, co_so, ghi_chu }) {
-  const [exists] = await pool.execute(
-    `SELECT id FROM LichHocNgoaiLe WHERE lich_hoc_id = :lich_hoc_id AND ngay_hoc = :ngay_hoc`,
-    { lich_hoc_id, ngay_hoc }
-  );
 
-  if (exists.length > 0) {
-    // Nếu đã có thì update
-    await pool.execute(
-      `UPDATE LichHocNgoaiLe
-       SET phong = :phong, co_so = :co_so, ghi_chu = :ghi_chu
-       WHERE lich_hoc_id = :lich_hoc_id AND ngay_hoc = :ngay_hoc`,
-      { lich_hoc_id, ngay_hoc, phong, co_so, ghi_chu }
-    );
-    return 'updated';
-  } else {
-    // Nếu chưa có thì insert mới
-    await pool.execute(
-      `INSERT INTO LichHocNgoaiLe (lich_hoc_id, ngay_hoc, phong, co_so, ghi_chu)
-       VALUES (:lich_hoc_id, :ngay_hoc, :phong, :co_so, :ghi_chu)`,
-      { lich_hoc_id, ngay_hoc, phong, co_so, ghi_chu }
-    );
-    return 'inserted';
-  }
-}
 

@@ -80,4 +80,3 @@ export const updateSinhVien = async (id, data) => {
   vals.push(id)
   await pool.query(`UPDATE SinhVien SET ${fields.join(', ')} WHERE id = ?`, vals)
 }
-

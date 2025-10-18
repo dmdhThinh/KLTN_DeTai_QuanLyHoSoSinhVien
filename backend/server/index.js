@@ -12,10 +12,10 @@ import nganhRoutes from './routes/nganh.js'
 import lopRoutes from './routes/lop.js'
 
 import lichAdminRoutes from './routes/lichAdmin.js'
+import lophocphanRoutes from './routes/lopHocPhan.js'
 
 
 import path from 'path'
-
 
 dotenv.config()
 const app = express()
@@ -33,10 +33,12 @@ app.use('/api/khoa', khoaRoutes)
 app.use('/api/nganh', nganhRoutes)
 app.use('/api/lop', lopRoutes)
 
+app.use('/api/lich-admin', lichAdminRoutes)
+app.use('/api/lophocphan', lophocphanRoutes)
+
 // ✅ Public folder cho ảnh thẻ
 app.use('/uploads', express.static(path.resolve('uploads')))
 
-app.use('/api/lich-admin', lichAdminRoutes)
 // Import routes
 app.use('/api/import', importRoutes)
 // Health check

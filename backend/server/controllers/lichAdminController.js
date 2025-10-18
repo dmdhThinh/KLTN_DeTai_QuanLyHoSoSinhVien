@@ -1,6 +1,6 @@
 import {
   getAllLichAdmin, getLichByIdAdmin, createLichAdmin,
-  updateLichAdmin, deleteLichAdmin, upsertLichHocNgoaiLe
+  updateLichAdmin, deleteLichAdmin
 } from '../models/lichAdmin.js'
 
 import { pool } from '../config/db.js'
@@ -17,8 +17,6 @@ export async function getAll(req, res) {
 }
 
 // Lịch học (Admin) – hiển thị lặp theo tuần giống Sinh viên
-// ✅ Hiển thị lịch học giống sinh viên nhưng cho phép admin chọn lớp
-// ✅ Dành cho Admin – giống logic lịch học sinh viên
 export async function getLichHocAdmin(req, res) {
   try {
     const { lopId, from } = req.query
@@ -32,30 +30,36 @@ export async function getLichHocAdmin(req, res) {
     }
 
     const sql = `
-      SELECT 
-  lh.id,
-  lh.thu,
-  lh.ca,
-  lh.tiet_bat_dau  AS tietBatDau,
-  lh.tiet_ket_thuc AS tietKetThuc,
-  lh.phong,
-  lh.co_so AS coSo,
-  lh.loai,
-  lhp.ma_lop_hoc_phan AS maLopHocPhan,
-  hp.ten_hoc_phan     AS tenHocPhan,
-  hp.ma_hoc_phan      AS maHocPhan,
-  gv.ho_ten           AS tenGiangVien
-FROM LichHoc lh
-JOIN LopHocPhan lhp ON lhp.id = lh.lop_hoc_phan_id
-JOIN HocPhan hp ON hp.id = lhp.hoc_phan_id
-JOIN GiangVien gv ON gv.id = lhp.giang_vien_id
-WHERE lh.loai IN ('lythuyet','thuchanh','tructuyen')
-  AND lhp.lop_id = ?
-${dateFilter}
-ORDER BY lh.thu ASC, lh.ca ASC, lh.tiet_bat_dau ASC
-
-    `
-    const [rows] = await pool.execute(sql, params)
+  SELECT 
+    lh.id,
+    lh.thu,
+    lh.ca,
+    lh.tiet_bat_dau  AS tietBatDau,
+    lh.tiet_ket_thuc AS tietKetThuc,
+    lh.phong,
+    lh.co_so AS coSo,
+    lh.loai,
+    lh.ngay_hoc AS ngayHoc,
+    lhp.ma_lop_hoc_phan AS maLopHocPhan,
+    hp.ten_hoc_phan     AS tenHocPhan,
+    hp.ma_hoc_phan      AS maHocPhan,
+    gv.ho_ten           AS tenGiangVien
+  FROM LichHoc lh
+  JOIN LopHocPhan lhp ON lhp.id = lh.lop_hoc_phan_id
+  JOIN HocPhan hp ON hp.id = lhp.hoc_phan_id
+  JOIN GiangVien gv ON gv.id = lhp.giang_vien_id
+  WHERE lh.loai IN ('lythuyet','thuchanh','tructuyen')
+    AND lhp.lop_id = ?
+    AND (
+      -- 🧩 Nếu lịch có ngày cụ thể → chỉ hiển thị tuần chứa ngày đó
+      (lh.ngay_hoc IS NOT NULL AND lh.ngay_hoc BETWEEN DATE(?) AND DATE_ADD(DATE(?), INTERVAL 6 DAY))
+      OR
+      -- 🧩 Nếu không có ngày học cụ thể → là lịch lặp hàng tuần (hiển thị mọi tuần)
+      (lh.ngay_hoc IS NULL)
+    )
+  ORDER BY lh.thu ASC, lh.ca ASC, lh.tiet_bat_dau ASC
+`
+    const [rows] = await pool.execute(sql, [lopId, from, from])
     res.json(rows)
   } catch (err) {
     console.error('❌ Lỗi getLichHocAdmin:', err)
@@ -185,23 +189,3 @@ export async function updateGiangVien(req, res) {
 }
 
 
-export async function overrideLichHoc(req, res) {
-  try {
-    const { lich_hoc_id, ngay_hoc, phong, co_so, ghi_chu } = req.body;
-    if (!lich_hoc_id || !ngay_hoc)
-      return res.status(400).json({ message: 'Thiếu thông tin lịch học hoặc ngày học' });
-
-    const result = await upsertLichHocNgoaiLe({
-      lich_hoc_id, ngay_hoc, phong, co_so, ghi_chu,
-    });
-
-    res.json({
-      message: result === 'updated'
-        ? '✅ Cập nhật buổi học cụ thể thành công!'
-        : '✅ Tạo buổi học cụ thể thành công!',
-    });
-  } catch (err) {
-    console.error('❌ Lỗi override LichHoc:', err);
-    res.status(500).json({ message: 'Lỗi server khi cập nhật buổi học cụ thể' });
-  }
-}
