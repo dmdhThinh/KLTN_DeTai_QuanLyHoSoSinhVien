@@ -1,198 +1,182 @@
 // server/controllers/sinhVienController.js
-import { getSinhVienDetailById, isMaSvExists, createSinhVien } from '../models/sinhvien.js'
-import { pool } from '../config/db.js'
+import { pool } from '../config/db.js'   // ✅ Đúng cú pháp với export const pool
+import * as SinhVienModel from '../models/sinhvien.js'
 
-export async function getById(req, res) {
+// GET ALL
+export const getAll = async (req, res) => {
   try {
-    const id = Number(req.params.id)
-    if (!id) return res.status(400).json({ message: 'ID không hợp lệ' })
-    const data = await getSinhVienDetailById(id)
+    const { q = '', page = 1, limit = 10, sort = 'desc' } = req.query
+    const offset = (Number(page) - 1) * Number(limit)
+
+    const where = []
+    const params = []
+    if (q) {
+      where.push('(sv.ma_sv LIKE ? OR sv.ho_ten LIKE ?)')
+      params.push(`%${q}%`, `%${q}%`)
+    }
+    const whereSQL = where.length ? `WHERE ${where.join(' AND ')}` : ''
+
+    const [rows] = await pool.query(
+      `
+      SELECT sv.id, sv.ma_sv AS maSv, sv.ho_ten AS hoTen, sv.ngay_sinh AS ngaySinh,
+             sv.gioi_tinh AS gioiTinh, sv.khoa_hoc AS khoaHoc, sv.lop_id AS lopId
+      FROM SinhVien sv
+      ${whereSQL}
+      ORDER BY sv.id ${String(sort).toUpperCase() === 'ASC' ? 'ASC' : 'DESC'}
+      LIMIT ? OFFSET ?
+      `,
+      [...params, Number(limit), Number(offset)]
+    )
+
+    const [[{ total } = { total: 0 }]] = await pool.query(
+      `SELECT COUNT(*) AS total FROM SinhVien sv ${whereSQL}`,
+      params
+    )
+
+    return res.json({
+      data: rows || [],
+      pagination: {
+        page: Number(page),
+        limit: Number(limit),
+        total,
+        totalPages: Math.max(1, Math.ceil(total / Number(limit)))
+      }
+    })
+  } catch (err) {
+    console.error(err)
+    return res.status(500).json({ message: 'Lỗi lấy danh sách sinh viên' })
+  }
+}
+
+// GET BY ID
+export const getById = async (req, res) => {
+  try {
+    const { id } = req.params
+    const data = await SinhVienModel.getSinhVienDetailById(Number(id))
     if (!data) return res.status(404).json({ message: 'Không tìm thấy sinh viên' })
     return res.json(data)
-  } catch (e) {
-    console.error(e)
-    return res.status(500).json({ message: 'Lỗi máy chủ' })
+  } catch (err) {
+    console.error(err)
+    return res.status(500).json({ message: 'Lỗi lấy thông tin sinh viên' })
   }
 }
 
-// ====== Thêm mới sinh viên (Admin) ======
-export async function create(req, res) {
+// CREATE
+// export const create = async (req, res) => {
+//   try {
+//     const {
+//       ma_sv, ho_ten, ngay_sinh, gioi_tinh,
+//       email, so_dien_thoai, dia_chi, khoa_hoc,
+//       lop_id
+//     } = req.body || {}
+
+//     if (!ma_sv || !ho_ten || !ngay_sinh)
+//       return res.status(400).json({ message: 'Thiếu dữ liệu bắt buộc.' })
+
+//     const birthYear = Number(String(ngay_sinh).slice(0, 4))
+//     const currentYear = new Date().getFullYear()
+//     if (!birthYear || currentYear - birthYear <= 18)
+//       return res.status(400).json({ message: 'Tuổi phải lớn hơn 18.' })
+
+//     const isDup = await SinhVienModel.isMaSvExists(ma_sv)
+//     if (isDup) return res.status(400).json({ message: 'Mã sinh viên đã tồn tại.' })
+
+//     if (!lop_id || isNaN(Number(lop_id)))
+//       return res.status(400).json({ message: 'Vui lòng chọn lớp hợp lệ (lop_id).' })
+
+//     const [lopRows] = await pool.query('SELECT id FROM Lop WHERE id = ?', [Number(lop_id)])
+//     if (!lopRows || lopRows.length === 0)
+//       return res.status(400).json({ message: 'Lớp không tồn tại.' })
+
+//     const newId = await SinhVienModel.createSinhVien({
+//       ma_sv, ho_ten, ngay_sinh, gioi_tinh,
+//       email, so_dien_thoai, dia_chi, khoa_hoc,
+//       lop_id: Number(lop_id)
+//     })
+
+//     return res.status(201).json({ id: newId, message: 'Tạo sinh viên thành công' })
+//   } catch (err) {
+//     console.error(err)
+//     return res.status(500).json({ message: 'Lỗi tạo sinh viên' })
+//   }
+// }
+
+export const create = async (req, res) => {
   try {
     const {
       ma_sv, ho_ten, ngay_sinh, gioi_tinh,
-      email, so_dien_thoai, dia_chi, anh_the,
-      khoa_hoc, khoa_id, nganh_id, lop_id, co_van_id
+      email, so_dien_thoai, dia_chi, khoa_hoc,
+      lop_id
     } = req.body || {}
 
-    // 1) Ràng buộc bắt buộc
-    if (!ma_sv || !ho_ten || !ngay_sinh) {
-      return res.status(400).json({ message: 'Vui lòng nhập đầy đủ các trường bắt buộc: mã sinh viên, họ tên, ngày sinh.' })
-    }
+    const { anh_the } = req.body || {}
 
-    // 2) Tuổi > 18 theo năm
-    const birthYear = Number(String(ngay_sinh).slice(0, 4))
-    const currentYear = new Date().getFullYear()
-    const ageByYear = currentYear - birthYear
-    if (!(birthYear > 1900) || ageByYear <= 18) {
-      return res.status(400).json({ message: 'Tuổi phải lớn hơn 18 (tính theo năm hiện tại trừ năm sinh).' })
-    }
+    if (!ma_sv || !ho_ten || !ngay_sinh)
+      return res.status(400).json({ message: 'Thiếu dữ liệu bắt buộc.' })
 
-    // 3) Mã SV không trùng
-    if (await isMaSvExists(ma_sv)) {
-      return res.status(409).json({ message: 'Mã sinh viên đã tồn tại.' })
-    }
+    const isDup = await SinhVienModel.isMaSvExists(ma_sv)
+    if (isDup) return res.status(400).json({ message: 'Mã sinh viên đã tồn tại.' })
 
-    // 4) Tạo mới
-    const newId = await createSinhVien({
+    if (!lop_id || isNaN(Number(lop_id)))
+      return res.status(400).json({ message: 'Vui lòng chọn lớp hợp lệ (lop_id).' })
+
+    const [lopRows] = await pool.query('SELECT id FROM Lop WHERE id = ?', [Number(lop_id)])
+    if (!lopRows || lopRows.length === 0)
+      return res.status(400).json({ message: 'Lớp không tồn tại.' })
+
+    const newId = await SinhVienModel.createSinhVien({
       ma_sv, ho_ten, ngay_sinh, gioi_tinh,
-      email, so_dien_thoai, dia_chi, anh_the,
-      khoa_hoc, khoa_id, nganh_id, lop_id, co_van_id
+      email, so_dien_thoai, dia_chi, khoa_hoc,
+      lop_id: Number(lop_id), anh_the
     })
 
-    // Trả về bản ghi vừa tạo (hoặc chỉ id)
-    const created = await getSinhVienDetailById(newId)
-    return res.status(201).json({ message: 'Tạo sinh viên thành công', data: created })
-  } catch (e) {
-    console.error(e)
-    return res.status(500).json({ message: 'Lỗi máy chủ' })
-  }
-}
-// ======= LẤY DANH SÁCH SINH VIÊN CÓ PHÂN TRANG =======
-export async function getAll(req, res) {
-  try {
-    const search = req.query.q ? `%${req.query.q}%` : '%'
-    const page = Math.max(1, parseInt(req.query.page || 1))
-    const limit = Math.max(1, parseInt(req.query.limit || 10))
-    const offset = (page - 1) * limit
-    const sort = req.query.sort === 'asc' ? 'ASC' : 'DESC'
-
-    // Đảm bảo an toàn trước khi chèn limit/offset
-    if (isNaN(limit) || isNaN(offset)) {
-      return res.status(400).json({ message: 'Limit hoặc offset không hợp lệ' })
-    }
-
-    // Đếm tổng số
-    const [countRows] = await pool.execute(
-      `SELECT COUNT(*) AS total
-       FROM SinhVien
-       WHERE ma_sv LIKE :search OR ho_ten LIKE :search`,
-      { search }
-    )
-
-    const total = countRows[0].total
-    const totalPages = Math.ceil(total / limit)
-
-    // ⚡ Viết LIMIT/OFFSET trực tiếp (vì MySQL không bind được chúng)
-    const query = `
-      SELECT id, ma_sv AS maSv, ho_ten AS hoTen, ngay_sinh AS ngaySinh,
-             gioi_tinh AS gioiTinh, khoa_hoc AS khoaHoc
-      FROM SinhVien
-      WHERE ma_sv LIKE :search OR ho_ten LIKE :search
-      ORDER BY id ${sort}
-      LIMIT ${limit} OFFSET ${offset}
-    `
-
-    const [rows] = await pool.execute(query, { search })
-
-    res.json({
-      data: rows,
-      pagination: { page, limit, total, totalPages }
-    })
+    return res.status(201).json({ id: newId, message: 'Tạo sinh viên thành công' })
   } catch (err) {
-    console.error('❌ Lỗi getAll SinhVien:', err)
-    res.status(500).json({ message: 'Lỗi máy chủ khi lấy danh sách sinh viên' })
+    console.error(err)
+    return res.status(500).json({ message: 'Lỗi tạo sinh viên' })
   }
 }
 
-// ======= XOÁ SINH VIÊN =======
-export async function remove(req, res) {
+// UPDATE
+export const update = async (req, res) => {
   try {
-    const id = Number(req.params.id)
-    if (!id) {
-      return res.status(400).json({ message: 'ID không hợp lệ' })
-    }
-
-    // Kiểm tra sinh viên có tồn tại không
-    const [check] = await pool.execute('SELECT id FROM SinhVien WHERE id = :id', { id })
-    if (check.length === 0) {
-      return res.status(404).json({ message: 'Không tìm thấy sinh viên để xóa' })
-    }
-
-    // Thực hiện xoá
-    await pool.execute('DELETE FROM SinhVien WHERE id = :id', { id })
-    return res.json({ message: 'Đã xoá sinh viên thành công' })
-  } catch (err) {
-    console.error('❌ Lỗi xoá sinh viên:', err)
-    return res.status(500).json({ message: 'Lỗi máy chủ khi xoá sinh viên' })
-  }
-}
-// ======= CẬP NHẬT THÔNG TIN SINH VIÊN =======
-export async function update(req, res) {
-  try {
-    const id = Number(req.params.id)
-    if (!id) {
-      return res.status(400).json({ message: 'ID không hợp lệ' })
-    }
-
+    const { id } = req.params
     const {
       ma_sv, ho_ten, ngay_sinh, gioi_tinh,
-      email, so_dien_thoai, dia_chi, anh_the, khoa_hoc
+      email, so_dien_thoai, dia_chi, khoa_hoc,
+      lop_id
     } = req.body || {}
 
-    if (!ma_sv || !ho_ten || !ngay_sinh) {
-      return res.status(400).json({ message: 'Vui lòng nhập đầy đủ các trường bắt buộc.' })
+    if (lop_id !== undefined) {
+      if (!lop_id || isNaN(Number(lop_id)))
+        return res.status(400).json({ message: 'lop_id không hợp lệ.' })
+
+      const [rows] = await pool.query('SELECT id FROM Lop WHERE id = ?', [Number(lop_id)])
+      if (!rows || rows.length === 0)
+        return res.status(400).json({ message: 'Lớp không tồn tại.' })
     }
 
-    const birthYear = Number(String(ngay_sinh).slice(0, 4))
-    const currentYear = new Date().getFullYear()
-    if (currentYear - birthYear <= 18) {
-      return res.status(400).json({ message: 'Tuổi phải lớn hơn 18.' })
-    }
+    await SinhVienModel.updateSinhVien(Number(id), {
+      ma_sv, ho_ten, ngay_sinh, gioi_tinh,
+      email, so_dien_thoai, dia_chi, khoa_hoc,
+      lop_id: lop_id !== undefined ? Number(lop_id) : undefined
+    })
 
-    // Kiểm tra mã SV trùng (trừ chính nó)
-    const [exist] = await pool.execute(
-      'SELECT id FROM SinhVien WHERE ma_sv = :ma_sv AND id <> :id LIMIT 1',
-      { ma_sv, id }
-    )
-    if (exist.length > 0) {
-      return res.status(409).json({ message: 'Mã sinh viên đã tồn tại.' })
-    }
-
-    await pool.execute(
-  `UPDATE SinhVien
-   SET ma_sv = :ma_sv,
-       ho_ten = :ho_ten,
-       ngay_sinh = :ngay_sinh,
-       gioi_tinh = :gioi_tinh,
-       email = :email,
-       so_dien_thoai = :so_dien_thoai,
-       dia_chi = :dia_chi,
-       anh_the = :anh_the,
-       khoa_hoc = :khoa_hoc
-   WHERE id = :id`,
-  {
-    id,
-    ma_sv: ma_sv ?? null,
-    ho_ten: ho_ten ?? null,
-    ngay_sinh: ngay_sinh ?? null,
-    gioi_tinh: gioi_tinh ?? null,
-    email: email ?? null,
-    so_dien_thoai: so_dien_thoai ?? null,
-    dia_chi: dia_chi ?? null,
-    anh_the: anh_the ?? null,
-    khoa_hoc: khoa_hoc ?? null
-  }
-)
-
-
-    const [updated] = await pool.execute(
-      `SELECT id, ma_sv AS maSv, ho_ten AS hoTen, ngay_sinh AS ngaySinh,
-              gioi_tinh AS gioiTinh, khoa_hoc AS khoaHoc
-       FROM SinhVien WHERE id = :id`, { id })
-
-    return res.json({ message: 'Cập nhật thành công', data: updated[0] })
+    return res.json({ message: 'Cập nhật sinh viên thành công' })
   } catch (err) {
-    console.error('❌ Lỗi cập nhật sinh viên:', err)
-    return res.status(500).json({ message: 'Lỗi máy chủ khi cập nhật sinh viên' })
+    console.error(err)
+    return res.status(500).json({ message: 'Lỗi cập nhật sinh viên' })
+  }
+}
+
+// DELETE
+export const remove = async (req, res) => {
+  try {
+    const { id } = req.params
+    await pool.query('DELETE FROM SinhVien WHERE id = ?', [Number(id)])
+    return res.status(204).send()
+  } catch (err) {
+    console.error(err)
+    return res.status(500).json({ message: 'Lỗi xoá sinh viên' })
   }
 }

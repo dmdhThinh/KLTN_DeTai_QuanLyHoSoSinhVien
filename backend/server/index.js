@@ -14,6 +14,9 @@ import lopRoutes from './routes/lop.js'
 import lichAdminRoutes from './routes/lichAdmin.js'
 
 
+import path from 'path'
+
+
 dotenv.config()
 const app = express()
 
@@ -29,6 +32,9 @@ app.use('/api/lich', lichRoutes)
 app.use('/api/khoa', khoaRoutes)
 app.use('/api/nganh', nganhRoutes)
 app.use('/api/lop', lopRoutes)
+
+// ✅ Public folder cho ảnh thẻ
+app.use('/uploads', express.static(path.resolve('uploads')))
 
 app.use('/api/lich-admin', lichAdminRoutes)
 // Import routes
