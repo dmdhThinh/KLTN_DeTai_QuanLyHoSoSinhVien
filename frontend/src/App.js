@@ -28,6 +28,10 @@ import LichList from './pages/Admin/LichList'
 import AddLich from  './pages/Admin/AddLich'
 import EditLich from  './pages/Admin/EditLich'
 
+
+
+
+
 function App() {
   return (
     <BrowserRouter>
@@ -109,6 +113,8 @@ function App() {
         <Route path="/admin/lich" element={<PrivateRoute allowRoles={['Quản trị']}><LichList /></PrivateRoute>} />
         <Route path="/admin/lich/new" element={<PrivateRoute allowRoles={['Quản trị']}><AddLich /></PrivateRoute>} />
         <Route path="/admin/lich/edit/:id" element={<PrivateRoute allowRoles={['Quản trị']}><EditLich /></PrivateRoute>} />
+
+       
 
         {/* Trang không tồn tại → về login */}
         <Route path="*" element={<Navigate to="/login" replace />} />

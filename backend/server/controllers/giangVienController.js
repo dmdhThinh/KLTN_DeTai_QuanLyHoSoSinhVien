@@ -1,4 +1,5 @@
 import { getGiangVienDetailById } from '../models/giangvien.js'
+import { pool } from '../config/db.js'
 
 export async function getById(req, res) {
   try {

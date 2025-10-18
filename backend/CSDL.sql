@@ -316,17 +316,6 @@ CREATE TABLE LopHocPhan (
   FOREIGN KEY (lop_id) REFERENCES Lop(id)
   
 );
-CREATE TABLE LichHocNgoaiLe (
-  id INT AUTO_INCREMENT PRIMARY KEY,
-  lich_hoc_id INT NOT NULL,          -- tham chiếu mẫu trong LichHoc
-  ngay_hoc DATE NOT NULL,            -- buổi học cụ thể
-  phong VARCHAR(50) NULL,
-  co_so VARCHAR(50) NULL,
-  ghi_chu VARCHAR(255) NULL,
-  FOREIGN KEY (lich_hoc_id) REFERENCES LichHoc(id)
-);
-
-
 -- Bảng lịch học
 
 CREATE TABLE LichHoc (

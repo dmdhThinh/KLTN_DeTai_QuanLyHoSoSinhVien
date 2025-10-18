@@ -94,6 +94,13 @@ useEffect(() => {
 
         {/* Thanh chọn lớp, học kỳ, năm học */}
         <div className="toolbar d-flex align-items-center gap-2 flex-wrap">
+        <button
+  className="btn btn-success btn-sm"
+  onClick={() => navigate('/admin/lich/new')}
+>
+  ➕ Thêm tiết học
+</button>
+
           <select
             className="form-select"
             style={{ width: 200 }}
@@ -242,7 +249,6 @@ useEffect(() => {
   <div className="small text-muted">{cell.maLopHocPhan}</div>
   {cell.loai === 'thi' ? (
     <>
-      <div className="small">Ca: {cell.ca}</div>
       <div className="small">Phòng: {cell.phong}</div>
       <div className="small">GV: {cell.tenGiangVien}</div>
       <div className="small text-danger fw-semibold">(Thi)</div>
@@ -289,6 +295,9 @@ useEffect(() => {
           <div className="legend-item">
             <span style={{ background: '#b3e5fc', border: '1px solid #0288d1' }}></span> Trực tuyến
           </div>
+          <div className="legend-item">
+          <span style={{ background: '#fff9c4', border: '1px solid #fbc02d' }}></span> Lịch thi
+        </div>
           <div className="legend-item">
             <span style={{ background: '#ef5350', border: '1px solid #b71c1c' }}></span> Tạm ngưng
           </div>

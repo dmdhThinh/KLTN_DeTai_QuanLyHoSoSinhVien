@@ -147,10 +147,6 @@
     border-color: #fbc02d;
 }
 
-.monhoc-box.ngung {
-    background: #ef5350;
-    border-color: #b71c1c;
-}
 
 /* --- Chú thích --- */
 .legend {
@@ -173,4 +169,16 @@
     margin-right: 6px;
     vertical-align: middle;
     border: 1px solid #888;
+}
+/* 🔴 Lịch tạm ngưng */
+.monhoc-box.tamngung {
+    background-color: #ef5350 !important;
+    /* đỏ nhạt */
+    border: 1px solid #b71c1c !important;
+    color: white !important;
+    opacity: 0.95;
+}
+
+.monhoc-box.tamngung .fw-semibold {
+    color: #fff;
 }
