@@ -24,56 +24,31 @@ export const isMaSvExists = async (maSv) => {
   )
   return !!(rows && rows.length)
 }
-
 // Tạo sinh viên mới
-// export const createSinhVien = async (data) => {
-//   const {
-//     ma_sv, ho_ten, ngay_sinh, gioi_tinh,
-//     email, so_dien_thoai, dia_chi, khoa_hoc,
-//     lop_id
-//   } = data
-
-//   const [rs] = await pool.query(
-//     `INSERT INTO SinhVien
-//      (ma_sv, ho_ten, ngay_sinh, gioi_tinh, email, so_dien_thoai, dia_chi, khoa_hoc, lop_id)
-//      VALUES (?,?,?,?,?,?,?,?,?)`,
-//     [
-//       ma_sv,
-//       ho_ten,
-//       ngay_sinh,
-//       gioi_tinh || null,
-//       email || null,
-//       so_dien_thoai || null,
-//       dia_chi || null,
-//       khoa_hoc || null,
-//       lop_id || null
-//     ]
-//   )
-//   return rs.insertId
-// }
-
 export const createSinhVien = async (data) => {
   const {
     ma_sv, ho_ten, ngay_sinh, gioi_tinh,
     email, so_dien_thoai, dia_chi, khoa_hoc,
-    lop_id, anh_the
+    khoa_id, nganh_id, lop_id, anh_the
   } = data
 
   const [rs] = await pool.query(
     `INSERT INTO SinhVien
-     (ma_sv, ho_ten, ngay_sinh, gioi_tinh, email, so_dien_thoai, dia_chi, khoa_hoc, lop_id, anh_the)
-     VALUES (?,?,?,?,?,?,?,?,?,?)`,
+     (ma_sv, ho_ten, ngay_sinh, gioi_tinh, email,
+      so_dien_thoai, dia_chi, khoa_hoc,
+      khoa_id, nganh_id, lop_id, anh_the)
+     VALUES (?,?,?,?,?,?,?,?,?,?,?,?)`,
     [
       ma_sv, ho_ten, ngay_sinh, gioi_tinh || null,
       email || null, so_dien_thoai || null,
       dia_chi || null, khoa_hoc || null,
-      lop_id || null, anh_the || null
+      khoa_id || null, nganh_id || null, lop_id || null,
+      anh_the || null
     ]
   )
   return rs.insertId
 }
 
-// Cập nhật sinh viên
 export const updateSinhVien = async (id, data) => {
   const fields = []
   const vals = []
@@ -87,7 +62,10 @@ export const updateSinhVien = async (id, data) => {
     so_dien_thoai: 'so_dien_thoai',
     dia_chi: 'dia_chi',
     khoa_hoc: 'khoa_hoc',
-    lop_id: 'lop_id'
+    khoa_id: 'khoa_id',
+    nganh_id: 'nganh_id',
+    lop_id: 'lop_id',
+    anh_the: 'anh_the'
   }
 
   Object.entries(map).forEach(([k, col]) => {
@@ -102,3 +80,4 @@ export const updateSinhVien = async (id, data) => {
   vals.push(id)
   await pool.query(`UPDATE SinhVien SET ${fields.join(', ')} WHERE id = ?`, vals)
 }
+

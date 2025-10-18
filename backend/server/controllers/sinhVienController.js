@@ -61,55 +61,13 @@ export const getById = async (req, res) => {
   }
 }
 
-// CREATE
-// export const create = async (req, res) => {
-//   try {
-//     const {
-//       ma_sv, ho_ten, ngay_sinh, gioi_tinh,
-//       email, so_dien_thoai, dia_chi, khoa_hoc,
-//       lop_id
-//     } = req.body || {}
-
-//     if (!ma_sv || !ho_ten || !ngay_sinh)
-//       return res.status(400).json({ message: 'Thiếu dữ liệu bắt buộc.' })
-
-//     const birthYear = Number(String(ngay_sinh).slice(0, 4))
-//     const currentYear = new Date().getFullYear()
-//     if (!birthYear || currentYear - birthYear <= 18)
-//       return res.status(400).json({ message: 'Tuổi phải lớn hơn 18.' })
-
-//     const isDup = await SinhVienModel.isMaSvExists(ma_sv)
-//     if (isDup) return res.status(400).json({ message: 'Mã sinh viên đã tồn tại.' })
-
-//     if (!lop_id || isNaN(Number(lop_id)))
-//       return res.status(400).json({ message: 'Vui lòng chọn lớp hợp lệ (lop_id).' })
-
-//     const [lopRows] = await pool.query('SELECT id FROM Lop WHERE id = ?', [Number(lop_id)])
-//     if (!lopRows || lopRows.length === 0)
-//       return res.status(400).json({ message: 'Lớp không tồn tại.' })
-
-//     const newId = await SinhVienModel.createSinhVien({
-//       ma_sv, ho_ten, ngay_sinh, gioi_tinh,
-//       email, so_dien_thoai, dia_chi, khoa_hoc,
-//       lop_id: Number(lop_id)
-//     })
-
-//     return res.status(201).json({ id: newId, message: 'Tạo sinh viên thành công' })
-//   } catch (err) {
-//     console.error(err)
-//     return res.status(500).json({ message: 'Lỗi tạo sinh viên' })
-//   }
-// }
-
 export const create = async (req, res) => {
   try {
     const {
       ma_sv, ho_ten, ngay_sinh, gioi_tinh,
       email, so_dien_thoai, dia_chi, khoa_hoc,
-      lop_id
+      khoa_id, nganh_id, lop_id, anh_the
     } = req.body || {}
-
-    const { anh_the } = req.body || {}
 
     if (!ma_sv || !ho_ten || !ngay_sinh)
       return res.status(400).json({ message: 'Thiếu dữ liệu bắt buộc.' })
@@ -117,17 +75,10 @@ export const create = async (req, res) => {
     const isDup = await SinhVienModel.isMaSvExists(ma_sv)
     if (isDup) return res.status(400).json({ message: 'Mã sinh viên đã tồn tại.' })
 
-    if (!lop_id || isNaN(Number(lop_id)))
-      return res.status(400).json({ message: 'Vui lòng chọn lớp hợp lệ (lop_id).' })
-
-    const [lopRows] = await pool.query('SELECT id FROM Lop WHERE id = ?', [Number(lop_id)])
-    if (!lopRows || lopRows.length === 0)
-      return res.status(400).json({ message: 'Lớp không tồn tại.' })
-
     const newId = await SinhVienModel.createSinhVien({
       ma_sv, ho_ten, ngay_sinh, gioi_tinh,
       email, so_dien_thoai, dia_chi, khoa_hoc,
-      lop_id: Number(lop_id), anh_the
+      khoa_id, nganh_id, lop_id, anh_the
     })
 
     return res.status(201).json({ id: newId, message: 'Tạo sinh viên thành công' })
@@ -137,29 +88,19 @@ export const create = async (req, res) => {
   }
 }
 
-// UPDATE
 export const update = async (req, res) => {
   try {
     const { id } = req.params
     const {
       ma_sv, ho_ten, ngay_sinh, gioi_tinh,
       email, so_dien_thoai, dia_chi, khoa_hoc,
-      lop_id
+      khoa_id, nganh_id, lop_id, anh_the
     } = req.body || {}
-
-    if (lop_id !== undefined) {
-      if (!lop_id || isNaN(Number(lop_id)))
-        return res.status(400).json({ message: 'lop_id không hợp lệ.' })
-
-      const [rows] = await pool.query('SELECT id FROM Lop WHERE id = ?', [Number(lop_id)])
-      if (!rows || rows.length === 0)
-        return res.status(400).json({ message: 'Lớp không tồn tại.' })
-    }
 
     await SinhVienModel.updateSinhVien(Number(id), {
       ma_sv, ho_ten, ngay_sinh, gioi_tinh,
       email, so_dien_thoai, dia_chi, khoa_hoc,
-      lop_id: lop_id !== undefined ? Number(lop_id) : undefined
+      khoa_id, nganh_id, lop_id, anh_the
     })
 
     return res.json({ message: 'Cập nhật sinh viên thành công' })
@@ -169,7 +110,6 @@ export const update = async (req, res) => {
   }
 }
 
-// DELETE
 export const remove = async (req, res) => {
   try {
     const { id } = req.params
