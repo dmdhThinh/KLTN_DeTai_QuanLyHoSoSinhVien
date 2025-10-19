@@ -292,4 +292,3 @@ export async function downloadTemplate(req, res) {
     res.status(500).json({ message: 'Không thể tạo file mẫu Excel.' });
   }
 }
-
