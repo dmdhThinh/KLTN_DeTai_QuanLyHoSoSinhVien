@@ -12,8 +12,10 @@ export default function StudentList() {
   const [totalPages, setTotalPages] = useState(1)
   const [message, setMessage] = useState('')
   const [confirmDelete, setConfirmDelete] = useState(null)
+  const [importResult, setImportResult] = useState(null) // ✅ Lưu kết quả import
   const limit = 10
 
+  // Load dữ liệu sinh viên khi thay đổi trang
   useEffect(() => {
     loadStudents()
   }, [page])
@@ -21,10 +23,11 @@ export default function StudentList() {
   const loadStudents = async (q = query) => {
     setLoading(true)
     try {
-      const data = await apiFetch(`/api/sinhviens?q=${encodeURIComponent(q)}&page=${page}&limit=${limit}&sort=desc`)
+      const data = await apiFetch(
+        `/api/sinhviens?q=${encodeURIComponent(q)}&page=${page}&limit=${limit}&sort=desc`
+      )
       setStudents(data.data || [])
-      setTotalPages(data.pagination.totalPages || 1)
-      console.log('API Response:', data)
+      setTotalPages(data.pagination?.totalPages || 1)
     } catch (err) {
       console.error(err)
       setStudents([])
@@ -34,10 +37,11 @@ export default function StudentList() {
   }
 
   const handleSearch = (e) => {
-    e.preventDefault()
-    setPage(1)
-    loadStudents(query)
-  }
+  e.preventDefault()
+  setPage(1)
+  loadStudents(query.trim()) // dùng trim để loại khoảng trắng
+}
+
 
   const handleDelete = async (id) => {
     try {
@@ -46,63 +50,62 @@ export default function StudentList() {
       setConfirmDelete(null)
       loadStudents()
       setTimeout(() => setMessage(''), 3000)
-      console.log('API Response:',id)
     } catch (err) {
       setMessage('Xoá thất bại: ' + err.message)
       setTimeout(() => setMessage(''), 3000)
     }
   }
-// ✅ Import danh sách sinh viên
-const handleImport = async (e) => {
-  const file = e.target.files[0]
-  if (!file) return
-  const formData = new FormData()
-  formData.append('file', file)
 
-  try {
-    const res = await fetch('/api/import/students', {
-      method: 'POST',
-      body: formData
-    })
-    const data = await res.json()
-    if (!res.ok) throw new Error(data.message || 'Import thất bại')
+  // ✅ Import danh sách sinh viên
+  const handleImport = async (e) => {
+    const file = e.target.files[0]
+    if (!file) return
+    const formData = new FormData()
+    formData.append('file', file)
 
-    let msg = data.message
-    if (data.lỗi && data.lỗi.length) {
-      msg += ` (${data.lỗi.length} dòng lỗi)`
-      console.warn('Chi tiết lỗi:', data.lỗi)
+    try {
+      const res = await fetch('/api/import/students', {
+        method: 'POST',
+        body: formData
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.message || 'Import thất bại')
+
+      // ✅ Gán kết quả import vào state (hiển thị ở cuối trang)
+      setImportResult(data)
+      loadStudents() // tải lại danh sách sau import
+    } catch (err) {
+      setImportResult({
+        message: 'Import thất bại',
+        lỗi: [{ dòng: '-', lỗi: err.message }]
+      })
+    } finally {
+      e.target.value = '' // reset input
     }
-    alert(msg)
-    loadStudents()
-  } catch (err) {
-    alert(err.message)
-  } finally {
-    e.target.value = '' // reset input
   }
-}
-// ✅ Tải file mẫu
-const handleDownloadTemplate = async () => {
-  try {
-    const response = await fetch('/api/import/students/template')
-    if (!response.ok) throw new Error('Không thể tải file mẫu')
-    const blob = await response.blob()
 
-    // Tạo URL và tự động tải xuống
-    const url = window.URL.createObjectURL(blob)
-    const link = document.createElement('a')
-    link.href = url
-    link.download = 'MauNhapSinhVien.xlsx'
-    document.body.appendChild(link)
-    link.click()
-    link.remove()
-    window.URL.revokeObjectURL(url)
-  } catch (err) {
-    alert(err.message)
+  // ✅ Tải file mẫu có Khoa, Ngành, Lớp
+  const handleDownloadTemplate = async () => {
+    try {
+      const response = await fetch('/api/import/students/template')
+      if (!response.ok) throw new Error('Không thể tải file mẫu')
+      const blob = await response.blob()
+      const url = window.URL.createObjectURL(blob)
+      const link = document.createElement('a')
+      link.href = url
+      link.download = 'MauNhapSinhVien.xlsx'
+      document.body.appendChild(link)
+      link.click()
+      link.remove()
+      window.URL.revokeObjectURL(url)
+    } catch (err) {
+      alert(err.message)
+    }
   }
-}
 
   return (
     <AdminLayout activeMenu="students" title="Danh sách sinh viên">
+      {/* Thông báo trạng thái */}
       {message && (
         <div className="alert alert-info text-center py-2">{message}</div>
       )}
@@ -133,8 +136,8 @@ const handleDownloadTemplate = async () => {
         </div>
       )}
 
-      {/* Thanh tìm kiếm */}
-      <div className="d-flex align-items-center mb-3">
+      {/* Thanh tìm kiếm + nút thao tác */}
+      <div className="d-flex align-items-center mb-3 flex-wrap gap-2">
         <form onSubmit={handleSearch} className="d-flex gap-2">
           <input
             type="text"
@@ -144,8 +147,11 @@ const handleDownloadTemplate = async () => {
             onChange={(e) => setQuery(e.target.value)}
             style={{ width: 300 }}
           />
-          <button className="btn btn-outline-primary" type="submit">Tìm</button>
+          <button className="btn btn-outline-primary" type="submit">
+            Tìm
+          </button>
         </form>
+
         <div className="ms-auto d-flex gap-2 flex-wrap">
           <button
             className="btn btn-outline-secondary"
@@ -175,7 +181,6 @@ const handleDownloadTemplate = async () => {
             ➕ Thêm sinh viên
           </button>
         </div>
-
       </div>
 
       {/* Bảng dữ liệu */}
@@ -184,7 +189,9 @@ const handleDownloadTemplate = async () => {
           {loading ? (
             <div className="text-center p-4 text-muted">Đang tải...</div>
           ) : students.length === 0 ? (
-            <div className="text-center p-4 text-muted">Không có sinh viên nào.</div>
+            <div className="text-center p-4 text-muted">
+              Không có sinh viên nào.
+            </div>
           ) : (
             <div className="table-responsive">
               <table className="table table-striped align-middle mb-0">
@@ -205,13 +212,19 @@ const handleDownloadTemplate = async () => {
                       <td>{(page - 1) * limit + i + 1}</td>
                       <td>{sv.maSv}</td>
                       <td>{sv.hoTen}</td>
-                       <td>{sv.ngaySinh ? new Date(sv.ngaySinh).toLocaleDateString('vi-VN') : ''}</td>
+                      <td>
+                        {sv.ngaySinh
+                          ? new Date(sv.ngaySinh).toLocaleDateString('vi-VN')
+                          : ''}
+                      </td>
                       <td>{sv.gioiTinh}</td>
                       <td>{sv.khoaHoc}</td>
                       <td>
                         <button
                           className="btn btn-sm btn-outline-secondary me-2"
-                          onClick={() => navigate(`/admin/students/edit/${sv.id}`)}
+                          onClick={() =>
+                            navigate(`/admin/students/edit/${sv.id}`)
+                          }
                         >
                           ✏️ Sửa
                         </button>
@@ -253,6 +266,49 @@ const handleDownloadTemplate = async () => {
           </button>
         </div>
       </div>
+
+      {/* ✅ Hiển thị kết quả Import ở cuối trang */}
+      {importResult && (
+        <div className="card mt-4 shadow-sm">
+          <div
+            className={`card-header fw-semibold ${
+              importResult.lỗi && importResult.lỗi.length > 0
+                ? 'bg-danger text-white'
+                : 'bg-success text-white'
+            }`}
+          >
+            {importResult.lỗi && importResult.lỗi.length > 0
+              ? `⚠️ Có ${importResult.lỗi.length} dòng lỗi`
+              : '✅ Import thành công — không có lỗi'}
+          </div>
+          <div className="card-body p-0">
+            {importResult.lỗi && importResult.lỗi.length > 0 ? (
+              <div className="table-responsive">
+                <table className="table table-bordered mb-0">
+                  <thead>
+                    <tr>
+                      <th style={{ width: 80 }}>Dòng</th>
+                      <th>Lỗi</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {importResult.lỗi.map((err, i) => (
+                      <tr key={i}>
+                        <td>{err.dòng}</td>
+                        <td>{err.lỗi}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            ) : (
+              <div className="p-3 text-success fw-semibold">
+                Import thành công! Tất cả dữ liệu hợp lệ.
+              </div>
+            )}
+          </div>
+        </div>
+      )}
     </AdminLayout>
   )
 }

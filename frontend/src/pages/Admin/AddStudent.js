@@ -3,6 +3,7 @@ import React, { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { apiFetch, createSinhVien } from '../../api'
 import AdminLayout from '../../components/AdminLayout'
+import * as xlsx from 'xlsx'
 
 function CenterError({ message, onClose }) {
   if (!message) return null
@@ -257,3 +258,38 @@ const onSubmit = async (e) => {
     </AdminLayout>
   )
 }
+
+// ======= TẢI FILE MẪU EXCEL NHẬP SINH VIÊN (ĐÃ CÓ KHOA, NGÀNH, LỚP) =======
+export async function downloadTemplate(req, res) {
+  try {
+    const data = [
+      {
+        'Mã SV': 'SV001',
+        'Họ tên': 'Nguyễn Văn A',
+        'Ngày sinh': '2003-05-12',
+        'Giới tính': 'Nam',
+        'Email': 'example@gmail.com',
+        'Số điện thoại': '0909123456',
+        'Địa chỉ': '123 Đường ABC, Quận 1, TP.HCM',
+        'Khóa học': 'K47',
+        'Khoa': 'Công nghệ thông tin',
+        'Ngành': 'Kỹ thuật phần mềm',
+        'Lớp': 'DHKTPM18BTT'
+      }
+    ];
+
+    const ws = xlsx.utils.json_to_sheet(data);
+    const wb = xlsx.utils.book_new();
+    xlsx.utils.book_append_sheet(wb, ws, 'MauNhapSinhVien');
+
+    const buffer = xlsx.write(wb, { type: 'buffer', bookType: 'xlsx' });
+
+    res.setHeader('Content-Disposition', 'attachment; filename="MauNhapSinhVien.xlsx"');
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    res.send(buffer);
+  } catch (err) {
+    console.error('❌ Lỗi tạo file mẫu:', err);
+    res.status(500).json({ message: 'Không thể tạo file mẫu Excel.' });
+  }
+}
+

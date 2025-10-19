@@ -11,9 +11,15 @@ export const getAll = async (req, res) => {
     const where = []
     const params = []
     if (q) {
-      where.push('(sv.ma_sv LIKE ? OR sv.ho_ten LIKE ?)')
-      params.push(`%${q}%`, `%${q}%`)
+      if (/^sv\d+/i.test(q)) { // nếu gõ dạng mã SV
+        where.push('sv.ma_sv = ?')
+        params.push(q)
+      } else {
+        where.push('sv.ho_ten LIKE ?')
+        params.push(`%${q}%`)
+      }
     }
+
     const whereSQL = where.length ? `WHERE ${where.join(' AND ')}` : ''
 
     const [rows] = await pool.query(
