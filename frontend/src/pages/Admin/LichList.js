@@ -23,17 +23,46 @@ export default function LichList() {
   const [error, setError] = useState(null)
   const [weekStart, setWeekStart] = useState(getMonday(new Date()))
   const [lopId, setLopId] = useState('')
-  const [hocKy, setHocKy] = useState('')
-  const [namHoc, setNamHoc] = useState('')
-  const [lops, setLops] = useState([])
+
+  const [lops, setLops] = useState([]);
+  const [khoaId, setKhoaId] = useState('');
+  const [nganhId, setNganhId] = useState('');
+  const [nganhs, setNganhs] = useState([]);
+  const [khoas, setKhoas] = useState([]);
+  
+
   const navigate = useNavigate()
 
-  // 🧩 Tải danh sách lớp
+    // 🚀 Load Khoa
   useEffect(() => {
-    apiFetch('/api/lop')
-      .then((data) => setLops(data || []))
-      .catch(() => setLops([]))
-  }, [])
+    apiFetch('/api/khoa')
+      .then((data) => setKhoas(data || []))
+      .catch(() => setKhoas([]));
+  }, []);
+
+  // 🚀 Load Ngành based on selected Khoa
+  useEffect(() => {
+    if (khoaId) {
+      apiFetch(`/api/nganh?khoaId=${khoaId}`)
+        .then((data) => setNganhs(data || []))
+        .catch(() => setNganhs([]));
+    } else {
+      setNganhs([]);
+    }
+  }, [khoaId]);
+
+  // 🚀 Load Lớp based on selected Ngành
+  useEffect(() => {
+    if (nganhId) {
+      apiFetch(`/api/lop?nganhId=${nganhId}`)
+        .then((data) => setLops(data || []))
+        .catch(() => setLops([]));
+    } else {
+      setLops([]);
+    }
+  }, [nganhId]);
+
+
 
   const days = Array.from({ length: 7 }, (_, i) => {
     const d = new Date(weekStart)
@@ -74,7 +103,7 @@ useEffect(() => {
       setLich([])
     })
     .finally(() => setLoading(false))
-}, [lopId, hocKy, namHoc, weekStart])
+}, [lopId, weekStart])
 
 
   return (
@@ -100,44 +129,47 @@ useEffect(() => {
 >
   ➕ Thêm tiết học
 </button>
+<select
+          className="form-select"
+          style={{ width: 200 }}
+          value={khoaId}
+          onChange={(e) => setKhoaId(e.target.value)}
+        >
+          <option value="">-- Chọn Khoa --</option>
+          {khoas.map((k) => (
+            <option key={k.id} value={k.id}>
+              {k.tenKhoa}
+            </option>
+          ))}
+        </select>
 
-          <select
-            className="form-select"
-            style={{ width: 200 }}
-            value={lopId}
-            onChange={(e) => setLopId(e.target.value)}
-          >
-            <option value="">-- Chọn lớp --</option>
-            {lops.map((lop) => (
-              <option key={lop.id} value={lop.id}>
-                {lop.tenLop}
-              </option>
-            ))}
-          </select>
+        <select
+          className="form-select"
+          style={{ width: 200 }}
+          value={nganhId}
+          onChange={(e) => setNganhId(e.target.value)}
+        >
+          <option value="">-- Chọn Ngành --</option>
+          {nganhs.map((n) => (
+            <option key={n.id} value={n.id}>
+              {n.tenNganh}
+            </option>
+          ))}
+        </select>
 
-          <select
-            className="form-select"
-            style={{ width: 140 }}
-            value={hocKy}
-            onChange={(e) => setHocKy(e.target.value)}
-          >
-            <option value="">-- Học kỳ --</option>
-            <option value="HK1">HK1</option>
-            <option value="HK2">HK2</option>
-            <option value="Hè">Hè</option>
-          </select>
-
-          <select
-            className="form-select"
-            style={{ width: 160 }}
-            value={namHoc}
-            onChange={(e) => setNamHoc(e.target.value)}
-          >
-            <option value="">-- Năm học --</option>
-            <option value="2025-2026">2025-2026</option>
-            <option value="2024-2025">2024-2025</option>
-            <option value="2023-2024">2023-2024</option>
-          </select>
+         <select
+          className="form-select"
+          style={{ width: 200 }}
+          value={lopId}
+          onChange={(e) => setLopId(e.target.value)}
+        >
+          <option value="">-- Chọn Lớp --</option>
+          {lops.map((l) => (
+            <option key={l.id} value={l.id}>
+              {l.tenLop}
+            </option>
+          ))}
+        </select>
 
           <input
             type="date"
