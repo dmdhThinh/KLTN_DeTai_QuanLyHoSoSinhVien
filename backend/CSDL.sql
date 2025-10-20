@@ -339,15 +339,15 @@ VALUES ('HP001', 'Lập trình WWW (Java)', 3, 1);
 
 -- Lớp học phần cho lớp CNTT01
 INSERT INTO LopHocPhan (ma_lop_hoc_phan, hoc_phan_id, giang_vien_id, lop_id, hoc_ky, nam_hoc)
-VALUES ('DHKTPM18BTT', 1, 2, 1, 'HK1', '2025-2026');
+VALUES ('DHKTPM18BTT', 1, 1, 1, 'HK1', '2025-2026');
 
 -- Lịch học cụ thể
 INSERT INTO LichHoc (lop_hoc_phan_id, thu, ca, tiet_bat_dau, tiet_ket_thuc, phong, co_so, loai)
 VALUES
-(1, 2, 'sáng', 1, 3, 'V7.02', 'Cơ sở 1', 'lythuyet'),
-(1, 4, 'chiều', 7, 9, 'H8.03', 'Cơ sở 1', 'thuchanh');
+(2, 2, 'sáng', 1, 3, 'V7.02', 'Cơ sở 1', 'lythuyet'),
+(2, 4, 'chiều', 7, 9, 'H8.03', 'Cơ sở 1', 'thuchanh');
 
-/*
+
 
 ALTER TABLE LopHocPhan
 ADD COLUMN ngay_bat_dau DATE NULL,
@@ -359,7 +359,10 @@ SET ngay_bat_dau = '2025-09-15', ngay_ket_thuc = '2025-12-30', so_tuan_hoc = 15
 WHERE id = 1;
 ALTER TABLE Nganh
 ADD COLUMN ma_nganh VARCHAR(20) AFTER id;
-*/
+
+ALTER TABLE HocPhan
+ADD COLUMN nganh_id INT AFTER khoa_id,
+ADD FOREIGN KEY (nganh_id) REFERENCES Nganh(id);
 
 
 

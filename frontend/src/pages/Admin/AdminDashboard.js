@@ -37,6 +37,7 @@ export default function AdminDashboard() {
     { title: 'Quản lý ngành', icon: <FaUniversity />, path: '/admin/nganh' },
     { title: 'Quản lý lớp', icon: <FaUniversity />, path: '/admin/lop' },
     { title: 'Quản lý lịch học', icon: <FaCalendar />, path: '/admin/lich' },
+    { title: 'Quản lý lớp học phần', icon: <FaBook />, path: '/admin/lophocphan' },
     { title: 'Học phần', icon: <FaBook /> },
     { title: 'Học phí', icon: <FaMoneyBillWave /> },
     { title: 'Thông báo', icon: <FaBell /> },

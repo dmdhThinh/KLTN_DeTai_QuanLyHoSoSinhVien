@@ -28,6 +28,10 @@ import LichList from './pages/Admin/LichList'
 import AddLich from  './pages/Admin/AddLich'
 import EditLich from  './pages/Admin/EditLich'
 
+import LopHocPhanList from './pages/Admin/LopHocPhanList'
+import AddLopHocPhan from  './pages/Admin/AddLopHocPhan'
+import EditLopHocPhan from  './pages/Admin/EditLopHocPhan'
+
 
 
 
@@ -114,7 +118,9 @@ function App() {
         <Route path="/admin/lich/new" element={<PrivateRoute allowRoles={['Quản trị']}><AddLich /></PrivateRoute>} />
         <Route path="/admin/lich/edit/:id" element={<PrivateRoute allowRoles={['Quản trị']}><EditLich /></PrivateRoute>} />
 
-       
+        <Route path="/admin/lophocphan" element={<PrivateRoute allowRoles={['Quản trị']}><LopHocPhanList /></PrivateRoute>} />
+        <Route path="/admin/lophocphan/new" element={<PrivateRoute allowRoles={['Quản trị']}><AddLopHocPhan /></PrivateRoute>} />
+        <Route path="/admin/lophocphan/edit/:id" element={<PrivateRoute allowRoles={['Quản trị']}><EditLopHocPhan /></PrivateRoute>} />
 
         {/* Trang không tồn tại → về login */}
         <Route path="*" element={<Navigate to="/login" replace />} />

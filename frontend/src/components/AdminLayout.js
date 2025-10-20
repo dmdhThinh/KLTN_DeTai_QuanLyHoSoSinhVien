@@ -19,8 +19,9 @@ export default function AdminLayout({ title, children }) {
     if (path.startsWith('/admin/students')) return 'students';
     if (path.startsWith('/admin/khoa')) return 'departments';
     if (path.startsWith('/admin/nganh')) return 'majors';
-    if (path.startsWith('/admin/lop')) return 'classes';
+    if (path === '/admin/lop' || path.startsWith('/admin/lop/')) return 'classes';
     if (path.startsWith('/admin/lich')) return 'calendar';
+    if (path.startsWith('/admin/lophocphan')) return 'sectionClass';
 
     
     // Thêm các trường hợp khác nếu cần
@@ -42,6 +43,7 @@ export default function AdminLayout({ title, children }) {
       case 'majors': navigate('/admin/nganh'); break;
       case 'classes': navigate('/admin/lop'); break;
       case 'calendar': navigate('/admin/lich'); break;
+      case 'sectionClass': navigate('/admin/lophocphan'); break;
       // Thêm các case khác nếu cần
       default: break;
     }
@@ -56,6 +58,7 @@ export default function AdminLayout({ title, children }) {
     { key: 'majors', title: 'Quản lý ngành', icon: <FaUniversity />,  },
     { key: 'classes', title: 'Quản lý lớp', icon: <FaUniversity />,  },
     { key: 'calendar', title: 'Quản lý lịch học', icon: <FaCalendar />,  },
+    { key: 'sectionClass', title: 'Quản lý lớp học phần', icon: <FaBook />,  },
     { key: 'courses', title: 'Học phần', icon: <FaBook /> },
     { key: 'fees', title: 'Học phí', icon: <FaMoneyBillWave /> },
     { key: 'noti', title: 'Thông báo', icon: <FaBell /> },
