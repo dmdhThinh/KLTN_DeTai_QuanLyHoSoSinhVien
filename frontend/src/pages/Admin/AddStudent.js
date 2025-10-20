@@ -165,6 +165,8 @@ const onSubmit = async (e) => {
   return (
     <AdminLayout activeMenu="students" title="Thêm sinh viên">
       <CenterError message={error} onClose={() => setError('')} />
+        <div className="d-flex justify-content-center">
+      <div className="card shadow-sm w-100" style={{ maxWidth: 1370 }}>
 
       <div className="card shadow-sm">
         <div className="card-body">
@@ -253,6 +255,8 @@ const onSubmit = async (e) => {
               </button>
             </div>
           </form>
+        </div>
+        </div>
         </div>
       </div>
     </AdminLayout>

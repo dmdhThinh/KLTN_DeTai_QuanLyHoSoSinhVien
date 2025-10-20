@@ -1,26 +1,63 @@
-import { pool } from '../config/db.js'
 
+import * as LopHocPhanModel from '../models/lopHocPhan.js';
 // 🧩 Lấy danh sách lớp học phần (kèm môn & giảng viên)
+
+
+export async function create(req, res) {
+    try {
+        const data = req.body;  // assuming data is sent via the request body
+        const result = await LopHocPhanModel.createLopHocPhan(data);
+        res.status(201).json({ message: 'Lớp học phần created successfully', data: result });
+    } catch (err) {
+        res.status(500).json({ message: 'Error creating LopHocPhan', error: err.message });
+    }
+}
+
 export async function getAll(req, res) {
-  try {
-    const [rows] = await pool.execute(`
-      SELECT 
-        lhp.id,
-        lhp.ma_lop_hoc_phan AS maLopHocPhan,
-        hp.ten_hoc_phan     AS tenHocPhan,
-        gv.ho_ten           AS tenGiangVien,
-        lhp.hoc_ky          AS hocKy,
-        lhp.nam_hoc         AS namHoc,
-        l.ten_lop           AS tenLop
-      FROM LopHocPhan lhp
-      JOIN HocPhan hp ON hp.id = lhp.hoc_phan_id
-      JOIN GiangVien gv ON gv.id = lhp.giang_vien_id
-      JOIN Lop l ON l.id = lhp.lop_id
-      ORDER BY lhp.nam_hoc DESC, lhp.hoc_ky ASC, lhp.ma_lop_hoc_phan ASC
-    `)
-    res.json(rows)
-  } catch (err) {
-    console.error('❌ Lỗi getAll LopHocPhan:', err)
-    res.status(500).json({ message: 'Lỗi khi lấy danh sách lớp học phần' })
-  }
+    try {
+        const rows = await LopHocPhanModel.getAllLopHocPhan();
+        res.status(200).json(rows);
+    } catch (err) {
+        res.status(500).json({ message: 'Error fetching LopHocPhan list', error: err.message });
+    }
+}
+
+export async function getById(req, res) {
+    const { id } = req.params;
+    try {
+        const row = await LopHocPhanModel.getLopHocPhanById(id);
+        if (!row) {
+            return res.status(404).json({ message: 'Lớp học phần not found' });
+        }
+        res.status(200).json(row);
+    } catch (err) {
+        res.status(500).json({ message: 'Error fetching LopHocPhan by ID', error: err.message });
+    }
+}
+
+export async function update(req, res) {
+    const { id } = req.params;
+    const data = req.body;
+    try {
+        const result = await LopHocPhanModel.updateLopHocPhan(id, data);
+        if (result.affectedRows === 0) {
+            return res.status(404).json({ message: 'Lớp học phần not found' });
+        }
+        res.status(200).json({ message: 'Lớp học phần updated successfully' });
+    } catch (err) {
+        res.status(500).json({ message: 'Error updating LopHocPhan', error: err.message });
+    }
+}
+
+export async function deleteLopHocPhan(req, res) {
+    const { id } = req.params;
+    try {
+        const result = await LopHocPhanModel.deleteLopHocPhan(id);
+        if (result.affectedRows === 0) {
+            return res.status(404).json({ message: 'Lớp học phần not found' });
+        }
+        res.status(200).json({ message: 'Lớp học phần deleted successfully' });
+    } catch (err) {
+        res.status(500).json({ message: 'Error deleting LopHocPhan', error: err.message });
+    }
 }

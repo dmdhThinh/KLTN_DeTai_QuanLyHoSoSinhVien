@@ -14,6 +14,7 @@ import lopRoutes from './routes/lop.js'
 import lichAdminRoutes from './routes/lichAdmin.js'
 import lophocphanRoutes from './routes/lopHocPhan.js'
 
+import hocphanRoutes from './routes/hocphan.js'
 
 import path from 'path'
 
@@ -35,6 +36,7 @@ app.use('/api/lop', lopRoutes)
 
 app.use('/api/lich-admin', lichAdminRoutes)
 app.use('/api/lophocphan', lophocphanRoutes)
+app.use('/api/hocphan', hocphanRoutes)
 
 // ✅ Public folder cho ảnh thẻ
 app.use('/uploads', express.static(path.resolve('uploads')))
