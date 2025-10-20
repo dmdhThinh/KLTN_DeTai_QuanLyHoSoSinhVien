@@ -367,4 +367,14 @@ ADD FOREIGN KEY (nganh_id) REFERENCES Nganh(id);
 
 
 
-
+ALTER TABLE GiangVien
+  ADD COLUMN ngay_sinh DATE NULL AFTER ho_ten,
+  ADD COLUMN gioi_tinh ENUM('Nam','Nữ','Khác') NULL AFTER ngay_sinh,
+  ADD COLUMN dia_chi VARCHAR(255) NULL AFTER gioi_tinh,
+  ADD COLUMN anh_the VARCHAR(255) NULL AFTER dia_chi,
+  ADD COLUMN hoc_vi VARCHAR(50) NULL AFTER anh_the,          -- Thạc sĩ / Tiến sĩ / Cử nhân
+  ADD COLUMN chuc_vu VARCHAR(100) NULL AFTER hoc_vi,         -- Ví dụ: Trưởng khoa, Giảng viên
+  ADD COLUMN nganh_id INT NULL AFTER khoa_id,
+  ADD COLUMN lop_id INT NULL AFTER nganh_id,
+  ADD FOREIGN KEY (nganh_id) REFERENCES Nganh(id),
+  ADD FOREIGN KEY (lop_id) REFERENCES Lop(id);

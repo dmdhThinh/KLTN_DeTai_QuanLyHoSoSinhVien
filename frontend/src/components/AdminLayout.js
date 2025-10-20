@@ -1,3 +1,4 @@
+// src/components/AdminLayout.js
 import React from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { clearAuth } from '../api';
@@ -17,12 +18,13 @@ export default function AdminLayout({ title, children }) {
     const path = location.pathname;
     if (path === '/admin') return 'overview';
     if (path.startsWith('/admin/students')) return 'students';
+    if (path.startsWith('/admin/teachers')) return 'teachers';
     if (path.startsWith('/admin/khoa')) return 'departments';
     if (path.startsWith('/admin/nganh')) return 'majors';
     if (path === '/admin/lop' || path.startsWith('/admin/lop/')) return 'classes';
     if (path.startsWith('/admin/lich')) return 'calendar';
     if (path.startsWith('/admin/lophocphan')) return 'sectionClass';
-    if (path.startsWith('/admin/hocphan')) return 'courses';
+     if (path.startsWith('/admin/hocphan')) return 'courses';
 
     
     // Thêm các trường hợp khác nếu cần
@@ -40,6 +42,7 @@ export default function AdminLayout({ title, children }) {
     switch (key) {
       case 'overview': navigate('/admin'); break;
       case 'students': navigate('/admin/students'); break;
+      case 'teachers': navigate('/admin/teachers'); break;
       case 'departments': navigate('/admin/khoa'); break;
       case 'majors': navigate('/admin/nganh'); break;
       case 'classes': navigate('/admin/lop'); break;

@@ -4,6 +4,8 @@ import dotenv from 'dotenv'
 import authRoutes from './routes/auth.js'
 import sinhvienRoutes from './routes/sinhVien.js'
 import giangvienRoutes from './routes/giangVien.js'
+import importGiangVienRoutes from './routes/importGiangVien.js'
+
 import importRoutes from './routes/import.js'
 import lichRoutes from './routes/lich.js'
 
@@ -28,6 +30,7 @@ app.use(express.json())
 app.use('/api/auth', authRoutes)
 app.use('/api/sinhviens', sinhvienRoutes)
 app.use('/api/giangviens', giangvienRoutes)
+app.use('/api/import', importGiangVienRoutes)
 app.use('/api/lich', lichRoutes) 
 
 app.use('/api/khoa', khoaRoutes)

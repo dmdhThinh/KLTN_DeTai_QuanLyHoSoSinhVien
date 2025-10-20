@@ -32,7 +32,7 @@ export default function AdminDashboard() {
     { title: 'Tổng quan', icon: <FaHome />, path: '/admin' },
     { title: 'Quản lý tài khoản', icon: <FaUserCog /> },
     { title: 'Quản lý sinh viên', icon: <FaUserGraduate />, path: '/admin/students' },
-    { title: 'Quản lý giảng viên', icon: <FaChalkboardTeacher /> },
+    { title: 'Quản lý giảng viên', icon: <FaChalkboardTeacher />, path: '/admin/teachers' },
     { title: 'Quản lý khoa', icon: <FaUniversity />, path: '/admin/khoa' },
     { title: 'Quản lý ngành', icon: <FaUniversity />, path: '/admin/nganh' },
     { title: 'Quản lý lớp', icon: <FaUniversity />, path: '/admin/lop' },

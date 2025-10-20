@@ -1,3 +1,4 @@
+// server/models/giangvien.js
 import { pool } from '../config/db.js'
 
 // 🧩 Lấy toàn bộ giảng viên
@@ -9,7 +10,7 @@ export async function getAllGiangVien() {
       gv.ho_ten  AS hoTen,
       gv.email,
       gv.so_dien_thoai AS soDienThoai,
-      k.ten_khoa AS khoa
+      k.ten_khoa AS tenKhoa
     FROM GiangVien gv
     LEFT JOIN Khoa k ON k.id = gv.khoa_id
     ORDER BY gv.ho_ten ASC
@@ -17,6 +18,8 @@ export async function getAllGiangVien() {
   const [rows] = await pool.execute(sql)
   return rows
 }
+
+// 🧩 Lấy chi tiết giảng viên theo ID
 export async function getGiangVienDetailById(id) {
   const sql = `
     SELECT 
@@ -25,12 +28,16 @@ export async function getGiangVienDetailById(id) {
       gv.ho_ten  AS hoTen,
       gv.email,
       gv.so_dien_thoai AS soDienThoai,
-      k.ten_khoa AS khoa
+      gv.gioi_tinh AS gioiTinh,
+      gv.ngay_sinh AS ngaySinh,
+      gv.dia_chi AS diaChi,
+      gv.khoa_id AS khoaId,
+      k.ten_khoa AS tenKhoa
     FROM GiangVien gv
     LEFT JOIN Khoa k ON k.id = gv.khoa_id
-    WHERE gv.id = :id
+    WHERE gv.id = ?
     LIMIT 1
   `
-  const [rows] = await pool.execute(sql, { id })
+  const [rows] = await pool.execute(sql, [id])
   return rows[0] || null
 }
