@@ -32,6 +32,10 @@ import LopHocPhanList from './pages/Admin/LopHocPhanList'
 import AddLopHocPhan from  './pages/Admin/AddLopHocPhan'
 import EditLopHocPhan from  './pages/Admin/EditLopHocPhan'
 
+import HocPhanList from './pages/Admin/HocPhanList'
+import AddHocPhan from  './pages/Admin/AddHocPhan'
+import EditHocPhan from  './pages/Admin/EditHocPhan.js'
+
 
 
 
@@ -121,6 +125,10 @@ function App() {
         <Route path="/admin/lophocphan" element={<PrivateRoute allowRoles={['Quản trị']}><LopHocPhanList /></PrivateRoute>} />
         <Route path="/admin/lophocphan/new" element={<PrivateRoute allowRoles={['Quản trị']}><AddLopHocPhan /></PrivateRoute>} />
         <Route path="/admin/lophocphan/edit/:id" element={<PrivateRoute allowRoles={['Quản trị']}><EditLopHocPhan /></PrivateRoute>} />
+
+         <Route path="/admin/hocphan" element={<PrivateRoute allowRoles={['Quản trị']}><HocPhanList /></PrivateRoute>} />
+        <Route path="/admin/hocphan/new" element={<PrivateRoute allowRoles={['Quản trị']}><AddHocPhan /></PrivateRoute>} />
+        <Route path="/admin/hocphan/edit/:id" element={<PrivateRoute allowRoles={['Quản trị']}><EditHocPhan /></PrivateRoute>} />
 
         {/* Trang không tồn tại → về login */}
         <Route path="*" element={<Navigate to="/login" replace />} />

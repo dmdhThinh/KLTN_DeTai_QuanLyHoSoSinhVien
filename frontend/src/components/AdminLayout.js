@@ -22,6 +22,7 @@ export default function AdminLayout({ title, children }) {
     if (path === '/admin/lop' || path.startsWith('/admin/lop/')) return 'classes';
     if (path.startsWith('/admin/lich')) return 'calendar';
     if (path.startsWith('/admin/lophocphan')) return 'sectionClass';
+    if (path.startsWith('/admin/hocphan')) return 'courses';
 
     
     // Thêm các trường hợp khác nếu cần
@@ -44,6 +45,7 @@ export default function AdminLayout({ title, children }) {
       case 'classes': navigate('/admin/lop'); break;
       case 'calendar': navigate('/admin/lich'); break;
       case 'sectionClass': navigate('/admin/lophocphan'); break;
+      case 'courses': navigate('/admin/hocphan'); break;
       // Thêm các case khác nếu cần
       default: break;
     }
