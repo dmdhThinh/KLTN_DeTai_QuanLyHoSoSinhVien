@@ -365,8 +365,6 @@ ADD COLUMN nganh_id INT AFTER khoa_id,
 ADD FOREIGN KEY (nganh_id) REFERENCES Nganh(id);
 
 
-
-
 ALTER TABLE GiangVien
   ADD COLUMN ngay_sinh DATE NULL AFTER ho_ten,
   ADD COLUMN gioi_tinh ENUM('Nam','Nữ','Khác') NULL AFTER ngay_sinh,

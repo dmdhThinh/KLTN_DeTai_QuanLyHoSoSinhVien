@@ -1,43 +1,145 @@
 // server/models/giangvien.js
 import { pool } from '../config/db.js'
 
-// 🧩 Lấy toàn bộ giảng viên
-export async function getAllGiangVien() {
-  const sql = `
-    SELECT 
+export async function getAll({ q = '', page = 1, limit = 10 } = {}) {
+  const offset = (page - 1) * limit
+  const params = []
+  let where = 'WHERE 1=1'
+
+  if (q) {
+    where += ' AND (gv.ma_gv LIKE ? OR gv.ho_ten LIKE ?)'
+    params.push(`%${q}%`, `%${q}%`)
+  }
+
+  const [rows] = await pool.query(
+    `
+    SELECT
       gv.id,
-      gv.ma_gv   AS maGv,
-      gv.ho_ten  AS hoTen,
-      gv.email,
+      gv.ma_gv        AS maGv,
+      gv.ho_ten       AS hoTen,
+      gv.email        AS email,
       gv.so_dien_thoai AS soDienThoai,
-      k.ten_khoa AS tenKhoa
+      gv.gioi_tinh    AS gioiTinh,
+      gv.ngay_sinh    AS ngaySinh,
+      gv.dia_chi      AS diaChi,
+      gv.khoa_id      AS khoaId,
+      gv.nganh_id     AS nganhId,
+      gv.lop_id       AS lopId,
+      gv.chuc_vu      AS chucVu,
+      gv.anh_the      AS anhThe,
+      k.ten_khoa      AS tenKhoa,
+      n.ten_nganh     AS tenNganh,
+      l.ten_lop       AS tenLop
     FROM GiangVien gv
-    LEFT JOIN Khoa k ON k.id = gv.khoa_id
-    ORDER BY gv.ho_ten ASC
-  `
-  const [rows] = await pool.execute(sql)
-  return rows
+    LEFT JOIN Khoa  k ON gv.khoa_id  = k.id
+    LEFT JOIN Nganh n ON gv.nganh_id = n.id
+    LEFT JOIN Lop   l ON gv.lop_id   = l.id
+    ${where}
+    ORDER BY gv.id DESC
+    LIMIT ? OFFSET ?
+    `,
+    [...params, Number(limit), Number(offset)]
+  )
+
+  const [[{ total }]] = await pool.query(
+    `
+    SELECT COUNT(*) AS total
+    FROM GiangVien gv
+    ${where}
+    `,
+    params
+  )
+
+  return {
+    data: rows,
+    pagination: {
+      page: Number(page),
+      limit: Number(limit),
+      total,
+      totalPages: Math.max(1, Math.ceil(total / limit))
+    }
+  }
 }
 
-// 🧩 Lấy chi tiết giảng viên theo ID
-export async function getGiangVienDetailById(id) {
-  const sql = `
-    SELECT 
+export async function getById(id) {
+  const [rows] = await pool.query(
+    `
+    SELECT
       gv.id,
-      gv.ma_gv   AS maGv,
-      gv.ho_ten  AS hoTen,
-      gv.email,
+      gv.ma_gv        AS maGv,
+      gv.ho_ten       AS hoTen,
+      gv.email        AS email,
       gv.so_dien_thoai AS soDienThoai,
-      gv.gioi_tinh AS gioiTinh,
-      gv.ngay_sinh AS ngaySinh,
-      gv.dia_chi AS diaChi,
-      gv.khoa_id AS khoaId,
-      k.ten_khoa AS tenKhoa
+      gv.gioi_tinh    AS gioiTinh,
+      gv.ngay_sinh    AS ngaySinh,
+      gv.dia_chi      AS diaChi,
+      gv.khoa_id      AS khoaId,
+      gv.nganh_id     AS nganhId,
+      gv.lop_id       AS lopId,
+      gv.chuc_vu      AS chucVu,
+      gv.anh_the      AS anhThe,
+      k.ten_khoa      AS tenKhoa,
+      n.ten_nganh     AS tenNganh,
+      l.ten_lop       AS tenLop
     FROM GiangVien gv
-    LEFT JOIN Khoa k ON k.id = gv.khoa_id
+    LEFT JOIN Khoa  k ON gv.khoa_id  = k.id
+    LEFT JOIN Nganh n ON gv.nganh_id = n.id
+    LEFT JOIN Lop   l ON gv.lop_id   = l.id
     WHERE gv.id = ?
-    LIMIT 1
-  `
-  const [rows] = await pool.execute(sql, [id])
+    `,
+    [id]
+  )
   return rows[0] || null
+}
+
+export async function create(payload) {
+  const {
+    ma_gv, ho_ten, email, so_dien_thoai, gioi_tinh, ngay_sinh, dia_chi,
+    khoa_id, nganh_id, lop_id, chuc_vu, anh_the
+  } = payload
+
+  const [res] = await pool.query(
+    `
+    INSERT INTO GiangVien
+      (ma_gv, ho_ten, email, so_dien_thoai, gioi_tinh, ngay_sinh, dia_chi,
+       khoa_id, nganh_id, lop_id, chuc_vu, anh_the)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `,
+    [
+      ma_gv, ho_ten, email || null, so_dien_thoai || null, gioi_tinh || null,
+      ngay_sinh || null, dia_chi || null,
+      khoa_id || null, nganh_id || null, lop_id || null,
+      chuc_vu || null, anh_the || null
+    ]
+  )
+  return { id: res.insertId }
+}
+
+export async function update(id, payload) {
+  const {
+    ma_gv, ho_ten, email, so_dien_thoai, gioi_tinh, ngay_sinh, dia_chi,
+    khoa_id, nganh_id, lop_id, chuc_vu, anh_the
+  } = payload
+
+  await pool.query(
+    `
+    UPDATE GiangVien SET
+      ma_gv = ?, ho_ten = ?, email = ?, so_dien_thoai = ?, gioi_tinh = ?,
+      ngay_sinh = ?, dia_chi = ?, khoa_id = ?, nganh_id = ?, lop_id = ?,
+      chuc_vu = ?, anh_the = ?
+    WHERE id = ?
+    `,
+    [
+      ma_gv, ho_ten, email || null, so_dien_thoai || null, gioi_tinh || null,
+      ngay_sinh || null, dia_chi || null,
+      khoa_id || null, nganh_id || null, lop_id || null,
+      chuc_vu || null, anh_the || null,
+      id
+    ]
+  )
+  return { id }
+}
+
+export async function remove(id) {
+  await pool.query('DELETE FROM GiangVien WHERE id = ?', [id])
 }

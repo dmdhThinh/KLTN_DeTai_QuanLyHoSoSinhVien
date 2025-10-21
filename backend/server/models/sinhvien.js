@@ -1,35 +1,44 @@
 // server/models/sinhvien.js
 import { pool } from '../config/db.js'
 
-// Lấy chi tiết sinh viên theo ID
-// ✅ models/sinhvien.js
-export const getSinhVienDetailById = async (id) => {
-  const [rows] = await pool.query(
-    `
-    SELECT 
-      sv.id,
-      sv.ma_sv AS maSv,
-      sv.ho_ten AS hoTen,
-      sv.ngay_sinh AS ngaySinh,
-      sv.gioi_tinh AS gioiTinh,
-      sv.email,
-      sv.so_dien_thoai AS soDienThoai,
-      sv.dia_chi AS diaChi,
-      sv.khoa_hoc AS khoaHoc,
-      sv.anh_the AS anhThe,
-      l.ten_lop AS lop,
-      n.ten_nganh AS nganh,
-      k.ten_khoa AS khoa
-    FROM SinhVien sv
-    LEFT JOIN Lop l ON sv.lop_id = l.id
-    LEFT JOIN Nganh n ON l.nganh_id = n.id
-    LEFT JOIN Khoa k ON n.khoa_id = k.id
-    WHERE sv.id = ?
-    `,
-    [id]
-  )
-  return rows[0] || null
+// 🧩 Lấy chi tiết sinh viên theo ID (có Khoa - Ngành - Lớp)
+export async function getSinhVienDetailById(id) {
+  try {
+    const [rows] = await pool.query(
+      `
+      SELECT 
+        sv.id,
+        sv.ma_sv AS maSv,
+        sv.ho_ten AS hoTen,
+        sv.ngay_sinh AS ngaySinh,
+        sv.gioi_tinh AS gioiTinh,
+        sv.email,
+        sv.so_dien_thoai AS soDienThoai,
+        sv.dia_chi AS diaChi,
+        sv.khoa_hoc AS khoaHoc,
+        sv.anh_the AS anhThe,
+        sv.khoa_id AS khoaId,
+        sv.nganh_id AS nganhId,
+        sv.lop_id AS lopId,
+        k.ten_khoa AS tenKhoa,
+        n.ten_nganh AS tenNganh,
+        l.ten_lop AS tenLop
+      FROM SinhVien sv
+      LEFT JOIN Lop l ON sv.lop_id = l.id
+      LEFT JOIN Nganh n ON l.nganh_id = n.id
+      LEFT JOIN Khoa k ON n.khoa_id = k.id
+      WHERE sv.id = ?
+      `,
+      [id]
+    )
+
+    return rows[0] || null
+  } catch (err) {
+    console.error('❌ Lỗi khi lấy chi tiết sinh viên:', err)
+    throw err
+  }
 }
+
 
 // Kiểm tra mã sinh viên trùng
 export const isMaSvExists = async (maSv) => {

@@ -1,4 +1,3 @@
-// src/pages/Admin/GiangVienList.js
 import React, { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import AdminLayout from '../../components/AdminLayout'
@@ -14,30 +13,61 @@ export default function GiangVienList() {
   const [message, setMessage] = useState('')
   const [confirmDelete, setConfirmDelete] = useState(null)
   const [importResult, setImportResult] = useState(null)
+  const [khoas, setKhoas] = useState([])
+  const [nganhs, setNganhs] = useState([])
+  const [selectedKhoa, setSelectedKhoa] = useState('')
+  const [selectedNganh, setSelectedNganh] = useState('')
   const limit = 10
 
   useEffect(() => {
     loadGiangViens()
   }, [page])
 
-  const loadGiangViens = async (q = query) => {
+  useEffect(() => {
+    const fetchFilters = async () => {
+      try {
+        const [khoaRes, nganhRes] = await Promise.all([
+          apiFetch('/api/khoa'),
+          apiFetch('/api/nganh')
+        ])
+        setKhoas(khoaRes || [])
+        setNganhs(nganhRes || [])
+      } catch (err) {
+        console.error('Lỗi tải danh sách Khoa/Ngành:', err)
+      }
+    }
+    fetchFilters()
+  }, [])
+
+  const loadGiangViens = async (q = query, filters = {}) => {
     setLoading(true)
     try {
-      const data = await apiFetch(`/api/giangviens?q=${encodeURIComponent(q)}&page=${page}&limit=${limit}`)
+      const params = new URLSearchParams({
+        q: q || '',
+        page,
+        limit,
+        ...(filters.khoaId ? { khoaId: filters.khoaId } : {}),
+        ...(filters.nganhId ? { nganhId: filters.nganhId } : {})
+      })
+
+      const data = await apiFetch(`/api/giangviens?${params.toString()}`)
       setList(data.data || [])
       setTotalPages(data.pagination?.totalPages || 1)
     } catch (err) {
-      setList([])
       console.error(err)
+      setList([])
     } finally {
       setLoading(false)
     }
   }
 
-  const handleSearch = (e) => {
+  const handleSearch = async (e) => {
     e.preventDefault()
     setPage(1)
-    loadGiangViens(query.trim())
+    await loadGiangViens(query.trim(), {
+      khoaId: selectedKhoa,
+      nganhId: selectedNganh
+    })
   }
 
   const handleDelete = async (id) => {
@@ -62,7 +92,7 @@ export default function GiangVienList() {
     try {
       const res = await fetch('/api/import/teachers', {
         method: 'POST',
-        body: formData,
+        body: formData
       })
       const data = await res.json()
       if (!res.ok) throw new Error(data.message || 'Import thất bại')
@@ -72,7 +102,7 @@ export default function GiangVienList() {
     } catch (err) {
       setImportResult({
         message: 'Import thất bại',
-        lỗi: [{ dòng: '-', lỗi: err.message }],
+        lỗi: [{ dòng: '-', lỗi: err.message }]
       })
     } finally {
       e.target.value = ''
@@ -100,6 +130,7 @@ export default function GiangVienList() {
     <AdminLayout title="Danh sách Giảng viên" activeMenu="teachers">
       {message && <div className="alert alert-info text-center py-2">{message}</div>}
 
+      {/* Xác nhận xóa */}
       {confirmDelete && (
         <div
           className="position-fixed top-50 start-50 translate-middle bg-white shadow rounded p-4 text-center"
@@ -107,63 +138,87 @@ export default function GiangVienList() {
         >
           <div className="fw-semibold mb-3">Bạn có chắc muốn xoá giảng viên này?</div>
           <div className="d-flex justify-content-center gap-3">
-            <button
-              className="btn btn-danger"
-              onClick={() => handleDelete(confirmDelete.id)}
-            >
+            <button className="btn btn-danger" onClick={() => handleDelete(confirmDelete.id)}>
               Xoá
             </button>
-            <button
-              className="btn btn-secondary"
-              onClick={() => setConfirmDelete(null)}
-            >
+            <button className="btn btn-secondary" onClick={() => setConfirmDelete(null)}>
               Huỷ
             </button>
           </div>
         </div>
       )}
 
-      {/* Thanh tìm kiếm + nút thao tác */}
-      <div className="d-flex align-items-center mb-3 flex-wrap gap-2">
-        <form onSubmit={handleSearch} className="d-flex gap-2">
-          <input
-            type="text"
-            className="form-control"
-            placeholder="Tìm theo mã GV hoặc họ tên..."
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            style={{ width: 300 }}
-          />
-          <button className="btn btn-outline-primary" type="submit">
-            Tìm
-          </button>
-        </form>
+      {/* Bộ lọc tìm kiếm */}
+      <form onSubmit={handleSearch} className="d-flex flex-wrap gap-2 mb-3">
+        <input
+          type="text"
+          className="form-control"
+          placeholder="Tìm theo mã GV hoặc họ tên..."
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          style={{ maxWidth: 250 }}
+        />
 
-        <div className="ms-auto d-flex gap-2 flex-wrap">
-          <button className="btn btn-outline-secondary" onClick={handleDownloadTemplate}>
-            📄 Tải file mẫu
-          </button>
-          <button
-            className="btn btn-outline-success"
-            onClick={() => document.getElementById('fileInputGV').click()}
-          >
-            📥 Import danh sách
-          </button>
-          <input
-            id="fileInputGV"
-            type="file"
-            accept=".csv, .xlsx"
-            style={{ display: 'none' }}
-            onChange={handleImport}
-          />
+        <select
+          className="form-select"
+          value={selectedKhoa}
+          onChange={(e) => {
+            setSelectedKhoa(e.target.value)
+            setSelectedNganh('')
+          }}
+          style={{ maxWidth: 200 }}
+        >
+          <option value="">-- Tất cả khoa --</option>
+          {khoas.map((khoa) => (
+            <option key={khoa.id} value={khoa.id}>
+              {khoa.tenKhoa || khoa.ten_khoa}
+            </option>
+          ))}
+        </select>
 
-          <button
-            className="btn btn-primary"
-            onClick={() => navigate('/admin/teachers/new')}
-          >
-            ➕ Thêm giảng viên
-          </button>
-        </div>
+        <select
+          className="form-select"
+          value={selectedNganh}
+          onChange={(e) => setSelectedNganh(e.target.value)}
+          style={{ maxWidth: 200 }}
+          disabled={!selectedKhoa}
+        >
+          <option value="">-- Tất cả ngành --</option>
+          {nganhs
+            .filter((n) => String(n.khoaId) === String(selectedKhoa))
+            .map((n) => (
+              <option key={n.id} value={n.id}>
+                {n.tenNganh || n.ten_nganh}
+              </option>
+            ))}
+        </select>
+
+        <button type="submit" className="btn btn-primary">
+          Tìm kiếm
+        </button>
+      </form>
+
+      {/* Nút thao tác */}
+      <div className="d-flex justify-content-end mb-3 flex-wrap gap-2">
+        <button className="btn btn-outline-secondary" onClick={handleDownloadTemplate}>
+          📄 Tải file mẫu
+        </button>
+        <button
+          className="btn btn-outline-success"
+          onClick={() => document.getElementById('fileInputGV').click()}
+        >
+          📥 Import danh sách
+        </button>
+        <input
+          id="fileInputGV"
+          type="file"
+          accept=".csv, .xlsx"
+          style={{ display: 'none' }}
+          onChange={handleImport}
+        />
+        <button className="btn btn-primary" onClick={() => navigate('/admin/teachers/new')}>
+          ➕ Thêm giảng viên
+        </button>
       </div>
 
       {/* Bảng danh sách */}
@@ -181,9 +236,10 @@ export default function GiangVienList() {
                     <th>#</th>
                     <th>Mã GV</th>
                     <th>Họ tên</th>
-                    <th>Khoa</th>
                     <th>Giới tính</th>
-                    <th>Email</th>
+                    <th>Ngày sinh</th>
+                    <th>Khoa</th>
+                    <th>Ngành</th>
                     <th>Thao tác</th>
                   </tr>
                 </thead>
@@ -193,21 +249,22 @@ export default function GiangVienList() {
                       <td>{(page - 1) * limit + i + 1}</td>
                       <td>{gv.maGv}</td>
                       <td>{gv.hoTen}</td>
-                      <td>{gv.tenKhoa || '—'}</td>
                       <td>{gv.gioiTinh}</td>
-                      <td>{gv.email}</td>
+                      <td>{gv.ngaySinh ? new Date(gv.ngaySinh).toLocaleDateString('vi-VN') : '-'}</td>
+                      <td>{gv.tenKhoa || '-'}</td>
+                      <td>{gv.tenNganh || '-'}</td>
                       <td>
                         <button
-                          className="btn btn-sm btn-outline-secondary me-2"
+                          className="btn btn-sm btn-warning me-2"
                           onClick={() => navigate(`/admin/teachers/edit/${gv.id}`)}
                         >
-                          ✏️ Sửa
+                          Sửa
                         </button>
                         <button
-                          className="btn btn-sm btn-outline-danger"
+                          className="btn btn-sm btn-danger"
                           onClick={() => setConfirmDelete(gv)}
                         >
-                          Xoá
+                          Xóa
                         </button>
                       </td>
                     </tr>

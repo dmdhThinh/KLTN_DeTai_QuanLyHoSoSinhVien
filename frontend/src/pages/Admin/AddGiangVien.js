@@ -5,245 +5,178 @@ import { apiFetch } from '../../api'
 
 export default function AddGiangVien() {
   const navigate = useNavigate()
+  const [form, setForm] = useState({
+    ma_gv: '',
+    ho_ten: '',
+    email: '',
+    so_dien_thoai: '',
+    gioi_tinh: 'Nam',
+    ngay_sinh: '',
+    dia_chi: '',
+    khoa_id: '',
+    nganh_id: '',
+    lop_id: '',
+    chuc_vu: '',
+    anh_the: ''
+  })
+
   const [khoas, setKhoas] = useState([])
   const [nganhs, setNganhs] = useState([])
   const [lops, setLops] = useState([])
-  const [message, setMessage] = useState('')
+  const [saving, setSaving] = useState(false)
+  const [error, setError] = useState('')
 
-  const [form, setForm] = useState({
-    maGv: '',
-    hoTen: '',
-    email: '',
-    soDienThoai: '',
-    gioiTinh: '',
-    ngaySinh: '',
-    diaChi: '',
-    khoaId: '',
-    nganhId: '',
-    lopId: '',
-  })
-
-  // 🧩 Load danh sách khoa ban đầu
   useEffect(() => {
-    apiFetch('/api/khoa')
-      .then((data) => setKhoas(data || []))
-      .catch(() => setKhoas([]))
+    (async () => {
+      try {
+        const [k, n, l] = await Promise.all([
+          apiFetch('/api/khoa'),
+          apiFetch('/api/nganh'),
+          apiFetch('/api/lop')
+        ])
+        setKhoas(k || [])
+        setNganhs(n || [])
+        setLops(l || [])
+      } catch (e) {}
+    })()
   }, [])
 
-  // 🧩 Khi chọn khoa → load ngành theo khoa
-  useEffect(() => {
-    if (form.khoaId) {
-      apiFetch(`/api/nganh?khoaId=${form.khoaId}`)
-        .then((data) => setNganhs(data || []))
-        .catch(() => setNganhs([]))
-    } else {
-      setNganhs([])
-      setLops([])
-    }
-  }, [form.khoaId])
-
-  // 🧩 Khi chọn ngành → load lớp theo ngành
-  useEffect(() => {
-    if (form.nganhId) {
-      apiFetch(`/api/lop?nganhId=${form.nganhId}`)
-        .then((data) => setLops(data || []))
-        .catch(() => setLops([]))
-    } else {
-      setLops([])
-    }
-  }, [form.nganhId])
-
-  // 🧩 Cập nhật giá trị form
-  const handleChange = (e) => {
-    setForm({ ...form, [e.target.name]: e.target.value })
+  const update = (k) => (e) => {
+    const v = e.target.value
+    setForm(s => {
+      if (k === 'khoa_id') return { ...s, khoa_id: v, nganh_id: '', lop_id: '' }
+      if (k === 'nganh_id') return { ...s, nganh_id: v, lop_id: '' }
+      return { ...s, [k]: v }
+    })
   }
 
-  // 🧩 Gửi form
-  const handleSubmit = async (e) => {
+  const onSubmit = async (e) => {
     e.preventDefault()
+    if (saving) return
+    if (!form.ma_gv || !form.ho_ten || !form.khoa_id) {
+      setError('Vui lòng nhập Mã GV, Họ tên và chọn Khoa.')
+      return
+    }
+    setSaving(true)
+    setError('')
     try {
-      if (!form.maGv || !form.hoTen || !form.khoaId)
-        return setMessage('❌ Vui lòng nhập đầy đủ Mã GV, Họ tên, và chọn Khoa.')
-
       await apiFetch('/api/giangviens', {
         method: 'POST',
-        body: JSON.stringify(form),
+        body: JSON.stringify(form)
       })
-      setMessage('✅ Thêm giảng viên thành công!')
-      setTimeout(() => navigate('/admin/teachers'), 1000)
+      navigate('/admin/teachers', { replace: true })
     } catch (err) {
-      setMessage('❌ Lỗi: ' + err.message)
+      setError(err.message || 'Không thể tạo giảng viên')
+    } finally {
+      setSaving(false)
     }
   }
 
+  const nganhsByKhoa = form.khoa_id
+    ? nganhs.filter(n => String(n.khoaId) === String(form.khoa_id))
+    : nganhs
+
+  const lopsByNganh = form.nganh_id
+    ? lops.filter(l => String(l.nganhId) === String(form.nganh_id))
+    : []
+
   return (
-    <AdminLayout title="Thêm giảng viên">
-      {message && <div className="alert alert-info text-center py-2">{message}</div>}
+    <AdminLayout activeMenu="teachers" title="Thêm Giảng viên">
+      {error && <div className="alert alert-danger text-center">{error}</div>}
+      <div className="card shadow-sm">
+        <div className="card-body">
+          <form className="row g-3" onSubmit={onSubmit}>
+            <div className="col-md-3">
+              <label className="form-label">Mã GV *</label>
+              <input className="form-control" value={form.ma_gv} onChange={update('ma_gv')} />
+            </div>
+            <div className="col-md-5">
+              <label className="form-label">Họ tên *</label>
+              <input className="form-control" value={form.ho_ten} onChange={update('ho_ten')} />
+            </div>
+            <div className="col-md-4">
+              <label className="form-label">Chức vụ</label>
+              <input className="form-control" value={form.chuc_vu} onChange={update('chuc_vu')} placeholder="VD: Giảng viên chính" />
+            </div>
 
-      <form
-        onSubmit={handleSubmit}
-        className="card shadow-sm mx-auto p-4"
-        style={{ maxWidth: 700 }}
-      >
-        <div className="row">
-          <div className="col-md-6 mb-3">
-            <label className="form-label fw-semibold">Mã giảng viên *</label>
-            <input
-              type="text"
-              name="maGv"
-              value={form.maGv}
-              onChange={handleChange}
-              className="form-control"
-              placeholder="VD: GV001"
-            />
-          </div>
-          <div className="col-md-6 mb-3">
-            <label className="form-label fw-semibold">Họ tên *</label>
-            <input
-              type="text"
-              name="hoTen"
-              value={form.hoTen}
-              onChange={handleChange}
-              className="form-control"
-              placeholder="Nhập họ và tên"
-            />
-          </div>
+            <div className="col-md-4">
+              <label className="form-label">Email</label>
+              <input className="form-control" value={form.email} onChange={update('email')} />
+            </div>
+            <div className="col-md-4">
+              <label className="form-label">Số điện thoại</label>
+              <input className="form-control" value={form.so_dien_thoai} onChange={update('so_dien_thoai')} />
+            </div>
+            <div className="col-md-4">
+              <label className="form-label">Giới tính</label>
+              <select className="form-select" value={form.gioi_tinh} onChange={update('gioi_tinh')}>
+                <option>Nam</option>
+                <option>Nữ</option>
+              </select>
+            </div>
+
+            <div className="col-md-4">
+              <label className="form-label">Ngày sinh</label>
+              <input type="date" className="form-control" value={form.ngay_sinh} onChange={update('ngay_sinh')} />
+            </div>
+            <div className="col-md-8">
+              <label className="form-label">Địa chỉ</label>
+              <input className="form-control" value={form.dia_chi} onChange={update('dia_chi')} />
+            </div>
+
+            {/* Cascading Khoa → Ngành → Lớp */}
+            <div className="col-md-4">
+              <label className="form-label">Khoa *</label>
+              <select className="form-select" value={form.khoa_id} onChange={update('khoa_id')}>
+                <option value="">-- Chọn Khoa --</option>
+                {khoas.map(k => <option key={k.id} value={k.id}>{k.tenKhoa || k.ten_khoa}</option>)}
+              </select>
+            </div>
+            <div className="col-md-4">
+              <label className="form-label">Ngành</label>
+              <select className="form-select" value={form.nganh_id} onChange={update('nganh_id')} disabled={!nganhsByKhoa.length}>
+                <option value="">{nganhsByKhoa.length ? '-- Chọn Ngành --' : '— Chưa có ngành —'}</option>
+                {nganhsByKhoa.map(n => <option key={n.id} value={n.id}>{n.tenNganh || n.ten_nganh}</option>)}
+              </select>
+            </div>
+            <div className="col-md-4">
+              <label className="form-label">Lớp</label>
+              <select className="form-select" value={form.lop_id} onChange={update('lop_id')} disabled={!lopsByNganh.length}>
+                <option value="">{lopsByNganh.length ? '-- Chọn Lớp --' : '— Chưa có lớp —'}</option>
+                {lopsByNganh.map(l => <option key={l.id} value={l.id}>{l.tenLop}</option>)}
+              </select>
+            </div>
+
+            {/* Ảnh thẻ */}
+            <div className="col-md-6">
+              <label className="form-label">Ảnh thẻ (URL hoặc chọn file)</label>
+              <input
+                type="text"
+                className="form-control mb-2"
+                placeholder="Dán URL ảnh (nếu có)"
+                value={form.anh_the}
+                onChange={update('anh_the')}
+              />
+              <input
+                type="file"
+                className="form-control"
+                accept="image/*"
+                onChange={(e) => {
+                  const file = e.target.files?.[0]
+                  if (file) setForm(s => ({ ...s, anh_the: file.name }))
+                }}
+              />
+              {form.anh_the && <small className="text-muted">Ảnh hiện tại: <b>{form.anh_the}</b></small>}
+            </div>
+
+            <div className="col-12 d-flex justify-content-end">
+              <button className="btn btn-primary" disabled={saving}>
+                {saving ? 'Đang lưu...' : 'Tạo giảng viên'}
+              </button>
+            </div>
+          </form>
         </div>
-
-        <div className="row">
-          <div className="col-md-6 mb-3">
-            <label className="form-label fw-semibold">Giới tính</label>
-            <select
-              name="gioiTinh"
-              value={form.gioiTinh}
-              onChange={handleChange}
-              className="form-select"
-            >
-              <option value="">-- Chọn giới tính --</option>
-              <option value="Nam">Nam</option>
-              <option value="Nữ">Nữ</option>
-              <option value="Khác">Khác</option>
-            </select>
-          </div>
-
-          <div className="col-md-6 mb-3">
-            <label className="form-label fw-semibold">Ngày sinh</label>
-            <input
-              type="date"
-              name="ngaySinh"
-              value={form.ngaySinh}
-              onChange={handleChange}
-              className="form-control"
-            />
-          </div>
-        </div>
-
-        <div className="row">
-          <div className="col-md-6 mb-3">
-            <label className="form-label fw-semibold">Email</label>
-            <input
-              type="email"
-              name="email"
-              value={form.email}
-              onChange={handleChange}
-              className="form-control"
-              placeholder="email@domain.com"
-            />
-          </div>
-          <div className="col-md-6 mb-3">
-            <label className="form-label fw-semibold">Số điện thoại</label>
-            <input
-              type="text"
-              name="soDienThoai"
-              value={form.soDienThoai}
-              onChange={handleChange}
-              className="form-control"
-              placeholder="VD: 0901234567"
-            />
-          </div>
-        </div>
-
-        <div className="mb-3">
-          <label className="form-label fw-semibold">Địa chỉ</label>
-          <input
-            type="text"
-            name="diaChi"
-            value={form.diaChi}
-            onChange={handleChange}
-            className="form-control"
-            placeholder="Nhập địa chỉ"
-          />
-        </div>
-
-        {/* Khoa / Ngành / Lớp */}
-        <div className="row">
-          <div className="col-md-4 mb-3">
-            <label className="form-label fw-semibold">Khoa *</label>
-            <select
-              name="khoaId"
-              value={form.khoaId}
-              onChange={handleChange}
-              className="form-select"
-            >
-              <option value="">-- Chọn Khoa --</option>
-              {khoas.map((k) => (
-                <option key={k.id} value={k.id}>
-                  {k.tenKhoa}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <div className="col-md-4 mb-3">
-            <label className="form-label fw-semibold">Ngành</label>
-            <select
-              name="nganhId"
-              value={form.nganhId}
-              onChange={handleChange}
-              className="form-select"
-              disabled={!form.khoaId}
-            >
-              <option value="">-- Chọn Ngành --</option>
-              {nganhs.map((n) => (
-                <option key={n.id} value={n.id}>
-                  {n.tenNganh}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <div className="col-md-4 mb-3">
-            <label className="form-label fw-semibold">Lớp</label>
-            <select
-              name="lopId"
-              value={form.lopId}
-              onChange={handleChange}
-              className="form-select"
-              disabled={!form.nganhId}
-            >
-              <option value="">-- Chọn Lớp --</option>
-              {lops.map((l) => (
-                <option key={l.id} value={l.id}>
-                  {l.tenLop}
-                </option>
-              ))}
-            </select>
-          </div>
-        </div>
-
-        <div className="text-center mt-4">
-          <button className="btn btn-primary px-4" type="submit">
-            ➕ Thêm giảng viên
-          </button>
-          <button
-            type="button"
-            className="btn btn-secondary ms-2"
-            onClick={() => navigate('/admin/teachers')}
-          >
-            Quay lại
-          </button>
-        </div>
-      </form>
+      </div>
     </AdminLayout>
   )
 }

@@ -1,3 +1,4 @@
+// server/index.js
 import express from 'express'
 import cors from 'cors'
 import dotenv from 'dotenv'
@@ -5,6 +6,7 @@ import authRoutes from './routes/auth.js'
 import sinhvienRoutes from './routes/sinhVien.js'
 import giangvienRoutes from './routes/giangVien.js'
 import importGiangVienRoutes from './routes/importGiangVien.js'
+import taiKhoanRoutes from './routes/taiKhoan.js'
 
 import importRoutes from './routes/import.js'
 import lichRoutes from './routes/lich.js'
@@ -31,6 +33,7 @@ app.use('/api/auth', authRoutes)
 app.use('/api/sinhviens', sinhvienRoutes)
 app.use('/api/giangviens', giangvienRoutes)
 app.use('/api/import', importGiangVienRoutes)
+app.use('/api/taikhoan', taiKhoanRoutes)
 app.use('/api/lich', lichRoutes) 
 
 app.use('/api/khoa', khoaRoutes)
