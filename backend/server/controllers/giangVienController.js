@@ -94,7 +94,8 @@ export async function createGiangVien(req, res) {
     // ✅ tự tạo tài khoản cho giảng viên mới
     try {
       const accountId = await createAccount({
-        username: item.ma_gv,           // dùng mã giảng viên làm tên đăng nhập
+        username: item.ma_gv,
+         ho_ten: item.ho_ten,           // dùng mã giảng viên làm tên đăng nhập
         password: '123456',             // mật khẩu mặc định
         role: 'Giảng viên',             // vai trò
         trang_thai: 'Hoạt động'

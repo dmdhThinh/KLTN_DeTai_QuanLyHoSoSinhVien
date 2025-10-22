@@ -158,6 +158,7 @@ export const create = async (req, res) => {
     if (!ma_sv || !ho_ten || !ngay_sinh)
       return res.status(400).json({ message: 'Thiếu dữ liệu bắt buộc.' })
 
+    // ✅ Kiểm tra trùng mã sinh viên
     const isDup = await SinhVienModel.isMaSvExists(ma_sv)
     if (isDup) return res.status(400).json({ message: 'Mã sinh viên đã tồn tại.' })
 
@@ -168,16 +169,20 @@ export const create = async (req, res) => {
       khoa_id, nganh_id, lop_id, anh_the
     })
 
+    // ✅ Lấy lại sinh viên vừa tạo (để có đủ họ tên, mã, id)
+    const item = await SinhVienModel.getSinhVienDetailById(newId)
+
     // ✅ Tạo tài khoản sinh viên tương ứng
     try {
       const accId = await createAccount({
-        username: ma_sv,
+        username: item.maSv,          // dùng mã sinh viên làm username
+        ho_ten: item.hoTen,           // họ tên sinh viên
         password: '123456',
         role: 'Sinh viên',
         trang_thai: 'Hoạt động'
       })
 
-      // Gán vào cột tai_khoan_id trong bảng SinhVien
+      // ✅ Gán tài khoản vào sinh viên
       await pool.query('UPDATE SinhVien SET tai_khoan_id = ? WHERE id = ?', [accId, newId])
     } catch (err) {
       console.error('⚠️ Lỗi khi tạo tài khoản sinh viên:', err)
@@ -189,7 +194,6 @@ export const create = async (req, res) => {
     return res.status(500).json({ message: 'Lỗi tạo sinh viên' })
   }
 }
-
 
 export const update = async (req, res) => {
   try {

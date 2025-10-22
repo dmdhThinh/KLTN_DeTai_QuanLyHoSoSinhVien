@@ -1,3 +1,4 @@
+// src/pages/SinhVien/StudentDashboard.js
 import React, { useEffect, useState } from 'react'
 import { getSinhVienById, getSinhVienId, apiFetch } from '../../api'
 import Header from '../../components/Header'
@@ -93,7 +94,7 @@ export default function StudentDashboard() {
                     </div>
                     <div>
                       <div className="text-muted">Lớp học</div>
-                      <div className="fw-semibold">{sv?.lop || '-'}</div>
+                      <div className="fw-semibold">{sv?.tenLop || '-'}</div>
                     </div>
                     <div>
                       <div className="text-muted">Giới tính</div>
@@ -109,7 +110,7 @@ export default function StudentDashboard() {
                     </div>
                     <div>
                       <div className="text-muted">Ngành</div>
-                      <div className="fw-semibold">{sv?.nganh || '-'}</div>
+                      <div className="fw-semibold">{sv?.tenNganh || '-'}</div>
                     </div>
                     <div className="col-12">
                       <div className="text-muted">Nơi sinh</div>
@@ -117,7 +118,7 @@ export default function StudentDashboard() {
                     </div>
                     <div className="col-12">
                       <div className="text-muted">Khoa/Viện</div>
-                      <div className="fw-semibold">{sv?.khoa || '-'}</div>
+                      <div className="fw-semibold">{sv?.tenKhoa || '-'}</div>
                     </div>
                   </div>
                 </div>

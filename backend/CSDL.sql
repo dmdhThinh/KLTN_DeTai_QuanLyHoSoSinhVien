@@ -1,5 +1,3 @@
-
-
 USE QuanLySinhVien;
 
 -- Tài khoản
@@ -72,14 +70,63 @@ CREATE TABLE SinhVien (
     FOREIGN KEY (tai_khoan_id) REFERENCES TaiKhoan(id)
 );
 
--- Học phần
-CREATE TABLE HocPhan (
+-- Thông báo
+CREATE TABLE ThongBao (
     id INT AUTO_INCREMENT PRIMARY KEY,
-    ma_hp VARCHAR(20) UNIQUE NOT NULL,
-    ten_hp VARCHAR(100) NOT NULL,
-    so_tin_chi INT NOT NULL,
-    khoa_id INT,
-    FOREIGN KEY (khoa_id) REFERENCES Khoa(id)
+    tieu_de VARCHAR(200) NOT NULL,
+    noi_dung TEXT,
+    ngay_gui TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Hoạt động ngoại khóa
+CREATE TABLE HoatDongNgoaiKhoa (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    ten_hoat_dong VARCHAR(100) NOT NULL,
+    ngay_to_chuc DATE,
+    dia_diem VARCHAR(100),
+    mo_ta TEXT
+);
+
+-- Học phần (sử dụng định nghĩa phiên bản thứ hai để bao gồm mo_ta)
+CREATE TABLE HocPhan (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  ma_hoc_phan VARCHAR(50) NOT NULL UNIQUE,
+  ten_hoc_phan VARCHAR(255) NOT NULL,
+  so_tin_chi INT DEFAULT 3,
+  mo_ta TEXT,
+  khoa_id INT,
+  FOREIGN KEY (khoa_id) REFERENCES Khoa(id)
+);
+
+-- Lớp học phần
+CREATE TABLE LopHocPhan (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  ma_lop_hoc_phan VARCHAR(50) NOT NULL,
+  hoc_phan_id INT NOT NULL,
+  giang_vien_id INT NOT NULL,
+  lop_id INT NOT NULL,                     -- 🔹 lớp sinh viên học môn này
+  hoc_ky VARCHAR(20) DEFAULT 'HK1/2025',
+  nam_hoc VARCHAR(10) DEFAULT '2025-2026', -- 🔹 thêm năm học cho dễ lọc
+  trang_thai ENUM('Đang học','Đã kết thúc','Chưa mở') DEFAULT 'Đang học',
+  FOREIGN KEY (hoc_phan_id) REFERENCES HocPhan(id),
+  FOREIGN KEY (giang_vien_id) REFERENCES GiangVien(id),
+  FOREIGN KEY (lop_id) REFERENCES Lop(id)
+);
+
+-- Lịch học
+CREATE TABLE LichHoc (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  lop_hoc_phan_id INT NOT NULL,
+  thu INT NOT NULL,                         -- Thứ trong tuần (2-8)
+  ca ENUM('sáng','chiều','tối') NOT NULL,
+  tiet_bat_dau INT NOT NULL,
+  tiet_ket_thuc INT NOT NULL,
+  phong VARCHAR(50),
+  co_so VARCHAR(50),
+  ngay_hoc DATE NULL,                       -- 🔹 nếu có ngày học cụ thể
+  loai ENUM('lythuyet','thuchanh','tructuyen','thi') DEFAULT 'lythuyet',
+  ghi_chu VARCHAR(255) NULL,
+  FOREIGN KEY (lop_hoc_phan_id) REFERENCES LopHocPhan(id)
 );
 
 -- Kết quả học tập
@@ -132,14 +179,6 @@ CREATE TABLE HocPhi (
     FOREIGN KEY (hoc_phan_id) REFERENCES HocPhan(id)
 );
 
--- Thông báo
-CREATE TABLE ThongBao (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    tieu_de VARCHAR(200) NOT NULL,
-    noi_dung TEXT,
-    ngay_gui TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-
 -- Trạng thái đọc thông báo
 CREATE TABLE ThongBao_DaDoc (
     id INT AUTO_INCREMENT PRIMARY KEY,
@@ -173,15 +212,6 @@ CREATE TABLE RenLuyen (
     FOREIGN KEY (sinh_vien_id) REFERENCES SinhVien(id)
 );
 
--- Hoạt động ngoại khóa
-CREATE TABLE HoatDongNgoaiKhoa (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    ten_hoat_dong VARCHAR(100) NOT NULL,
-    ngay_to_chuc DATE,
-    dia_diem VARCHAR(100),
-    mo_ta TEXT
-);
-
 -- Sinh viên tham gia hoạt động ngoại khóa
 CREATE TABLE ThamGiaHoatDong (
     id INT AUTO_INCREMENT PRIMARY KEY,
@@ -204,8 +234,32 @@ CREATE TABLE YeuCauTuVan (
     FOREIGN KEY (co_van_id) REFERENCES GiangVien(id)
 );
 
-USE QuanLySinhVien;
+-- Áp dụng các ALTER TABLE
+ALTER TABLE LopHocPhan
+ADD COLUMN ngay_bat_dau DATE NULL,
+ADD COLUMN ngay_ket_thuc DATE NULL,
+ADD COLUMN so_tuan_hoc INT DEFAULT 15;
 
+ALTER TABLE Nganh
+ADD COLUMN ma_nganh VARCHAR(20) AFTER id;
+
+ALTER TABLE HocPhan
+ADD COLUMN nganh_id INT AFTER khoa_id,
+ADD FOREIGN KEY (nganh_id) REFERENCES Nganh(id);
+
+ALTER TABLE GiangVien
+  ADD COLUMN ngay_sinh DATE NULL AFTER ho_ten,
+  ADD COLUMN gioi_tinh ENUM('Nam','Nữ','Khác') NULL AFTER ngay_sinh,
+  ADD COLUMN dia_chi VARCHAR(255) NULL AFTER gioi_tinh,
+  ADD COLUMN anh_the VARCHAR(255) NULL AFTER dia_chi,
+  ADD COLUMN hoc_vi VARCHAR(50) NULL AFTER anh_the,          -- Thạc sĩ / Tiến sĩ / Cử nhân
+  ADD COLUMN chuc_vu VARCHAR(100) NULL AFTER hoc_vi,         -- Ví dụ: Trưởng khoa, Giảng viên
+  ADD COLUMN nganh_id INT NULL AFTER khoa_id,
+  ADD COLUMN lop_id INT NULL AFTER nganh_id,
+  ADD FOREIGN KEY (nganh_id) REFERENCES Nganh(id),
+  ADD FOREIGN KEY (lop_id) REFERENCES Lop(id);
+
+-- Bây giờ INSERT dữ liệu (merge và điều chỉnh để tránh xung đột, sử dụng tên trường nhất quán từ định nghĩa cuối)
 -- 1. Tài khoản mẫu
 INSERT INTO TaiKhoan (username, password_hash, role, trang_thai) VALUES
 ('admin01', '123456', 'Quản trị', 'Hoạt động'),
@@ -239,9 +293,9 @@ INSERT INTO SinhVien (ma_sv, ho_ten, ngay_sinh, gioi_tinh, email, so_dien_thoai,
 VALUES
 ('SV001', 'Trần Thị B', '2003-05-12', 'Nữ', 'ttb@iuh.edu.vn', '0912345678', '123 Lê Lợi, Q.1, TP.HCM', 'anh_sv001.jpg', 'K47', 1, 1, 1, 1, 3);
 
--- 7. Học phần
-INSERT INTO HocPhan (ma_hp, ten_hp, so_tin_chi, khoa_id) VALUES
-('HP001', 'Lập trình Java', 3, 1),
+-- 7. Học phần (merge: sử dụng tên mới cho HP001 từ phần sau, thêm HP002 và HP003 từ phần đầu)
+INSERT INTO HocPhan (ma_hoc_phan, ten_hoc_phan, so_tin_chi, khoa_id) VALUES
+('HP001', 'Lập trình WWW (Java)', 3, 1),
 ('HP002', 'Cơ sở dữ liệu', 3, 1),
 ('HP003', 'Kinh tế vi mô', 2, 2);
 
@@ -290,89 +344,19 @@ INSERT INTO ThamGiaHoatDong (sinh_vien_id, hoat_dong_id, vai_tro) VALUES
 INSERT INTO YeuCauTuVan (sinh_vien_id, co_van_id, noi_dung, trang_thai) VALUES
 (1, 1, 'Em muốn được tư vấn về kế hoạch học tập.', 'Chờ phản hồi');
 
-
-CREATE TABLE HocPhan (
-  id INT AUTO_INCREMENT PRIMARY KEY,
-  ma_hoc_phan VARCHAR(50) NOT NULL UNIQUE,
-  ten_hoc_phan VARCHAR(255) NOT NULL,
-  so_tin_chi INT DEFAULT 3,
-  mo_ta TEXT,
-  khoa_id INT,
-  FOREIGN KEY (khoa_id) REFERENCES Khoa(id)
-);
-
-
-CREATE TABLE LopHocPhan (
-  id INT AUTO_INCREMENT PRIMARY KEY,
-  ma_lop_hoc_phan VARCHAR(50) NOT NULL,
-  hoc_phan_id INT NOT NULL,
-  giang_vien_id INT NOT NULL,
-  lop_id INT NOT NULL,                     -- 🔹 lớp sinh viên học môn này
-  hoc_ky VARCHAR(20) DEFAULT 'HK1/2025',
-  nam_hoc VARCHAR(10) DEFAULT '2025-2026', -- 🔹 thêm năm học cho dễ lọc
-  trang_thai ENUM('Đang học','Đã kết thúc','Chưa mở') DEFAULT 'Đang học',
-  FOREIGN KEY (hoc_phan_id) REFERENCES HocPhan(id),
-  FOREIGN KEY (giang_vien_id) REFERENCES GiangVien(id),
-  FOREIGN KEY (lop_id) REFERENCES Lop(id)
-  
-);
--- Bảng lịch học
-
-CREATE TABLE LichHoc (
-  id INT AUTO_INCREMENT PRIMARY KEY,
-  lop_hoc_phan_id INT NOT NULL,
-  thu INT NOT NULL,                         -- Thứ trong tuần (2-8)
-  ca ENUM('sáng','chiều','tối') NOT NULL,
-  tiet_bat_dau INT NOT NULL,
-  tiet_ket_thuc INT NOT NULL,
-  phong VARCHAR(50),
-  co_so VARCHAR(50),
-  ngay_hoc DATE NULL,                       -- 🔹 nếu có ngày học cụ thể
-  loai ENUM('lythuyet','thuchanh','tructuyen','thi') DEFAULT 'lythuyet',
-  ghi_chu VARCHAR(255) NULL,
-  FOREIGN KEY (lop_hoc_phan_id) REFERENCES LopHocPhan(id)
-);
-
--- Môn học
-INSERT INTO HocPhan (ma_hoc_phan, ten_hoc_phan, so_tin_chi, khoa_id)
-VALUES ('HP001', 'Lập trình WWW (Java)', 3, 1);
-
--- Lớp học phần cho lớp CNTT01
+-- INSERT cho lớp học phần
 INSERT INTO LopHocPhan (ma_lop_hoc_phan, hoc_phan_id, giang_vien_id, lop_id, hoc_ky, nam_hoc)
 VALUES ('DHKTPM18BTT', 1, 1, 1, 'HK1', '2025-2026');
 
 -- Lịch học cụ thể
 INSERT INTO LichHoc (lop_hoc_phan_id, thu, ca, tiet_bat_dau, tiet_ket_thuc, phong, co_so, loai)
 VALUES
-(2, 2, 'sáng', 1, 3, 'V7.02', 'Cơ sở 1', 'lythuyet'),
-(2, 4, 'chiều', 7, 9, 'H8.03', 'Cơ sở 1', 'thuchanh');
+(1, 2, 'sáng', 1, 3, 'V7.02', 'Cơ sở 1', 'lythuyet'),
+(1, 4, 'chiều', 7, 9, 'H8.03', 'Cơ sở 1', 'thuchanh');
 
-
-
-ALTER TABLE LopHocPhan
-ADD COLUMN ngay_bat_dau DATE NULL,
-ADD COLUMN ngay_ket_thuc DATE NULL,
-ADD COLUMN so_tuan_hoc INT DEFAULT 15;
-
+-- UPDATE cho LopHocPhan
 UPDATE LopHocPhan
 SET ngay_bat_dau = '2025-09-15', ngay_ket_thuc = '2025-12-30', so_tuan_hoc = 15
 WHERE id = 1;
-ALTER TABLE Nganh
-ADD COLUMN ma_nganh VARCHAR(20) AFTER id;
 
-ALTER TABLE HocPhan
-ADD COLUMN nganh_id INT AFTER khoa_id,
-ADD FOREIGN KEY (nganh_id) REFERENCES Nganh(id);
-
-
-ALTER TABLE GiangVien
-  ADD COLUMN ngay_sinh DATE NULL AFTER ho_ten,
-  ADD COLUMN gioi_tinh ENUM('Nam','Nữ','Khác') NULL AFTER ngay_sinh,
-  ADD COLUMN dia_chi VARCHAR(255) NULL AFTER gioi_tinh,
-  ADD COLUMN anh_the VARCHAR(255) NULL AFTER dia_chi,
-  ADD COLUMN hoc_vi VARCHAR(50) NULL AFTER anh_the,          -- Thạc sĩ / Tiến sĩ / Cử nhân
-  ADD COLUMN chuc_vu VARCHAR(100) NULL AFTER hoc_vi,         -- Ví dụ: Trưởng khoa, Giảng viên
-  ADD COLUMN nganh_id INT NULL AFTER khoa_id,
-  ADD COLUMN lop_id INT NULL AFTER nganh_id,
-  ADD FOREIGN KEY (nganh_id) REFERENCES Nganh(id),
-  ADD FOREIGN KEY (lop_id) REFERENCES Lop(id);
+ALTER TABLE TaiKhoan ADD COLUMN ho_ten VARCHAR(100);

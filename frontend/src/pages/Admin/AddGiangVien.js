@@ -17,6 +17,7 @@ export default function AddGiangVien() {
     nganh_id: '',
     lop_id: '',
     chuc_vu: '',
+    hoc_vi: 'Cử nhân', // 🆕 thêm trường học vị
     anh_the: ''
   })
 
@@ -107,6 +108,17 @@ export default function AddGiangVien() {
               <label className="form-label">Số điện thoại</label>
               <input className="form-control" value={form.so_dien_thoai} onChange={update('so_dien_thoai')} />
             </div>
+
+            {/* 🆕 Học vị */}
+            <div className="col-md-4">
+              <label className="form-label">Học vị *</label>
+              <select className="form-select" value={form.hoc_vi} onChange={update('hoc_vi')}>
+                <option value="Cử nhân">Cử nhân</option>
+                <option value="Thạc sĩ">Thạc sĩ</option>
+                <option value="Tiến sĩ">Tiến sĩ</option>
+              </select>
+            </div>
+
             <div className="col-md-4">
               <label className="form-label">Giới tính</label>
               <select className="form-select" value={form.gioi_tinh} onChange={update('gioi_tinh')}>

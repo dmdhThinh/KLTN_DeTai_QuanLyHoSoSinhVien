@@ -26,9 +26,11 @@ export async function getAll({ q = '', role = '' }) {
       tk.role,
       tk.trang_thai,
       CASE
-        WHEN tk.role = 'Giảng viên' THEN gv.ho_ten
-        WHEN tk.role = 'Sinh viên' THEN sv.ho_ten
-        ELSE 'Quản trị viên'
+        WHEN tk.role = 'Giảng viên' THEN 
+          COALESCE(gv.ho_ten, tk.ho_ten)
+        WHEN tk.role = 'Sinh viên' THEN 
+          COALESCE(sv.ho_ten, tk.ho_ten)
+        ELSE tk.ho_ten
       END AS hoTen
     FROM TaiKhoan tk
     LEFT JOIN GiangVien gv ON gv.tai_khoan_id = tk.id
@@ -42,14 +44,14 @@ export async function getAll({ q = '', role = '' }) {
   return rows
 }
 
-export async function createAccount({ username, password, role, trang_thai = 'Hoạt động' }) {
+export async function createAccount({ username, password, role, ho_ten = '', trang_thai = 'Hoạt động' }) {
   const passwordHash = await bcrypt.hash(password, 10)
   const [rs] = await pool.query(
-    `INSERT INTO TaiKhoan (username, password_hash, role, trang_thai)
-     VALUES (?, ?, ?, ?)`,
-    [username, passwordHash, role, trang_thai]
+    `INSERT INTO TaiKhoan (username, password_hash, role, ho_ten, trang_thai)
+     VALUES (?, ?, ?, ?, ?)`,
+    [username, passwordHash, role, ho_ten, trang_thai]
   )
-  return { id: rs.insertId }
+  return rs.insertId  // ✅ chỉ trả về ID số, không phải { id: ... }
 }
 
 export async function resetPassword(id) {
