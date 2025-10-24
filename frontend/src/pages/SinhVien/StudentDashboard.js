@@ -1,4 +1,3 @@
-// src/pages/SinhVien/StudentDashboard.js
 import React, { useEffect, useState } from 'react'
 import { getSinhVienById, getSinhVienId, apiFetch } from '../../api'
 import Header from '../../components/Header'
@@ -165,9 +164,16 @@ export default function StudentDashboard() {
             'Khảo sát',
           ].map((t) => (
             <button key={t} className="btn btn-outline-secondary rounded-3">
-              {t}
-            </button>
+      {t === 'Kết quả học tập' ? (
+        <a href="/diemso" style={{ textDecoration: 'none', color: 'inherit' }}>
+          {t}
+        </a>
+      ) : (
+        t
+      )}
+    </button>
           ))}
+          
         </div>
       </div>
     </div>

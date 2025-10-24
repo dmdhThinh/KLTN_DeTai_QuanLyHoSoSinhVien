@@ -228,7 +228,7 @@ export default function LopList() {
                             navigate(`/admin/lop/edit/${lop.id}`)
                           }
                         >
-                          ✏️ Sửa
+                           Sửa
                         </button>
                         <button
                           className="btn btn-sm btn-outline-danger"

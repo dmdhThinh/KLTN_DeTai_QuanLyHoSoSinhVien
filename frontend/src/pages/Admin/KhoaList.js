@@ -148,7 +148,7 @@ const handleSubmit = (e) => {
                             navigate(`/admin/khoa/edit/${khoa.id}`)
                           }
                         >
-                          ✏️ Sửa
+                           Sửa
                         </button>
                         <button
                           className="btn btn-sm btn-outline-danger"

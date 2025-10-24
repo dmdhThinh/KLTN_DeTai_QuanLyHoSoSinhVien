@@ -21,6 +21,7 @@ function Login() {
       const result = await loginApi(username, password)
       // Expecting { token, sinhVienId, giangVienId, role }
       saveAuth(result)
+      
       const normalize = (s) => (s || '').toLowerCase().normalize('NFD').replace(/\p{Diacritic}/gu, '')
       const role = normalize(result.role || '')
       if (role.includes('admin') || role.includes('quan tri')) {

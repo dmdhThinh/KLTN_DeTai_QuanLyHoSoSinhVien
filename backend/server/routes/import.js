@@ -1,4 +1,3 @@
-// server/routes/import.js
 import express from 'express'
 import { upload, importStudents, downloadTemplate } from '../controllers/importController.js'
 
