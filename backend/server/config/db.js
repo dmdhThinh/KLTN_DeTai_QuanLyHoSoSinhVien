@@ -13,3 +13,11 @@ export const pool = mysql.createPool({
   namedPlaceholders: true,
   timezone: 'Z'
 })
+pool.getConnection()
+  .then(conn => {
+    console.log('✅ Connected successfully!');
+    conn.release();
+  })
+  .catch(err => {
+    console.error('❌ Connection failed:', err.message);
+  });

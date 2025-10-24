@@ -84,6 +84,8 @@ export default function AddGiangVien() {
   return (
     <AdminLayout activeMenu="teachers" title="Thêm Giảng viên">
       {error && <div className="alert alert-danger text-center">{error}</div>}
+        <div className="d-flex justify-content-center">
+      <div className="card shadow-sm w-100" style={{ maxWidth: 1370 }}>
       <div className="card shadow-sm">
         <div className="card-body">
           <form className="row g-3" onSubmit={onSubmit}>
@@ -188,6 +190,8 @@ export default function AddGiangVien() {
             </div>
           </form>
         </div>
+      </div>
+      </div>
       </div>
     </AdminLayout>
   )

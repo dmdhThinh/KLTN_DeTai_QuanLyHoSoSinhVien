@@ -33,7 +33,7 @@ export async function getById(req, res) {
   }
 }
 
-// ✏️ Update
+//  Update
 export async function update(req, res) {
   const { id } = req.params
   const data = req.body

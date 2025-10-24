@@ -52,7 +52,7 @@ export async function getHocPhanById(id) {
   }
 }
 
-// ✏️ UPDATE
+//  UPDATE
 export async function updateHocPhan(id, data) {
   const { maHocPhan, tenHocPhan, soTinChi, moTa, khoaId } = data
   try {

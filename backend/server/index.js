@@ -1,13 +1,9 @@
-// server/index.js
 import express from 'express'
 import cors from 'cors'
 import dotenv from 'dotenv'
 import authRoutes from './routes/auth.js'
 import sinhvienRoutes from './routes/sinhVien.js'
 import giangvienRoutes from './routes/giangVien.js'
-import importGiangVienRoutes from './routes/importGiangVien.js'
-import taiKhoanRoutes from './routes/taiKhoan.js'
-
 import importRoutes from './routes/import.js'
 import lichRoutes from './routes/lich.js'
 
@@ -20,6 +16,9 @@ import lophocphanRoutes from './routes/lopHocPhan.js'
 
 import hocphanRoutes from './routes/hocphan.js'
 
+import importGiangVienRoutes from './routes/importGiangVien.js'
+import taiKhoanRoutes from './routes/taiKhoan.js'
+import ketQuaHocTapRoutes from './routes/ketQuaHocTap.js';
 import path from 'path'
 
 dotenv.config()
@@ -42,7 +41,9 @@ app.use('/api/lop', lopRoutes)
 
 app.use('/api/lich-admin', lichAdminRoutes)
 app.use('/api/lophocphan', lophocphanRoutes)
-app.use('/api/hocphan', hocphanRoutes)
+app.use('/api/hocphan', hocphanRoutes)      
+
+app.use('/api/ketquahoctap', ketQuaHocTapRoutes);
 
 // ✅ Public folder cho ảnh thẻ
 app.use('/uploads', express.static(path.resolve('uploads')))

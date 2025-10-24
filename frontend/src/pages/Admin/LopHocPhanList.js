@@ -287,7 +287,7 @@ export default function LopHocPhanList() {
                           className="btn btn-sm btn-outline-secondary me-2"
                           onClick={() => navigate(`/admin/lophocphan/edit/${lop.id}`)}
                         >
-                          ✏️ Sửa
+                           Sửa
                         </button>
                         <button
                           className="btn btn-sm btn-outline-danger"

@@ -159,7 +159,7 @@ export default function NganhList() {
                           className="btn btn-sm btn-outline-secondary me-2"
                           onClick={() => navigate(`/admin/nganh/edit/${nganh.id}`)}
                         >
-                          ✏️ Sửa
+                           Sửa
                         </button>
                         <button
                           className="btn btn-sm btn-outline-danger"

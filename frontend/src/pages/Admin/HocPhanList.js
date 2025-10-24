@@ -238,7 +238,7 @@ export default function HocPhanList() {
                           className="btn btn-sm btn-outline-secondary me-2"
                           onClick={() => navigate(`/admin/hocphan/edit/${hp.id}`, { state: hp })}
                         >
-                          ✏️ Sửa
+                           Sửa
                         </button>
                         <button
                           className="btn btn-sm btn-outline-danger"
