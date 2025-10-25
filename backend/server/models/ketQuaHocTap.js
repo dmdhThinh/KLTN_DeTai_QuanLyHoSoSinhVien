@@ -101,27 +101,66 @@ export async function deleteKetQuaHocTap(id) {
 
 // 📤 Nhập điểm từ file Excel
 export async function importGrades(grades) {
+  const conn = await pool.getConnection();
   try {
-    const query = `
+    await conn.beginTransaction();
+
+    const sql = `
       INSERT INTO KetQuaHocTap (
-        sinh_vien_id, hoc_phan_id, diem_ly_thuyet_1, diem_ly_thuyet_2,
-        diem_thuc_hanh_1, diem_thuc_hanh_2, diem_giua_ky, diem_cuoi_ky,
-        diem_tong_ket, diem_chu, hoc_luc, xep_loai, dat, diem_thang_4
-      ) VALUES ?
+        sinh_vien_id, hoc_phan_id,
+        diem_ly_thuyet_1, diem_ly_thuyet_2, diem_ly_thuyet_3, diem_ly_thuyet_4,
+        diem_thuc_hanh_1, diem_thuc_hanh_2, diem_thuc_hanh_3,
+        diem_giua_ky, diem_cuoi_ky,
+        diem_tong_ket, diem_chu, hoc_luc, xep_loai, dat, diem_thang_4,
+        nam_hoc, hoc_ky
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      ON DUPLICATE KEY UPDATE
+        diem_ly_thuyet_1 = COALESCE(VALUES(diem_ly_thuyet_1), diem_ly_thuyet_1),
+        diem_ly_thuyet_2 = COALESCE(VALUES(diem_ly_thuyet_2), diem_ly_thuyet_2),
+        diem_ly_thuyet_3 = COALESCE(VALUES(diem_ly_thuyet_3), diem_ly_thuyet_3),
+        diem_ly_thuyet_4 = COALESCE(VALUES(diem_ly_thuyet_4), diem_ly_thuyet_4),
+        diem_thuc_hanh_1 = COALESCE(VALUES(diem_thuc_hanh_1), diem_thuc_hanh_1),
+        diem_thuc_hanh_2 = COALESCE(VALUES(diem_thuc_hanh_2), diem_thuc_hanh_2),
+        diem_thuc_hanh_3 = COALESCE(VALUES(diem_thuc_hanh_3), diem_thuc_hanh_3),
+        diem_giua_ky     = COALESCE(VALUES(diem_giua_ky),     diem_giua_ky),
+        diem_cuoi_ky     = COALESCE(VALUES(diem_cuoi_ky),     diem_cuoi_ky),
+        -- cập nhật các cột tính toán khi có điểm cuối kỳ
+        diem_tong_ket = COALESCE(VALUES(diem_tong_ket), diem_tong_ket),
+        diem_chu      = COALESCE(VALUES(diem_chu),      diem_chu),
+        hoc_luc       = COALESCE(VALUES(hoc_luc),       hoc_luc),
+        xep_loai      = COALESCE(VALUES(xep_loai),      xep_loai),
+        dat           = COALESCE(VALUES(dat),           dat),
+        diem_thang_4  = COALESCE(VALUES(diem_thang_4),  diem_thang_4)
     `;
-    const values = grades.map(g => [
-      g.sinh_vien_id, g.hoc_phan_id,
-      g.diem_ly_thuyet_1, g.diem_ly_thuyet_2,
-      g.diem_thuc_hanh_1, g.diem_thuc_hanh_2,
-      g.diem_giua_ky, g.diem_cuoi_ky,
-      g.diem_tong_ket, g.diem_chu, g.hoc_luc, g.xep_loai, g.dat, g.diem_thang_4
-    ]);
-    await pool.query(query, [values]);
+
+    for (const g of grades) {
+      // ✅ Đặt mặc định năm học / học kỳ NGAY TRONG VÒNG LẶP
+      const namHoc = g.nam_hoc ?? '2025-2026';
+      const hocKy = g.hoc_ky ?? 'HK1';
+
+      const vals = [
+        g.sinh_vien_id, g.hoc_phan_id,
+        g.diem_ly_thuyet_1 ?? null, g.diem_ly_thuyet_2 ?? null, g.diem_ly_thuyet_3 ?? null, g.diem_ly_thuyet_4 ?? null,
+        g.diem_thuc_hanh_1 ?? null, g.diem_thuc_hanh_2 ?? null, g.diem_thuc_hanh_3 ?? null,
+        g.diem_giua_ky ?? null, g.diem_cuoi_ky ?? null,
+        g.diem_tong_ket ?? null, g.diem_chu ?? null, g.hoc_luc ?? null, g.xep_loai ?? null, g.dat ?? null, g.diem_thang_4 ?? null,
+        namHoc, hocKy
+      ];
+
+      await conn.execute(sql, vals);
+    }
+
+    await conn.commit();
   } catch (err) {
-    console.error('❌ Lỗi khi import điểm từ Excel:', err);
+    await conn.rollback();
+    console.error('❌ importGrades upsert error:', err);
     throw err;
+  } finally {
+    conn.release();
   }
 }
+
+
 
 // 📚 Lấy điểm theo sinh viên
 export async function getKetQuaHocTapBySinhVienId(sinhVienId) {

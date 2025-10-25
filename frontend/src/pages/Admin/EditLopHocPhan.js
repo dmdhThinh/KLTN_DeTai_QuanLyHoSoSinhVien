@@ -67,7 +67,7 @@ export default function EditLopHocPhan() {
       setNganhs(nganhData)
       setLops(lopData)
       setHocPhans(hocPhanData)
-      setGiangViens(gvData)
+      setGiangViens(gvData.data || []);
 
       setForm({
         maLopHocPhan: lhpData.ma_lop_hoc_phan || lhpData.maLopHocPhan || '',
@@ -216,18 +216,22 @@ export default function EditLopHocPhan() {
 
               {/* Giảng viên */}
               <div className="col-md-4">
-                <label className="form-label">Giảng viên *</label>
-                <select
-                  className="form-select"
-                  value={form.giangVienId}
-                  onChange={(e) => handleChange('giangVienId', e.target.value)}
-                >
-                  <option value="">-- Chọn giảng viên --</option>
-                  {giangViens.map(gv => (
-                    <option key={gv.id} value={gv.id}>{gv.hoTen || gv.ho_ten}</option>
-                  ))}
-                </select>
-              </div>
+  <label className="form-label">Giảng viên *</label>
+  <select
+    className="form-select"
+    value={form.giangVienId}
+    onChange={(e) => handleChange('giangVienId', e.target.value)}
+  >
+    <option value="">-- Chọn giảng viên --</option>
+    {Array.isArray(giangViens) && giangViens.length > 0 ? (
+      giangViens.map(gv => (
+        <option key={gv.id} value={gv.id}>{gv.hoTen || gv.ho_ten}</option>
+      ))
+    ) : (
+      <option value="" disabled>Không có giảng viên</option>
+    )}
+  </select>
+</div>
 
               {/* Ngày bắt đầu / kết thúc / số tuần */}
               <div className="col-md-4">

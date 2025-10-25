@@ -32,11 +32,14 @@ export default function AddLich() {
   }, [])
 
   // 🔹 Tải danh sách giảng viên
-  useEffect(() => {
-    apiFetch('/api/giangviens')
-      .then((data) => setGiangViens(data || []))
-      .catch((err) => console.error('❌ Lỗi tải giảng viên:', err))
-  }, [])
+useEffect(() => {
+  apiFetch('/api/giangviens')
+    .then((response) => setGiangViens(response.data || [])) // Extract the 'data' array
+    .catch((err) => {
+      console.error('❌ Lỗi tải giảng viên:', err);
+      setGiangViens([]); // Fallback to empty array on error
+    });
+}, []);
 
   // 🔹 Khi chọn lớp học phần → tải lịch hiện có để kiểm tra trùng
   useEffect(() => {
@@ -144,22 +147,26 @@ export default function AddLich() {
 
             {/* Giảng viên */}
             <div>
-              <label className="form-label">Giảng viên phụ trách</label>
-              <select
-                className="form-select"
-                name="giang_vien_id"
-                value={lich.giang_vien_id}
-                onChange={handleChange}
-                required
-              >
-                <option value="">-- Chọn giảng viên --</option>
-                {giangViens.map((gv) => (
-                  <option key={gv.id} value={gv.id}>
-                    {gv.ho_ten}
-                  </option>
-                ))}
-              </select>
-            </div>
+  <label className="form-label">Giảng viên phụ trách</label>
+  <select
+    className="form-select"
+    name="giang_vien_id"
+    value={lich.giang_vien_id}
+    onChange={handleChange}
+    required
+  >
+    <option value="">-- Chọn giảng viên --</option>
+    {Array.isArray(giangViens) && giangViens.length > 0 ? (
+      giangViens.map((gv) => (
+        <option key={gv.id} value={gv.id}>
+          {gv.hoTen || gv.ho_ten}
+        </option>
+      ))
+    ) : (
+      <option value="" disabled>Không có giảng viên</option>
+    )}
+  </select>
+</div>
 
             {/* Thứ */}
             <div>

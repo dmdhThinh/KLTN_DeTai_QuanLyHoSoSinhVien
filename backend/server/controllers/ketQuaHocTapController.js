@@ -1,6 +1,7 @@
 import * as KetQuaHocTapModel from '../models/ketQuaHocTap.js';
-import * as xlsx from 'xlsx';
-
+import XLSX from "xlsx";
+import fs from "fs";
+import { pool } from "../config/db.js";
 // 🧮 Hàm tính điểm tổng kết IUH
 function tinhDiemTongKetIUH(data) {
   const toNum = v => (v === undefined || v === null || v === '' ? null : Number(v));
@@ -136,30 +137,61 @@ export async function deleteGrade(req, res) {
 
 // 📤 Nhập điểm từ file Excel (tự tính và lưu)
 export async function importGrades(req, res) {
-  if (!req.file) {
-    return res.status(400).json({ message: 'Không có file Excel được tải lên' });
-  }
+  if (!req.file) return res.status(400).json({ message: "Không có file Excel được tải lên" });
+
   try {
-    const workbook = xlsx.readFile(req.file.path);
+    const buffer = fs.readFileSync(req.file.path);
+    const workbook = XLSX.read(buffer, { type: "buffer" }); // ✅ dùng read() thay vì readFile()
     const sheetName = workbook.SheetNames[0];
     const sheet = workbook.Sheets[sheetName];
-    const data = xlsx.utils.sheet_to_json(sheet);
+    const rows = XLSX.utils.sheet_to_json(sheet);
 
-    const grades = data.map(row => ({
-      sinh_vien_id: row['Mã sinh viên'],
-      hoc_phan_id: row['Mã học phần'],
-      diem_giua_ky: row['Giữa kỳ'],
-      diem_cuoi_ky: row['Cuối kỳ'],
-      diem_ly_thuyet_1: row['TX1'],
-      diem_ly_thuyet_2: row['TX2'],
-      diem_thuc_hanh_1: row['TH1'],
-      diem_thuc_hanh_2: row['TH2'],
-      diem_thuc_hanh_3: row['TH3'],
-    })).map(item => ({ ...item, ...tinhDiemTongKetIUH(item) }));
+    // Chuẩn hóa & ánh xạ đồng loạt
+    const grades = [];
+    for (const r of rows) {
+      const maSV = r['Mã sinh viên'] ?? r['Ma sinh vien'] ?? r['ma_sv'];
+      const maHP = r['Mã học phần'] ?? r['Ma hoc phan'] ?? r['ma_hp'];
+
+      const sinh_vien_id = await getSinhVienIdByMa(String(maSV).trim());
+      const hoc_phan_id  = await getHocPhanIdByMa(String(maHP).trim());
+      if (!sinh_vien_id || !hoc_phan_id) continue; // bỏ dòng không hợp lệ
+
+      const v = (x) => (x === '' || x === undefined || x === null ? null : Number(x));
+
+      const item = {
+        sinh_vien_id,
+        hoc_phan_id,
+        diem_ly_thuyet_1: v(r['TX1']),
+        diem_ly_thuyet_2: v(r['TX2']),
+        diem_ly_thuyet_3: v(r['TX3']),
+        diem_ly_thuyet_4: v(r['TX4']),
+        diem_thuc_hanh_1: v(r['TH1']),
+        diem_thuc_hanh_2: v(r['TH2']),
+        diem_thuc_hanh_3: v(r['TH3']),
+        diem_giua_ky:     v(r['Giữa kỳ'] ?? r['Giua ky']),
+        diem_cuoi_ky:     v(r['Cuối kỳ'] ?? r['Cuoi ky']),
+      };
+
+      // CHỈ tính khi có điểm cuối kỳ
+      if (item.diem_cuoi_ky !== null) {
+        Object.assign(item, tinhDiemTongKetIUH(item));
+      }
+      grades.push(item);
+    }
 
     await KetQuaHocTapModel.importGrades(grades);
-    res.status(200).json({ message: 'Điểm đã được nhập và tính tự động từ file Excel' });
+    res.status(200).json({ message: 'Điểm đã được nhập (và tự tính nếu có "Cuối kỳ").' });
   } catch (err) {
     res.status(500).json({ message: 'Lỗi khi nhập điểm từ file Excel', error: err.message });
   }
+  fs.unlinkSync(req.file.path);
+}
+// tra cứu ID từ mã
+async function getSinhVienIdByMa(ma) {
+  const [rows] = await pool.execute('SELECT id FROM SinhVien WHERE ma_sv = ?', [ma]);
+  return rows[0]?.id || null;
+}
+async function getHocPhanIdByMa(ma) {
+  const [rows] = await pool.execute('SELECT id FROM HocPhan WHERE ma_hoc_phan = ?', [ma]);
+  return rows[0]?.id || null;
 }

@@ -1,363 +1,698 @@
-USE QuanLySinhVien;
+CREATE DATABASE  IF NOT EXISTS `quanlysinhvien` /*!40100 DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci */ /*!80016 DEFAULT ENCRYPTION='N' */;
+USE `quanlysinhvien`;
+-- MySQL dump 10.13  Distrib 8.0.43, for Win64 (x86_64)
+--
+-- Host: quanlysinhvien.chwga2g2s4mx.ap-southeast-1.rds.amazonaws.com    Database: quanlysinhvien
+-- ------------------------------------------------------
+-- Server version	8.0.42
 
--- Tài khoản
-CREATE TABLE TaiKhoan (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    username VARCHAR(50) UNIQUE NOT NULL,
-    password_hash VARCHAR(255) NOT NULL,
-    role ENUM('Sinh viên','Giảng viên','Quản trị') NOT NULL,
-    trang_thai ENUM('Hoạt động','Ngừng hoạt động') DEFAULT 'Hoạt động'
-);
+/*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
+/*!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS */;
+/*!40101 SET @OLD_COLLATION_CONNECTION=@@COLLATION_CONNECTION */;
+/*!50503 SET NAMES utf8 */;
+/*!40103 SET @OLD_TIME_ZONE=@@TIME_ZONE */;
+/*!40103 SET TIME_ZONE='+00:00' */;
+/*!40014 SET @OLD_UNIQUE_CHECKS=@@UNIQUE_CHECKS, UNIQUE_CHECKS=0 */;
+/*!40014 SET @OLD_FOREIGN_KEY_CHECKS=@@FOREIGN_KEY_CHECKS, FOREIGN_KEY_CHECKS=0 */;
+/*!40101 SET @OLD_SQL_MODE=@@SQL_MODE, SQL_MODE='NO_AUTO_VALUE_ON_ZERO' */;
+/*!40111 SET @OLD_SQL_NOTES=@@SQL_NOTES, SQL_NOTES=0 */;
+SET @MYSQLDUMP_TEMP_LOG_BIN = @@SESSION.SQL_LOG_BIN;
+SET @@SESSION.SQL_LOG_BIN= 0;
 
--- Khoa
-CREATE TABLE Khoa (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    ten_khoa VARCHAR(100) NOT NULL
-);
+--
+-- GTID state at the beginning of the backup 
+--
 
--- Ngành
-CREATE TABLE Nganh (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    ten_nganh VARCHAR(100) NOT NULL,
-    khoa_id INT,
-    FOREIGN KEY (khoa_id) REFERENCES Khoa(id)
-);
+SET @@GLOBAL.GTID_PURGED=/*!80000 '+'*/ '';
 
--- Lớp
-CREATE TABLE Lop (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    ten_lop VARCHAR(50) NOT NULL,
-    khoa_id INT,
-    nganh_id INT,
-    FOREIGN KEY (khoa_id) REFERENCES Khoa(id),
-    FOREIGN KEY (nganh_id) REFERENCES Nganh(id)
-);
+--
+-- Table structure for table `DangKyHocPhan`
+--
 
--- Giảng viên (cố vấn học tập)
-CREATE TABLE GiangVien (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    ma_gv VARCHAR(20) UNIQUE NOT NULL,
-    ho_ten VARCHAR(100) NOT NULL,
-    email VARCHAR(100),
-    so_dien_thoai VARCHAR(20),
-    khoa_id INT,
-    tai_khoan_id INT UNIQUE,
-    FOREIGN KEY (khoa_id) REFERENCES Khoa(id),
-    FOREIGN KEY (tai_khoan_id) REFERENCES TaiKhoan(id)
-);
+DROP TABLE IF EXISTS `DangKyHocPhan`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `DangKyHocPhan` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `sinh_vien_id` int DEFAULT NULL,
+  `hoc_phan_id` int DEFAULT NULL,
+  `hoc_ky` varchar(20) DEFAULT NULL,
+  `nam_hoc` varchar(10) DEFAULT NULL,
+  `trang_thai` enum('Thành công','Thất bại') DEFAULT 'Thành công',
+  PRIMARY KEY (`id`),
+  KEY `sinh_vien_id` (`sinh_vien_id`),
+  KEY `hoc_phan_id` (`hoc_phan_id`),
+  CONSTRAINT `DangKyHocPhan_ibfk_1` FOREIGN KEY (`sinh_vien_id`) REFERENCES `SinhVien` (`id`),
+  CONSTRAINT `DangKyHocPhan_ibfk_2` FOREIGN KEY (`hoc_phan_id`) REFERENCES `HocPhan` (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
 
--- Sinh viên
-CREATE TABLE SinhVien (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    ma_sv VARCHAR(20) UNIQUE NOT NULL,
-    ho_ten VARCHAR(100) NOT NULL,
-    ngay_sinh DATE,
-    gioi_tinh ENUM('Nam','Nữ','Khác'),
-    email VARCHAR(100),
-    so_dien_thoai VARCHAR(20),
-    dia_chi TEXT,
-    anh_the VARCHAR(255), -- ảnh thẻ
-    khoa_hoc VARCHAR(10), -- ví dụ: K47
-    khoa_id INT,
-    nganh_id INT,
-    lop_id INT,
-    co_van_id INT,
-    tai_khoan_id INT UNIQUE,
-    FOREIGN KEY (khoa_id) REFERENCES Khoa(id),
-    FOREIGN KEY (nganh_id) REFERENCES Nganh(id),
-    FOREIGN KEY (lop_id) REFERENCES Lop(id),
-    FOREIGN KEY (co_van_id) REFERENCES GiangVien(id),
-    FOREIGN KEY (tai_khoan_id) REFERENCES TaiKhoan(id)
-);
+--
+-- Dumping data for table `DangKyHocPhan`
+--
 
--- Thông báo
-CREATE TABLE ThongBao (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    tieu_de VARCHAR(200) NOT NULL,
-    noi_dung TEXT,
-    ngay_gui TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
+LOCK TABLES `DangKyHocPhan` WRITE;
+/*!40000 ALTER TABLE `DangKyHocPhan` DISABLE KEYS */;
+INSERT INTO `DangKyHocPhan` VALUES (1,1,1,'HK1','2025-2026','Thành công'),(2,1,2,'HK1','2025-2026','Thành công');
+/*!40000 ALTER TABLE `DangKyHocPhan` ENABLE KEYS */;
+UNLOCK TABLES;
 
--- Hoạt động ngoại khóa
-CREATE TABLE HoatDongNgoaiKhoa (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    ten_hoat_dong VARCHAR(100) NOT NULL,
-    ngay_to_chuc DATE,
-    dia_diem VARCHAR(100),
-    mo_ta TEXT
-);
+--
+-- Table structure for table `GiangVien`
+--
 
--- Học phần (sử dụng định nghĩa phiên bản thứ hai để bao gồm mo_ta)
-CREATE TABLE HocPhan (
-  id INT AUTO_INCREMENT PRIMARY KEY,
-  ma_hoc_phan VARCHAR(50) NOT NULL UNIQUE,
-  ten_hoc_phan VARCHAR(255) NOT NULL,
-  so_tin_chi INT DEFAULT 3,
-  mo_ta TEXT,
-  khoa_id INT,
-  FOREIGN KEY (khoa_id) REFERENCES Khoa(id)
-);
+DROP TABLE IF EXISTS `GiangVien`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `GiangVien` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `ma_gv` varchar(20) NOT NULL,
+  `ho_ten` varchar(100) NOT NULL,
+  `ngay_sinh` date DEFAULT NULL,
+  `gioi_tinh` enum('Nam','Nữ','Khác') DEFAULT NULL,
+  `dia_chi` varchar(255) DEFAULT NULL,
+  `anh_the` varchar(255) DEFAULT NULL,
+  `hoc_vi` varchar(50) DEFAULT NULL,
+  `chuc_vu` varchar(100) DEFAULT NULL,
+  `email` varchar(100) DEFAULT NULL,
+  `so_dien_thoai` varchar(20) DEFAULT NULL,
+  `khoa_id` int DEFAULT NULL,
+  `nganh_id` int DEFAULT NULL,
+  `lop_id` int DEFAULT NULL,
+  `tai_khoan_id` int DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `ma_gv` (`ma_gv`),
+  UNIQUE KEY `tai_khoan_id` (`tai_khoan_id`),
+  KEY `khoa_id` (`khoa_id`),
+  KEY `nganh_id` (`nganh_id`),
+  KEY `lop_id` (`lop_id`),
+  CONSTRAINT `GiangVien_ibfk_1` FOREIGN KEY (`khoa_id`) REFERENCES `Khoa` (`id`),
+  CONSTRAINT `GiangVien_ibfk_2` FOREIGN KEY (`tai_khoan_id`) REFERENCES `TaiKhoan` (`id`),
+  CONSTRAINT `GiangVien_ibfk_3` FOREIGN KEY (`nganh_id`) REFERENCES `Nganh` (`id`),
+  CONSTRAINT `GiangVien_ibfk_4` FOREIGN KEY (`lop_id`) REFERENCES `Lop` (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=37 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
 
--- Lớp học phần
-CREATE TABLE LopHocPhan (
-  id INT AUTO_INCREMENT PRIMARY KEY,
-  ma_lop_hoc_phan VARCHAR(50) NOT NULL,
-  hoc_phan_id INT NOT NULL,
-  giang_vien_id INT NOT NULL,
-  lop_id INT NOT NULL,                     -- 🔹 lớp sinh viên học môn này
-  hoc_ky VARCHAR(20) DEFAULT 'HK1/2025',
-  nam_hoc VARCHAR(10) DEFAULT '2025-2026', -- 🔹 thêm năm học cho dễ lọc
-  trang_thai ENUM('Đang học','Đã kết thúc','Chưa mở') DEFAULT 'Đang học',
-  FOREIGN KEY (hoc_phan_id) REFERENCES HocPhan(id),
-  FOREIGN KEY (giang_vien_id) REFERENCES GiangVien(id),
-  FOREIGN KEY (lop_id) REFERENCES Lop(id)
-);
+--
+-- Dumping data for table `GiangVien`
+--
 
--- Lịch học
-CREATE TABLE LichHoc (
-  id INT AUTO_INCREMENT PRIMARY KEY,
-  lop_hoc_phan_id INT NOT NULL,
-  thu INT NOT NULL,                         -- Thứ trong tuần (2-8)
-  ca ENUM('sáng','chiều','tối') NOT NULL,
-  tiet_bat_dau INT NOT NULL,
-  tiet_ket_thuc INT NOT NULL,
-  phong VARCHAR(50),
-  co_so VARCHAR(50),
-  ngay_hoc DATE NULL,                       -- 🔹 nếu có ngày học cụ thể
-  loai ENUM('lythuyet','thuchanh','tructuyen','thi') DEFAULT 'lythuyet',
-  ghi_chu VARCHAR(255) NULL,
-  FOREIGN KEY (lop_hoc_phan_id) REFERENCES LopHocPhan(id)
-);
+LOCK TABLES `GiangVien` WRITE;
+/*!40000 ALTER TABLE `GiangVien` DISABLE KEYS */;
+INSERT INTO `GiangVien` VALUES (1,'GV001','Nguyễn Test B','1980-01-01','Nam','123 Lê Lợi',NULL,NULL,NULL,'nva@iuh.edu.vn','0901234567',1,4,4,2),(3,'GV003','Nguyễn Văn A','1980-01-01','Nam','123 Lê Lợi',NULL,NULL,NULL,'nva@iuh.edu.vn','0901234567',1,4,4,NULL),(4,'GV004','Nguyễn Văn A','1980-01-02','Nam','124 Lê Lợi',NULL,NULL,NULL,'nva@iuh.edu.vn','0901234568',1,4,4,NULL),(5,'GV005','Nguyễn Văn A','1980-01-03','Nam','125 Lê Lợi',NULL,NULL,NULL,'nva@iuh.edu.vn','0901234569',1,4,4,NULL),(7,'GV007','Nguyễn Văn A','1980-01-05','Nam','127 Lê Lợi',NULL,NULL,NULL,'nva@iuh.edu.vn','0901234571',1,4,4,NULL),(8,'GV008','Nguyễn Văn A','1980-01-06','Nam','128 Lê Lợi',NULL,NULL,NULL,'nva@iuh.edu.vn','0901234572',1,4,4,NULL),(9,'GV009','Nguyễn Văn A','1980-01-07','Nam','129 Lê Lợi',NULL,NULL,NULL,'nva@iuh.edu.vn','0901234573',1,4,4,NULL),(10,'GV0010','Nguyễn Văn A','1980-01-01','Nam','123 Lê Lợi',NULL,NULL,NULL,'nva@iuh.edu.vn','0901234567',1,4,4,NULL),(11,'GV0011','Nguyễn Văn A','1980-01-02','Nam','124 Lê Lợi',NULL,NULL,NULL,'nva@iuh.edu.vn','0901234568',1,4,4,NULL),(12,'GV0012','Nguyễn Văn A','1980-01-03','Nam','125 Lê Lợi',NULL,NULL,NULL,'nva@iuh.edu.vn','0901234569',1,4,4,NULL),(13,'GV0013','Nguyễn Văn A','1980-01-04','Nam','126 Lê Lợi',NULL,NULL,NULL,'nva@iuh.edu.vn','0901234570',1,4,4,NULL),(14,'GV0014','Nguyễn Văn A','1980-01-05','Nam','127 Lê Lợi',NULL,NULL,NULL,'nva@iuh.edu.vn','0901234571',1,4,4,NULL),(15,'GV0015','Nguyễn Văn A','1980-01-06','Nam','128 Lê Lợi',NULL,NULL,NULL,'nva@iuh.edu.vn','0901234572',1,4,4,NULL),(16,'GV0016','Nguyễn Văn A','1980-01-07','Nam','129 Lê Lợi',NULL,NULL,NULL,'nva@iuh.edu.vn','0901234573',1,2,2,NULL),(18,'GV200','Nguyễn Văn A','1980-01-01','Nam','123 Lê Lợi',NULL,NULL,'Giảng viên chính','nva@iuh.edu.vn','0901234567',1,4,4,NULL),(19,'GV201','Nguyễn Văn A','1980-01-02','Nam','124 Lê Lợi',NULL,NULL,'Giảng viên chính','nva@iuh.edu.vn','0901234568',1,4,4,NULL),(20,'GV202','Nguyễn Văn A','1980-01-03','Nam','125 Lê Lợi',NULL,NULL,'Giảng viên chính','nva@iuh.edu.vn','0901234569',1,4,4,NULL),(21,'GV203','Nguyễn Văn A','1980-01-04','Nam','126 Lê Lợi',NULL,NULL,'Giảng viên chính','nva@iuh.edu.vn','0901234570',1,4,4,NULL),(26,'GV300','Nguyễn Văn A','1980-01-01','Nam','123 Lê Lợi',NULL,NULL,'Giảng viên chính','nva@iuh.edu.vn','0901234567',1,4,4,15),(27,'GV301','Nguyễn Văn A','1980-01-02','Nam','124 Lê Lợi',NULL,NULL,'Giảng viên chính','nva@iuh.edu.vn','0901234568',1,4,4,16),(28,'GV302','Nguyễn Văn A','1980-01-03','Nam','125 Lê Lợi',NULL,NULL,'Giảng viên chính','nva@iuh.edu.vn','0901234569',1,4,4,17),(29,'GV303','Nguyễn Văn A','1980-01-04','Nam','126 Lê Lợi',NULL,NULL,'Giảng viên chính','nva@iuh.edu.vn','0901234570',1,4,4,18),(30,'000075','xcvxcv','1972-04-30','Nữ','sdfsdfsd',NULL,NULL,'Giảng viên chính','thinhdinhdam304@gmail.com','234234',1,2,2,NULL),(31,'2131','sdsf','1990-04-30','Nam','dsvsdvsdv','','Tiến sĩ','giảng viên chính','thinhdinhdam304@gmail.com','123123',1,2,2,NULL),(32,'2221','dfbdbf','2003-04-30','Nam','sdvsd','','Cử nhân','giảng viên phụ','thinhdinhdam304@gmail.com','2134123',2,3,3,NULL),(33,'12312312','dfbđ','1991-11-11','Nữ','dvsdvsv','','Thạc sĩ','phụ','thinhdinhdam304@gmail.com','123123',1,2,2,NULL),(34,'111','111sdvsdvs','1991-11-11','Nam','sâsasd','','Thạc sĩ','','thinhdinhdam304@gmail.com','12323',2,3,3,NULL),(35,'123123123','SDVSDV','1992-11-11','Nam','DFGDFGD','','Thạc sĩ','123','thinhdinhdam304@gmail.com','423423',1,2,2,27),(36,'12342132131','test lần 5','2001-03-06','Nam','321@gmail.com','','Thạc sĩ','Giang vien','123@gmail.com','0369852147',2,3,3,30);
+/*!40000 ALTER TABLE `GiangVien` ENABLE KEYS */;
+UNLOCK TABLES;
 
--- Kết quả học tập
-CREATE TABLE KetQuaHocTap (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    sinh_vien_id INT,
-    hoc_phan_id INT,
-    hoc_ky VARCHAR(20),
-    nam_hoc VARCHAR(10),
-    diem_qua_trinh DECIMAL(4,2),
-    diem_thi DECIMAL(4,2),
-    diem_tong_ket DECIMAL(4,2),
-    hoc_luc VARCHAR(20),
-    FOREIGN KEY (sinh_vien_id) REFERENCES SinhVien(id),
-    FOREIGN KEY (hoc_phan_id) REFERENCES HocPhan(id)
-);
+--
+-- Table structure for table `HoSoHanhChinh`
+--
 
--- Kế hoạch học tập
-CREATE TABLE KeHoachHocTap (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    sinh_vien_id INT,
-    hoc_phan_id INT,
-    trang_thai ENUM('Đã đăng ký','Đang học','Đã hoàn thành','Chưa đạt') DEFAULT 'Đã đăng ký',
-    FOREIGN KEY (sinh_vien_id) REFERENCES SinhVien(id),
-    FOREIGN KEY (hoc_phan_id) REFERENCES HocPhan(id)
-);
+DROP TABLE IF EXISTS `HoSoHanhChinh`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `HoSoHanhChinh` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `sinh_vien_id` int DEFAULT NULL,
+  `loai_ho_so` varchar(100) DEFAULT NULL,
+  `ngay_tao` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+  `trang_thai` enum('Chờ duyệt','Đang xử lý','Hoàn thành','Từ chối') DEFAULT 'Chờ duyệt',
+  `ghi_chu` text,
+  PRIMARY KEY (`id`),
+  KEY `sinh_vien_id` (`sinh_vien_id`),
+  CONSTRAINT `HoSoHanhChinh_ibfk_1` FOREIGN KEY (`sinh_vien_id`) REFERENCES `SinhVien` (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
 
--- Đăng ký học phần
-CREATE TABLE DangKyHocPhan (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    sinh_vien_id INT,
-    hoc_phan_id INT,
-    hoc_ky VARCHAR(20),
-    nam_hoc VARCHAR(10),
-    trang_thai ENUM('Thành công','Thất bại') DEFAULT 'Thành công',
-    FOREIGN KEY (sinh_vien_id) REFERENCES SinhVien(id),
-    FOREIGN KEY (hoc_phan_id) REFERENCES HocPhan(id)
-);
+--
+-- Dumping data for table `HoSoHanhChinh`
+--
 
--- Học phí
-CREATE TABLE HocPhi (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    sinh_vien_id INT,
-    hoc_phan_id INT,
-    hoc_ky VARCHAR(20),
-    nam_hoc VARCHAR(10),
-    so_tien DECIMAL(12,2),
-    tinh_trang ENUM('Chưa nộp','Đã nộp','Quá hạn') DEFAULT 'Chưa nộp',
-    FOREIGN KEY (sinh_vien_id) REFERENCES SinhVien(id),
-    FOREIGN KEY (hoc_phan_id) REFERENCES HocPhan(id)
-);
+LOCK TABLES `HoSoHanhChinh` WRITE;
+/*!40000 ALTER TABLE `HoSoHanhChinh` DISABLE KEYS */;
+INSERT INTO `HoSoHanhChinh` VALUES (1,1,'Giấy xác nhận sinh viên','2025-10-20 04:03:59','Hoàn thành','Đã ký và đóng dấu');
+/*!40000 ALTER TABLE `HoSoHanhChinh` ENABLE KEYS */;
+UNLOCK TABLES;
 
--- Trạng thái đọc thông báo
-CREATE TABLE ThongBao_DaDoc (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    sinh_vien_id INT,
-    thong_bao_id INT,
-    da_doc ENUM('Chưa đọc','Đã đọc') DEFAULT 'Chưa đọc',
-    ngay_doc TIMESTAMP NULL,
-    FOREIGN KEY (sinh_vien_id) REFERENCES SinhVien(id),
-    FOREIGN KEY (thong_bao_id) REFERENCES ThongBao(id)
-);
+--
+-- Table structure for table `HoatDongNgoaiKhoa`
+--
 
--- Hồ sơ hành chính
-CREATE TABLE HoSoHanhChinh (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    sinh_vien_id INT,
-    loai_ho_so VARCHAR(100),
-    ngay_tao TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    trang_thai ENUM('Chờ duyệt','Đang xử lý','Hoàn thành','Từ chối') DEFAULT 'Chờ duyệt',
-    ghi_chu TEXT,
-    FOREIGN KEY (sinh_vien_id) REFERENCES SinhVien(id)
-);
+DROP TABLE IF EXISTS `HoatDongNgoaiKhoa`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `HoatDongNgoaiKhoa` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `ten_hoat_dong` varchar(100) NOT NULL,
+  `ngay_to_chuc` date DEFAULT NULL,
+  `dia_diem` varchar(100) DEFAULT NULL,
+  `mo_ta` text,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
 
--- Rèn luyện
-CREATE TABLE RenLuyen (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    sinh_vien_id INT,
-    hoc_ky VARCHAR(20),
-    nam_hoc VARCHAR(10),
-    diem INT,
-    nhan_xet TEXT,
-    FOREIGN KEY (sinh_vien_id) REFERENCES SinhVien(id)
-);
+--
+-- Dumping data for table `HoatDongNgoaiKhoa`
+--
 
--- Sinh viên tham gia hoạt động ngoại khóa
-CREATE TABLE ThamGiaHoatDong (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    sinh_vien_id INT,
-    hoat_dong_id INT,
-    vai_tro VARCHAR(50),
-    FOREIGN KEY (sinh_vien_id) REFERENCES SinhVien(id),
-    FOREIGN KEY (hoat_dong_id) REFERENCES HoatDongNgoaiKhoa(id)
-);
+LOCK TABLES `HoatDongNgoaiKhoa` WRITE;
+/*!40000 ALTER TABLE `HoatDongNgoaiKhoa` DISABLE KEYS */;
+INSERT INTO `HoatDongNgoaiKhoa` VALUES (1,'Hội thảo AI','2025-11-20','Hội trường A','Chia sẻ về AI và ứng dụng trong CNTT');
+/*!40000 ALTER TABLE `HoatDongNgoaiKhoa` ENABLE KEYS */;
+UNLOCK TABLES;
 
--- Yêu cầu tư vấn học tập
-CREATE TABLE YeuCauTuVan (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    sinh_vien_id INT,
-    co_van_id INT,
-    noi_dung TEXT,
-    ngay_gui TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    trang_thai ENUM('Chờ phản hồi','Đã phản hồi') DEFAULT 'Chờ phản hồi',
-    FOREIGN KEY (sinh_vien_id) REFERENCES SinhVien(id),
-    FOREIGN KEY (co_van_id) REFERENCES GiangVien(id)
-);
+--
+-- Table structure for table `HocPhan`
+--
 
--- Áp dụng các ALTER TABLE
-ALTER TABLE LopHocPhan
-ADD COLUMN ngay_bat_dau DATE NULL,
-ADD COLUMN ngay_ket_thuc DATE NULL,
-ADD COLUMN so_tuan_hoc INT DEFAULT 15;
+DROP TABLE IF EXISTS `HocPhan`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `HocPhan` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `ma_hoc_phan` varchar(50) NOT NULL,
+  `ten_hoc_phan` varchar(255) NOT NULL,
+  `so_tin_chi` int DEFAULT '3',
+  `mo_ta` text,
+  `khoa_id` int DEFAULT NULL,
+  `nganh_id` int DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `ma_hoc_phan` (`ma_hoc_phan`),
+  KEY `khoa_id` (`khoa_id`),
+  KEY `nganh_id` (`nganh_id`),
+  CONSTRAINT `HocPhan_ibfk_1` FOREIGN KEY (`khoa_id`) REFERENCES `Khoa` (`id`),
+  CONSTRAINT `HocPhan_ibfk_2` FOREIGN KEY (`nganh_id`) REFERENCES `Nganh` (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=6 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
 
-ALTER TABLE Nganh
-ADD COLUMN ma_nganh VARCHAR(20) AFTER id;
+--
+-- Dumping data for table `HocPhan`
+--
 
-ALTER TABLE HocPhan
-ADD COLUMN nganh_id INT AFTER khoa_id,
-ADD FOREIGN KEY (nganh_id) REFERENCES Nganh(id);
+LOCK TABLES `HocPhan` WRITE;
+/*!40000 ALTER TABLE `HocPhan` DISABLE KEYS */;
+INSERT INTO `HocPhan` VALUES (1,'HP001','Lập trình WWW (Java)',4,NULL,1,4),(2,'HP003','Cơ sở dữ liệu MongoDB',3,'12321321sdfasdf',1,4),(4,'HP011','Big Data',3,NULL,1,2),(5,'HP1111','Toán cao cấp',3,'aaaaaaa',1,1);
+/*!40000 ALTER TABLE `HocPhan` ENABLE KEYS */;
+UNLOCK TABLES;
 
-ALTER TABLE GiangVien
-  ADD COLUMN ngay_sinh DATE NULL AFTER ho_ten,
-  ADD COLUMN gioi_tinh ENUM('Nam','Nữ','Khác') NULL AFTER ngay_sinh,
-  ADD COLUMN dia_chi VARCHAR(255) NULL AFTER gioi_tinh,
-  ADD COLUMN anh_the VARCHAR(255) NULL AFTER dia_chi,
-  ADD COLUMN hoc_vi VARCHAR(50) NULL AFTER anh_the,          -- Thạc sĩ / Tiến sĩ / Cử nhân
-  ADD COLUMN chuc_vu VARCHAR(100) NULL AFTER hoc_vi,         -- Ví dụ: Trưởng khoa, Giảng viên
-  ADD COLUMN nganh_id INT NULL AFTER khoa_id,
-  ADD COLUMN lop_id INT NULL AFTER nganh_id,
-  ADD FOREIGN KEY (nganh_id) REFERENCES Nganh(id),
-  ADD FOREIGN KEY (lop_id) REFERENCES Lop(id);
+--
+-- Table structure for table `HocPhi`
+--
 
--- Bây giờ INSERT dữ liệu (merge và điều chỉnh để tránh xung đột, sử dụng tên trường nhất quán từ định nghĩa cuối)
--- 1. Tài khoản mẫu
-INSERT INTO TaiKhoan (username, password_hash, role, trang_thai) VALUES
-('admin01', '123456', 'Quản trị', 'Hoạt động'),
-('gv001', '123456', 'Giảng viên', 'Hoạt động'),
-('sv001', '123456', 'Sinh viên', 'Hoạt động');
+DROP TABLE IF EXISTS `HocPhi`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `HocPhi` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `sinh_vien_id` int DEFAULT NULL,
+  `hoc_phan_id` int DEFAULT NULL,
+  `hoc_ky` varchar(20) DEFAULT NULL,
+  `nam_hoc` varchar(10) DEFAULT NULL,
+  `so_tien` decimal(12,2) DEFAULT NULL,
+  `tinh_trang` enum('Chưa nộp','Đã nộp','Quá hạn') DEFAULT 'Chưa nộp',
+  PRIMARY KEY (`id`),
+  KEY `sinh_vien_id` (`sinh_vien_id`),
+  KEY `hoc_phan_id` (`hoc_phan_id`),
+  CONSTRAINT `HocPhi_ibfk_1` FOREIGN KEY (`sinh_vien_id`) REFERENCES `SinhVien` (`id`),
+  CONSTRAINT `HocPhi_ibfk_2` FOREIGN KEY (`hoc_phan_id`) REFERENCES `HocPhan` (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
 
--- 2. Khoa
-INSERT INTO Khoa (ten_khoa) VALUES
-('Công nghệ thông tin'),
-('Kinh tế'),
-('Cơ khí');
+--
+-- Dumping data for table `HocPhi`
+--
 
--- 3. Ngành
-INSERT INTO Nganh (ten_nganh, khoa_id) VALUES
-('Khoa học máy tính', 1),
-('Hệ thống thông tin', 1),
-('Quản trị kinh doanh', 2);
+LOCK TABLES `HocPhi` WRITE;
+/*!40000 ALTER TABLE `HocPhi` DISABLE KEYS */;
+INSERT INTO `HocPhi` VALUES (1,1,1,'HK1','2025-2026',1200000.00,'Chưa nộp'),(2,1,2,'HK1','2025-2026',1200000.00,'Đã nộp');
+/*!40000 ALTER TABLE `HocPhi` ENABLE KEYS */;
+UNLOCK TABLES;
 
--- 4. Lớp
-INSERT INTO Lop (ten_lop, khoa_id, nganh_id) VALUES
-('CNTT01', 1, 1),
-('HTTT01', 1, 2),
-('QTKD01', 2, 3);
+--
+-- Table structure for table `KeHoachHocTap`
+--
 
--- 5. Giảng viên
-INSERT INTO GiangVien (ma_gv, ho_ten, email, so_dien_thoai, khoa_id, tai_khoan_id) VALUES
-('GV001', 'Nguyễn Văn A', 'nva@iuh.edu.vn', '0901234567', 1, 2);
+DROP TABLE IF EXISTS `KeHoachHocTap`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `KeHoachHocTap` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `sinh_vien_id` int DEFAULT NULL,
+  `hoc_phan_id` int DEFAULT NULL,
+  `trang_thai` enum('Đã đăng ký','Đang học','Đã hoàn thành','Chưa đạt') DEFAULT 'Đã đăng ký',
+  PRIMARY KEY (`id`),
+  KEY `sinh_vien_id` (`sinh_vien_id`),
+  KEY `hoc_phan_id` (`hoc_phan_id`),
+  CONSTRAINT `KeHoachHocTap_ibfk_1` FOREIGN KEY (`sinh_vien_id`) REFERENCES `SinhVien` (`id`),
+  CONSTRAINT `KeHoachHocTap_ibfk_2` FOREIGN KEY (`hoc_phan_id`) REFERENCES `HocPhan` (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
 
--- 6. Sinh viên
-INSERT INTO SinhVien (ma_sv, ho_ten, ngay_sinh, gioi_tinh, email, so_dien_thoai, dia_chi, anh_the, khoa_hoc, khoa_id, nganh_id, lop_id, co_van_id, tai_khoan_id)
-VALUES
-('SV001', 'Trần Thị B', '2003-05-12', 'Nữ', 'ttb@iuh.edu.vn', '0912345678', '123 Lê Lợi, Q.1, TP.HCM', 'anh_sv001.jpg', 'K47', 1, 1, 1, 1, 3);
+--
+-- Dumping data for table `KeHoachHocTap`
+--
 
--- 7. Học phần (merge: sử dụng tên mới cho HP001 từ phần sau, thêm HP002 và HP003 từ phần đầu)
-INSERT INTO HocPhan (ma_hoc_phan, ten_hoc_phan, so_tin_chi, khoa_id) VALUES
-('HP001', 'Lập trình WWW (Java)', 3, 1),
-('HP002', 'Cơ sở dữ liệu', 3, 1),
-('HP003', 'Kinh tế vi mô', 2, 2);
+LOCK TABLES `KeHoachHocTap` WRITE;
+/*!40000 ALTER TABLE `KeHoachHocTap` DISABLE KEYS */;
+/*!40000 ALTER TABLE `KeHoachHocTap` ENABLE KEYS */;
+UNLOCK TABLES;
 
--- 8. Đăng ký học phần (SV001 đăng ký 2 môn)
-INSERT INTO DangKyHocPhan (sinh_vien_id, hoc_phan_id, hoc_ky, nam_hoc, trang_thai) VALUES
-(1, 1, 'HK1', '2025-2026', 'Thành công'),
-(1, 2, 'HK1', '2025-2026', 'Thành công');
+--
+-- Table structure for table `KetQuaHocTap`
+--
 
--- 9. Kết quả học tập (tạm nhập điểm cho SV001)
-INSERT INTO KetQuaHocTap (sinh_vien_id, hoc_phan_id, hoc_ky, nam_hoc, diem_qua_trinh, diem_thi, diem_tong_ket, hoc_luc) VALUES
-(1, 1, 'HK1', '2025-2026', 8.0, 7.5, 7.8, 'Khá'),
-(1, 2, 'HK1', '2025-2026', 7.0, 8.0, 7.5, 'Khá');
+DROP TABLE IF EXISTS `KetQuaHocTap`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `KetQuaHocTap` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `sinh_vien_id` int DEFAULT NULL,
+  `hoc_phan_id` int DEFAULT NULL,
+  `hoc_ky` varchar(20) DEFAULT NULL,
+  `nam_hoc` varchar(10) DEFAULT NULL,
+  `diem_giua_ky` decimal(4,2) DEFAULT NULL,
+  `diem_ly_thuyet_1` decimal(4,2) DEFAULT NULL,
+  `diem_ly_thuyet_2` decimal(4,2) DEFAULT NULL,
+  `diem_ly_thuyet_3` decimal(4,2) DEFAULT NULL,
+  `diem_ly_thuyet_4` decimal(4,2) DEFAULT NULL,
+  `diem_thuc_hanh_1` decimal(4,2) DEFAULT NULL,
+  `diem_thuc_hanh_2` decimal(4,2) DEFAULT NULL,
+  `diem_thuc_hanh_3` decimal(4,2) DEFAULT NULL,
+  `diem_cuoi_ky` decimal(4,2) DEFAULT NULL,
+  `diem_tong_ket` decimal(4,2) DEFAULT NULL,
+  `diem_thang_4` decimal(4,2) DEFAULT NULL,
+  `diem_chu` varchar(10) DEFAULT NULL,
+  `hoc_luc` varchar(50) DEFAULT NULL,
+  `xep_loai` varchar(50) DEFAULT NULL,
+  `dat` enum('Đạt','Không đạt') DEFAULT 'Đạt',
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uq_ketqua` (`sinh_vien_id`,`hoc_phan_id`,`nam_hoc`,`hoc_ky`),
+  KEY `KetQuaHocTap_ibfk_2` (`hoc_phan_id`),
+  CONSTRAINT `KetQuaHocTap_ibfk_1` FOREIGN KEY (`sinh_vien_id`) REFERENCES `SinhVien` (`id`),
+  CONSTRAINT `KetQuaHocTap_ibfk_2` FOREIGN KEY (`hoc_phan_id`) REFERENCES `HocPhan` (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=64 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
 
--- 10. Học phí
-INSERT INTO HocPhi (sinh_vien_id, hoc_phan_id, hoc_ky, nam_hoc, so_tien, tinh_trang) VALUES
-(1, 1, 'HK1', '2025-2026', 1200000, 'Chưa nộp'),
-(1, 2, 'HK1', '2025-2026', 1200000, 'Đã nộp');
+--
+-- Dumping data for table `KetQuaHocTap`
+--
 
--- 11. Thông báo
-INSERT INTO ThongBao (tieu_de, noi_dung) VALUES
-('Thông báo đăng ký học phần HK1', 'Sinh viên tiến hành đăng ký học phần từ ngày 10/09/2025 đến 20/09/2025.'),
-('Thông báo nộp học phí', 'Hạn chót nộp học phí HK1 là ngày 15/10/2025.');
+LOCK TABLES `KetQuaHocTap` WRITE;
+/*!40000 ALTER TABLE `KetQuaHocTap` DISABLE KEYS */;
+INSERT INTO `KetQuaHocTap` VALUES (44,1,1,NULL,NULL,7.00,8.00,9.00,NULL,NULL,7.00,8.00,NULL,8.00,7.80,3.00,'B','Khá','Khá','Đạt'),(45,41,1,NULL,NULL,6.00,7.00,8.00,7.00,NULL,8.00,8.00,NULL,7.00,7.00,3.00,'B','Khá','Khá','Đạt'),(60,1,2,NULL,NULL,7.00,8.00,9.00,NULL,NULL,7.00,8.00,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL),(61,41,2,NULL,NULL,6.00,7.00,8.00,7.00,NULL,8.00,8.00,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL),(62,1,2,NULL,NULL,7.00,8.00,9.00,NULL,NULL,7.00,8.00,NULL,7.00,7.30,3.00,'B','Khá','Khá','Đạt'),(63,41,2,NULL,NULL,6.00,7.00,8.00,7.00,NULL,8.00,8.00,NULL,7.00,7.00,3.00,'B','Khá','Khá','Đạt');
+/*!40000 ALTER TABLE `KetQuaHocTap` ENABLE KEYS */;
+UNLOCK TABLES;
 
--- 12. Trạng thái đọc thông báo
-INSERT INTO ThongBao_DaDoc (sinh_vien_id, thong_bao_id, da_doc) VALUES
-(1, 1, 'Đã đọc'),
-(1, 2, 'Chưa đọc');
+--
+-- Table structure for table `Khoa`
+--
 
--- 13. Hồ sơ hành chính
-INSERT INTO HoSoHanhChinh (sinh_vien_id, loai_ho_so, trang_thai, ghi_chu) VALUES
-(1, 'Giấy xác nhận sinh viên', 'Hoàn thành', 'Đã ký và đóng dấu');
+DROP TABLE IF EXISTS `Khoa`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `Khoa` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `ten_khoa` varchar(100) NOT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=8 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
 
--- 14. Rèn luyện
-INSERT INTO RenLuyen (sinh_vien_id, hoc_ky, nam_hoc, diem, nhan_xet) VALUES
-(1, 'HK1', '2025-2026', 80, 'Tham gia tích cực hoạt động đoàn hội');
+--
+-- Dumping data for table `Khoa`
+--
 
--- 15. Hoạt động ngoại khóa
-INSERT INTO HoatDongNgoaiKhoa (ten_hoat_dong, ngay_to_chuc, dia_diem, mo_ta) VALUES
-('Hội thảo AI', '2025-11-20', 'Hội trường A', 'Chia sẻ về AI và ứng dụng trong CNTT');
+LOCK TABLES `Khoa` WRITE;
+/*!40000 ALTER TABLE `Khoa` DISABLE KEYS */;
+INSERT INTO `Khoa` VALUES (1,'Công nghệ thông tin'),(2,'Kinh tế'),(3,'Cơ khí'),(4,'Ngoại ngữ'),(5,'Thương mại - du lịch'),(6,'Luật'),(7,'Công nghệ điện');
+/*!40000 ALTER TABLE `Khoa` ENABLE KEYS */;
+UNLOCK TABLES;
 
--- 16. Sinh viên tham gia hoạt động
-INSERT INTO ThamGiaHoatDong (sinh_vien_id, hoat_dong_id, vai_tro) VALUES
-(1, 1, 'Người tham gia');
+--
+-- Table structure for table `LichHoc`
+--
 
--- 17. Yêu cầu tư vấn
-INSERT INTO YeuCauTuVan (sinh_vien_id, co_van_id, noi_dung, trang_thai) VALUES
-(1, 1, 'Em muốn được tư vấn về kế hoạch học tập.', 'Chờ phản hồi');
+DROP TABLE IF EXISTS `LichHoc`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `LichHoc` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `lop_hoc_phan_id` int NOT NULL,
+  `thu` int NOT NULL,
+  `ca` enum('sáng','chiều','tối') NOT NULL,
+  `tiet_bat_dau` int NOT NULL,
+  `tiet_ket_thuc` int NOT NULL,
+  `phong` varchar(50) DEFAULT NULL,
+  `co_so` varchar(50) DEFAULT NULL,
+  `ngay_hoc` date DEFAULT NULL,
+  `loai` enum('lythuyet','thuchanh','tructuyen','thi') DEFAULT 'lythuyet',
+  `ghi_chu` varchar(255) DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  KEY `lop_hoc_phan_id` (`lop_hoc_phan_id`),
+  CONSTRAINT `LichHoc_ibfk_1` FOREIGN KEY (`lop_hoc_phan_id`) REFERENCES `LopHocPhan` (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=6 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
 
--- INSERT cho lớp học phần
-INSERT INTO LopHocPhan (ma_lop_hoc_phan, hoc_phan_id, giang_vien_id, lop_id, hoc_ky, nam_hoc)
-VALUES ('DHKTPM18BTT', 1, 1, 1, 'HK1', '2025-2026');
+--
+-- Dumping data for table `LichHoc`
+--
 
--- Lịch học cụ thể
-INSERT INTO LichHoc (lop_hoc_phan_id, thu, ca, tiet_bat_dau, tiet_ket_thuc, phong, co_so, loai)
-VALUES
-(1, 2, 'sáng', 1, 3, 'V7.02', 'Cơ sở 1', 'lythuyet'),
-(1, 4, 'chiều', 7, 9, 'H8.03', 'Cơ sở 1', 'thuchanh');
+LOCK TABLES `LichHoc` WRITE;
+/*!40000 ALTER TABLE `LichHoc` DISABLE KEYS */;
+INSERT INTO `LichHoc` VALUES (3,2,2,'sáng',1,3,'V7.02','Cơ sở 1',NULL,'lythuyet',NULL),(4,2,4,'chiều',7,9,'H8.03','Cơ sở 1',NULL,'thuchanh',NULL),(5,2,6,'sáng',1,3,'H8.01','Cơ sở 1',NULL,'lythuyet',NULL);
+/*!40000 ALTER TABLE `LichHoc` ENABLE KEYS */;
+UNLOCK TABLES;
 
--- UPDATE cho LopHocPhan
-UPDATE LopHocPhan
-SET ngay_bat_dau = '2025-09-15', ngay_ket_thuc = '2025-12-30', so_tuan_hoc = 15
-WHERE id = 1;
+--
+-- Table structure for table `Lop`
+--
 
-ALTER TABLE TaiKhoan ADD COLUMN ho_ten VARCHAR(100);
-ALTER TABLE TaiKhoan ADD COLUMN da_doi_mat_khau TINYINT(1) DEFAULT 0;
+DROP TABLE IF EXISTS `Lop`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `Lop` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `ten_lop` varchar(50) NOT NULL,
+  `khoa_id` int DEFAULT NULL,
+  `nganh_id` int DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  KEY `khoa_id` (`khoa_id`),
+  KEY `nganh_id` (`nganh_id`),
+  CONSTRAINT `Lop_ibfk_1` FOREIGN KEY (`khoa_id`) REFERENCES `Khoa` (`id`),
+  CONSTRAINT `Lop_ibfk_2` FOREIGN KEY (`nganh_id`) REFERENCES `Nganh` (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=5 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `Lop`
+--
+
+LOCK TABLES `Lop` WRITE;
+/*!40000 ALTER TABLE `Lop` DISABLE KEYS */;
+INSERT INTO `Lop` VALUES (1,'DHKTPM17BTT',1,4),(2,'HTTT01',1,2),(3,'QTKD01',2,3),(4,'DHKTPM19BTT',1,4);
+/*!40000 ALTER TABLE `Lop` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
+-- Table structure for table `LopHocPhan`
+--
+
+DROP TABLE IF EXISTS `LopHocPhan`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `LopHocPhan` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `ma_lop_hoc_phan` varchar(50) NOT NULL,
+  `hoc_phan_id` int NOT NULL,
+  `giang_vien_id` int NOT NULL,
+  `lop_id` int NOT NULL,
+  `hoc_ky` varchar(20) DEFAULT 'HK1/2025',
+  `nam_hoc` varchar(10) DEFAULT '2025-2026',
+  `trang_thai` enum('Đang học','Đã kết thúc','Chưa mở') DEFAULT 'Đang học',
+  `ngay_bat_dau` date DEFAULT NULL,
+  `ngay_ket_thuc` date DEFAULT NULL,
+  `so_tuan_hoc` int DEFAULT '15',
+  PRIMARY KEY (`id`),
+  KEY `hoc_phan_id` (`hoc_phan_id`),
+  KEY `giang_vien_id` (`giang_vien_id`),
+  KEY `lop_id` (`lop_id`),
+  CONSTRAINT `LopHocPhan_ibfk_1` FOREIGN KEY (`hoc_phan_id`) REFERENCES `HocPhan` (`id`),
+  CONSTRAINT `LopHocPhan_ibfk_2` FOREIGN KEY (`giang_vien_id`) REFERENCES `GiangVien` (`id`),
+  CONSTRAINT `LopHocPhan_ibfk_3` FOREIGN KEY (`lop_id`) REFERENCES `Lop` (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=8 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `LopHocPhan`
+--
+
+LOCK TABLES `LopHocPhan` WRITE;
+/*!40000 ALTER TABLE `LopHocPhan` DISABLE KEYS */;
+INSERT INTO `LopHocPhan` VALUES (2,'DHKTPM17BTT-HP001',1,1,1,'HK1','2025-2026','Đang học','2025-08-11','2025-11-17',15),(6,'DHKTPM17BTT-HP003',2,1,1,'HK1','2025-2026','Đang học','2025-08-13','2025-11-19',17),(7,'DHHTTT17DTT-HP011',4,36,2,'HK1','2025-2026','Đang học','2025-08-22','2025-11-21',15);
+/*!40000 ALTER TABLE `LopHocPhan` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
+-- Table structure for table `Nganh`
+--
+
+DROP TABLE IF EXISTS `Nganh`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `Nganh` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `ma_nganh` varchar(20) DEFAULT NULL,
+  `ten_nganh` varchar(100) NOT NULL,
+  `khoa_id` int DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  KEY `khoa_id` (`khoa_id`),
+  CONSTRAINT `Nganh_ibfk_1` FOREIGN KEY (`khoa_id`) REFERENCES `Khoa` (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=5 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `Nganh`
+--
+
+LOCK TABLES `Nganh` WRITE;
+/*!40000 ALTER TABLE `Nganh` DISABLE KEYS */;
+INSERT INTO `Nganh` VALUES (1,'KHMT','Khoa học máy tính',1),(2,'HTTT','Hệ thống thông tin',1),(3,'QTKD','Quản trị kinh doanh',2),(4,'KTPM','Kỹ thuật phần mềm',1);
+/*!40000 ALTER TABLE `Nganh` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
+-- Table structure for table `RenLuyen`
+--
+
+DROP TABLE IF EXISTS `RenLuyen`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `RenLuyen` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `sinh_vien_id` int DEFAULT NULL,
+  `hoc_ky` varchar(20) DEFAULT NULL,
+  `nam_hoc` varchar(10) DEFAULT NULL,
+  `diem` int DEFAULT NULL,
+  `nhan_xet` text,
+  PRIMARY KEY (`id`),
+  KEY `sinh_vien_id` (`sinh_vien_id`),
+  CONSTRAINT `RenLuyen_ibfk_1` FOREIGN KEY (`sinh_vien_id`) REFERENCES `SinhVien` (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `RenLuyen`
+--
+
+LOCK TABLES `RenLuyen` WRITE;
+/*!40000 ALTER TABLE `RenLuyen` DISABLE KEYS */;
+INSERT INTO `RenLuyen` VALUES (1,1,'HK1','2025-2026',80,'Tham gia tích cực hoạt động đoàn hội');
+/*!40000 ALTER TABLE `RenLuyen` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
+-- Table structure for table `SinhVien`
+--
+
+DROP TABLE IF EXISTS `SinhVien`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `SinhVien` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `ma_sv` varchar(20) NOT NULL,
+  `ho_ten` varchar(100) NOT NULL,
+  `ngay_sinh` date DEFAULT NULL,
+  `gioi_tinh` enum('Nam','Nữ','Khác') DEFAULT NULL,
+  `email` varchar(100) DEFAULT NULL,
+  `so_dien_thoai` varchar(20) DEFAULT NULL,
+  `dia_chi` text,
+  `anh_the` varchar(255) DEFAULT NULL,
+  `khoa_hoc` varchar(10) DEFAULT NULL,
+  `khoa_id` int DEFAULT NULL,
+  `nganh_id` int DEFAULT NULL,
+  `lop_id` int DEFAULT NULL,
+  `co_van_id` int DEFAULT NULL,
+  `tai_khoan_id` int DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `ma_sv` (`ma_sv`),
+  UNIQUE KEY `tai_khoan_id` (`tai_khoan_id`),
+  KEY `khoa_id` (`khoa_id`),
+  KEY `nganh_id` (`nganh_id`),
+  KEY `lop_id` (`lop_id`),
+  KEY `co_van_id` (`co_van_id`),
+  CONSTRAINT `SinhVien_ibfk_1` FOREIGN KEY (`khoa_id`) REFERENCES `Khoa` (`id`),
+  CONSTRAINT `SinhVien_ibfk_2` FOREIGN KEY (`nganh_id`) REFERENCES `Nganh` (`id`),
+  CONSTRAINT `SinhVien_ibfk_3` FOREIGN KEY (`lop_id`) REFERENCES `Lop` (`id`),
+  CONSTRAINT `SinhVien_ibfk_4` FOREIGN KEY (`co_van_id`) REFERENCES `GiangVien` (`id`),
+  CONSTRAINT `SinhVien_ibfk_5` FOREIGN KEY (`tai_khoan_id`) REFERENCES `TaiKhoan` (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=43 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `SinhVien`
+--
+
+LOCK TABLES `SinhVien` WRITE;
+/*!40000 ALTER TABLE `SinhVien` DISABLE KEYS */;
+INSERT INTO `SinhVien` VALUES (1,'SV001','Trần Thị B','2003-05-12','Nữ','ttb@iuh.edu.vn','0912345678','123 Lê Lợi, Q.1, TP.HCM','anh_sv001.jpg','K47',1,4,1,1,3),(2,'SV800','Nguyễn Văn A','2003-05-12','Nam','example@gmail.com','0909123456','123 Đường ABC, Quận 1, TP.HCM',NULL,'K47',1,4,4,NULL,NULL),(3,'SV801','Nguyễn Văn A','2003-05-13','Nam','example@gmail.com','0909123457','124 Đường ABC, Quận 1, TP.HCM',NULL,'K48',1,4,4,NULL,NULL),(4,'SV802','Nguyễn Văn A','2003-05-14','Nam','example@gmail.com','0909123458','125 Đường ABC, Quận 1, TP.HCM',NULL,'K49',1,4,4,NULL,NULL),(5,'SV803','Nguyễn Văn A','2003-05-15','Nam','example@gmail.com','0909123459','126 Đường ABC, Quận 1, TP.HCM',NULL,'K50',1,4,4,NULL,NULL),(6,'SV804','Nguyễn Văn A','2003-05-16','Nam','example@gmail.com','0909123460','127 Đường ABC, Quận 1, TP.HCM',NULL,'K51',1,4,4,NULL,NULL),(7,'SV805','Nguyễn Văn A','2003-05-17','Nam','example@gmail.com','0909123461','128 Đường ABC, Quận 1, TP.HCM',NULL,'K52',1,4,4,NULL,NULL),(8,'SV806','Nguyễn Văn A','2003-05-18','Nam','example@gmail.com','0909123462','129 Đường ABC, Quận 1, TP.HCM',NULL,'K53',1,4,4,NULL,NULL),(9,'SV807','Nguyễn Văn A','2003-05-19','Nam','example@gmail.com','0909123463','130 Đường ABC, Quận 1, TP.HCM',NULL,'K54',1,4,4,NULL,NULL),(11,'214423','fbdbdf','2003-04-30','Nam','thinhdinhdam304@gmail.com','4234','hgfhfhgf',NULL,'K21',2,3,3,NULL,NULL),(12,'121eqw','vbcv','2002-12-21','Nam','thinhdinhdam304@gmail.com','123123','ègdfbd',NULL,'54',2,3,3,NULL,NULL),(13,'30042003','dfbdfb','2003-04-30','Nam','thinhdinhdam304@gmail.com','545345','âcscascs',NULL,'k12',1,2,2,NULL,5),(14,'SV901','Nguyễn Văn A','2003-05-12','Nam','example@gmail.com','0909123456','123 Đường ABC, Quận 1, TP.HCM',NULL,'K47',1,4,4,NULL,NULL),(15,'SV902','Nguyễn Văn A','2003-05-13','Nam','example@gmail.com','0909123457','124 Đường ABC, Quận 1, TP.HCM',NULL,'K48',1,4,4,NULL,NULL),(16,'SV903','Nguyễn Văn A','2003-05-14','Nam','example@gmail.com','0909123458','125 Đường ABC, Quận 1, TP.HCM',NULL,'K49',1,4,4,NULL,NULL),(17,'SV904','Nguyễn Văn A','2003-05-15','Nam','example@gmail.com','0909123459','126 Đường ABC, Quận 1, TP.HCM',NULL,'K50',1,4,4,NULL,NULL),(18,'SV905','Nguyễn Văn A','2003-05-16','Nam','example@gmail.com','0909123460','127 Đường ABC, Quận 1, TP.HCM',NULL,'K51',1,4,4,NULL,NULL),(19,'SV906','Nguyễn Văn A','2003-05-17','Nam','example@gmail.com','0909123461','128 Đường ABC, Quận 1, TP.HCM',NULL,'K52',1,4,4,NULL,NULL),(20,'SV907','Nguyễn Văn A','2003-05-18','Nam','example@gmail.com','0909123462','129 Đường ABC, Quận 1, TP.HCM',NULL,'K53',1,4,4,NULL,NULL),(21,'SV908','Nguyễn Văn A','2003-05-19','Nam','example@gmail.com','0909123463','130 Đường ABC, Quận 1, TP.HCM',NULL,'K54',1,4,4,NULL,NULL),(22,'SV909','Nguyễn Văn A','2003-05-20','Nam','example@gmail.com','0909123464','131 Đường ABC, Quận 1, TP.HCM',NULL,'K55',1,4,4,NULL,NULL),(23,'SV555','Nguyễn Văn B','2003-05-12','Nam','example@gmail.com','0909123456','123 Đường ABC, Quận 1, TP.HCM',NULL,'K47',1,2,2,NULL,6),(24,'SV556','Nguyễn Văn A','2003-05-13','Nam','example@gmail.com','0909123457','124 Đường ABC, Quận 1, TP.HCM',NULL,'K48',1,4,4,NULL,7),(25,'SV557','Nguyễn Văn A','2003-05-14','Nam','example@gmail.com','0909123458','125 Đường ABC, Quận 1, TP.HCM',NULL,'K49',1,4,4,NULL,8),(26,'SV558','Nguyễn Văn A','2003-05-15','Nam','example@gmail.com','0909123459','126 Đường ABC, Quận 1, TP.HCM',NULL,'K50',1,4,4,NULL,9),(27,'SV559','Nguyễn Văn A','2003-05-16','Nam','example@gmail.com','0909123460','127 Đường ABC, Quận 1, TP.HCM',NULL,'K51',1,4,4,NULL,10),(28,'SV560','Nguyễn Văn A','2003-05-17','Nam','example@gmail.com','0909123461','128 Đường ABC, Quận 1, TP.HCM',NULL,'K52',1,2,2,NULL,11),(29,'SV561','Nguyễn Văn A','2003-05-18','Nam','example@gmail.com','0909123462','129 Đường ABC, Quận 1, TP.HCM',NULL,'K53',1,4,4,NULL,12),(30,'SV562','Nguyễn Văn A','2003-05-19','Nam','example@gmail.com','0909123463','130 Đường ABC, Quận 1, TP.HCM',NULL,'K54',1,4,4,NULL,13),(31,'SV563','Nguyễn Văn A','2003-05-20','Nam','example@gmail.com','0909123464','131 Đường ABC, Quận 1, TP.HCM',NULL,'K55',1,4,4,NULL,14),(34,'SV552','Test lần 3','2004-01-22','Nam','123@gmail.com','0325698741','112/2 Quang Trung',NULL,'K47',2,3,3,NULL,NULL),(35,'9999999999','thinh','2003-04-30','Nam','thinhdinhdam304@gmail.com','123123','dgadfga',NULL,'k23',1,2,2,NULL,NULL),(36,'100111','thịnh','2003-04-30','Nam','thinhdinhdam304@gmail.com','123123','adasadsd',NULL,'k19',1,2,2,NULL,NULL),(37,'989898989','a','2003-12-11','Nam','thinhdinhdam304@gmail.com','123123','fsdsdf',NULL,'k21',1,2,2,NULL,28),(38,'44444444444444','test lần 4','2006-03-01','Nam','123@gmail.com','0369852147','122/3 Quang Trung',NULL,'K56',1,2,2,NULL,29),(39,'12','thinh','2005-11-11','Nam','thinhdinhdam304@gmail.com','123123','dfsdfsdf','0870480c-2dce-400f-9054-73231eae9973.jpg','k12',1,2,2,NULL,31),(41,'sv002','Phạm Văn C','2001-03-02','Nam','123@gmail.com','0123654789','12/Nguyễn Văn Bảo',NULL,'47',1,4,1,NULL,33),(42,'2510','thinh','2001-11-11','Nam','thinhdinhdam304@gmail.com','123123','dfsadasd',NULL,'k12',1,2,2,NULL,34);
+/*!40000 ALTER TABLE `SinhVien` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
+-- Table structure for table `TaiKhoan`
+--
+
+DROP TABLE IF EXISTS `TaiKhoan`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `TaiKhoan` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `username` varchar(50) NOT NULL,
+  `password_hash` varchar(255) NOT NULL,
+  `role` enum('Sinh viên','Giảng viên','Quản trị') NOT NULL,
+  `trang_thai` enum('Hoạt động','Ngừng hoạt động') DEFAULT 'Hoạt động',
+  `ho_ten` varchar(100) DEFAULT NULL,
+  `da_doi_mat_khau` tinyint(1) DEFAULT '0',
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `username` (`username`)
+) ENGINE=InnoDB AUTO_INCREMENT=35 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `TaiKhoan`
+--
+
+LOCK TABLES `TaiKhoan` WRITE;
+/*!40000 ALTER TABLE `TaiKhoan` DISABLE KEYS */;
+INSERT INTO `TaiKhoan` VALUES (1,'admin01','123456','Quản trị','Hoạt động','Nguyễn Văn A',1),(2,'gv001','123456','Giảng viên','Hoạt động','Nguyễn Văn A',1),(3,'sv001','123456','Sinh viên','Hoạt động','Trần Thị B',1),(5,'30042003','$2b$10$73z4Ab2PNa0CVZ42H7nKY.KXYfxJv4qOoAhBIPTitxvyaMt.SnRZ.','Sinh viên','Hoạt động',NULL,1),(6,'SV555','$2b$10$AvKZ2.bJio2/VcKZXU6iqe3YF0MVHUexvuCEXCbBgMz4HvXj/YVni','Sinh viên','Hoạt động',NULL,0),(7,'SV556','$2b$10$So4NYAbHQRKpXN6ELTW0e.AhBd8NOc7TG3Jkqyu9zuoo13eDfWuji','Sinh viên','Hoạt động',NULL,0),(8,'SV557','$2b$10$2FZMYOhyBAvPqGVSUWdhNOQfPNhqrA16cttnNxN7qH.NwptCNEiNC','Sinh viên','Hoạt động',NULL,0),(9,'SV558','$2b$10$TTFc9sD1G9b9Pz4ltYFUbObGiadIfHypUYzzZkdqdqe2BZcuD8Eva','Sinh viên','Hoạt động',NULL,0),(10,'SV559','$2b$10$1/GUMf2w48cGAFGbMXaHaeotmedXqUSLkeD51nL.NH6GA8SRSzV3G','Sinh viên','Hoạt động',NULL,0),(11,'SV560','$2b$10$VYDLZ28xAYBgNiPQIQ0JyekTxb7ltJphptUYXOX80b439nEnJY5LW','Sinh viên','Hoạt động',NULL,0),(12,'SV561','$2b$10$r/ul5Iq8yQkYlpsR.YDKwug7Eg/8E0BzDCPXbKD2YZG6IUigwt7Sm','Sinh viên','Hoạt động',NULL,0),(13,'SV562','$2b$10$SV7HAQJDNbtCEJJhEeZ5Lely1FYmYb6tn9YfAWCVlqVhGe1ei/Zde','Sinh viên','Hoạt động',NULL,0),(14,'SV563','$2b$10$uWe08sTIKTCXo4xJ/nooQ.kUXxGZuwo854454WRF3rC9h9i8Dybfe','Sinh viên','Hoạt động',NULL,0),(15,'GV300','$2b$10$ncswsDi10c2Ks19oDdySPe9dazVirq/MyJSrY11L1vA5W4v3l4/g.','Giảng viên','Hoạt động',NULL,0),(16,'GV301','$2b$10$dz0o.6D8PPPyd.dbob9TGOI1vT8ywryrT.8Sjr8bX402jpWpJaC/K','Giảng viên','Hoạt động',NULL,0),(17,'GV302','$2b$10$EvCAZiYo87rZMAgvtdq4de50q5SMXOR8MUJORWfExmwOuGYaR3Mte','Giảng viên','Hoạt động',NULL,0),(18,'GV303','$2b$10$BN4/LXSH9sDbyymdAM2Qn.eS/PBtNLjteNaV9jEbkZCD78Qf4HS5m','Giảng viên','Hoạt động',NULL,0),(21,'SV552','$2b$10$m9uuoXpKCgKLzoZQewkReOmEKw9dOvjEoFItIGlWxKiYbo30Xpyym','Sinh viên','Hoạt động',NULL,0),(22,'9999999999','$2b$10$705kPOXkotw.9l8YK4DCIeBtK5aSn3Q5.EqOYjGJl/t4lqZSgvujS','Sinh viên','Hoạt động',NULL,0),(23,'2131','$2b$10$e8sjhEOq17VM8lKo7dMbnOWy2Uh.cC4.Cah2rXVXkkMF0sN0XJUJO','Giảng viên','Hoạt động',NULL,1),(24,'2221','$2b$10$/AxvMNugYuQY73HS3IF1c.1i63xHmRTZRhDfxi8mDhEj.jGmyLctu','Giảng viên','Hoạt động',NULL,0),(25,'12312312','$2b$10$iXTp9OfG1PvYKqpBNy607OnTjd.QdJlA3.68w5i0dJVHIZ788O6cy','Giảng viên','Hoạt động',NULL,0),(26,'111','$2b$10$upLyUs27pvxcJxK1YBcWM.3U3UkAw0Px4GEHtsVsRgVE7D.gzc3gS','Giảng viên','Hoạt động',NULL,0),(27,'123123123','$2b$10$bQCp.xIBKz32K9k6jYttUu.jjZPdDoGhYtJhTNVaqqSJYM0eQRaJK','Giảng viên','Hoạt động','SDVSDV',0),(28,'989898989','$2b$10$xeF4UodgeDshTbBrGIx9j.jYoKKIZyiiiAXWXy/g0fzVVQKgU12w2','Sinh viên','Hoạt động','a',0),(29,'44444444444444','$2b$10$0Ev1AmD7CJXMWm3/qdveZuwER4nTj13Myk7xtm6ClX6IcIArWfmVu','Sinh viên','Hoạt động','test lần 4',0),(30,'12342132131','$2b$10$bgwOtUwo6feUr90NGhK.S.UUecgMY8lIKwlu0bzb0pAtC8sndEKwm','Giảng viên','Hoạt động','test lần 5',0),(31,'12','$2b$10$9LyHAxZ4s5bVfYFeXcXrk.zEOi5t.AYP3/n/psTIvefoqGDgMS7g.','Sinh viên','Hoạt động','thinh',1),(33,'sv002','$2b$10$TW7RkOP.azVbLvpnhpLn..7lDdxW1IsMYd4sE69Gkjz.CbysezYAW','Sinh viên','Hoạt động','Phạm Văn C',0),(34,'2510','$2b$10$Y0NWAq8kuHoS6AhDgdtmteeVB5P2F5BeKUM02OHDtYZ.kZhFDGA.i','Sinh viên','Hoạt động','thinh',1);
+/*!40000 ALTER TABLE `TaiKhoan` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
+-- Table structure for table `ThamGiaHoatDong`
+--
+
+DROP TABLE IF EXISTS `ThamGiaHoatDong`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `ThamGiaHoatDong` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `sinh_vien_id` int DEFAULT NULL,
+  `hoat_dong_id` int DEFAULT NULL,
+  `vai_tro` varchar(50) DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  KEY `sinh_vien_id` (`sinh_vien_id`),
+  KEY `hoat_dong_id` (`hoat_dong_id`),
+  CONSTRAINT `ThamGiaHoatDong_ibfk_1` FOREIGN KEY (`sinh_vien_id`) REFERENCES `SinhVien` (`id`),
+  CONSTRAINT `ThamGiaHoatDong_ibfk_2` FOREIGN KEY (`hoat_dong_id`) REFERENCES `HoatDongNgoaiKhoa` (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `ThamGiaHoatDong`
+--
+
+LOCK TABLES `ThamGiaHoatDong` WRITE;
+/*!40000 ALTER TABLE `ThamGiaHoatDong` DISABLE KEYS */;
+INSERT INTO `ThamGiaHoatDong` VALUES (1,1,1,'Người tham gia');
+/*!40000 ALTER TABLE `ThamGiaHoatDong` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
+-- Table structure for table `ThongBao`
+--
+
+DROP TABLE IF EXISTS `ThongBao`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `ThongBao` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `tieu_de` varchar(200) NOT NULL,
+  `noi_dung` text,
+  `ngay_gui` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `ThongBao`
+--
+
+LOCK TABLES `ThongBao` WRITE;
+/*!40000 ALTER TABLE `ThongBao` DISABLE KEYS */;
+INSERT INTO `ThongBao` VALUES (1,'Thông báo đăng ký học phần HK1','Sinh viên tiến hành đăng ký học phần từ ngày 10/09/2025 đến 20/09/2025.','2025-10-20 04:03:59'),(2,'Thông báo nộp học phí','Hạn chót nộp học phí HK1 là ngày 15/10/2025.','2025-10-20 04:03:59');
+/*!40000 ALTER TABLE `ThongBao` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
+-- Table structure for table `ThongBao_DaDoc`
+--
+
+DROP TABLE IF EXISTS `ThongBao_DaDoc`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `ThongBao_DaDoc` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `sinh_vien_id` int DEFAULT NULL,
+  `thong_bao_id` int DEFAULT NULL,
+  `da_doc` enum('Chưa đọc','Đã đọc') DEFAULT 'Chưa đọc',
+  `ngay_doc` timestamp NULL DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  KEY `sinh_vien_id` (`sinh_vien_id`),
+  KEY `thong_bao_id` (`thong_bao_id`),
+  CONSTRAINT `ThongBao_DaDoc_ibfk_1` FOREIGN KEY (`sinh_vien_id`) REFERENCES `SinhVien` (`id`),
+  CONSTRAINT `ThongBao_DaDoc_ibfk_2` FOREIGN KEY (`thong_bao_id`) REFERENCES `ThongBao` (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `ThongBao_DaDoc`
+--
+
+LOCK TABLES `ThongBao_DaDoc` WRITE;
+/*!40000 ALTER TABLE `ThongBao_DaDoc` DISABLE KEYS */;
+INSERT INTO `ThongBao_DaDoc` VALUES (1,1,1,'Đã đọc',NULL),(2,1,2,'Chưa đọc',NULL);
+/*!40000 ALTER TABLE `ThongBao_DaDoc` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
+-- Table structure for table `YeuCauTuVan`
+--
+
+DROP TABLE IF EXISTS `YeuCauTuVan`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `YeuCauTuVan` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `sinh_vien_id` int DEFAULT NULL,
+  `co_van_id` int DEFAULT NULL,
+  `noi_dung` text,
+  `ngay_gui` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+  `trang_thai` enum('Chờ phản hồi','Đã phản hồi') DEFAULT 'Chờ phản hồi',
+  PRIMARY KEY (`id`),
+  KEY `sinh_vien_id` (`sinh_vien_id`),
+  KEY `co_van_id` (`co_van_id`),
+  CONSTRAINT `YeuCauTuVan_ibfk_1` FOREIGN KEY (`sinh_vien_id`) REFERENCES `SinhVien` (`id`),
+  CONSTRAINT `YeuCauTuVan_ibfk_2` FOREIGN KEY (`co_van_id`) REFERENCES `GiangVien` (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `YeuCauTuVan`
+--
+
+LOCK TABLES `YeuCauTuVan` WRITE;
+/*!40000 ALTER TABLE `YeuCauTuVan` DISABLE KEYS */;
+INSERT INTO `YeuCauTuVan` VALUES (1,1,1,'Em muốn được tư vấn về kế hoạch học tập.','2025-10-20 04:03:59','Chờ phản hồi');
+/*!40000 ALTER TABLE `YeuCauTuVan` ENABLE KEYS */;
+UNLOCK TABLES;
+SET @@SESSION.SQL_LOG_BIN = @MYSQLDUMP_TEMP_LOG_BIN;
+/*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
+
+/*!40101 SET SQL_MODE=@OLD_SQL_MODE */;
+/*!40014 SET FOREIGN_KEY_CHECKS=@OLD_FOREIGN_KEY_CHECKS */;
+/*!40014 SET UNIQUE_CHECKS=@OLD_UNIQUE_CHECKS */;
+/*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
+/*!40101 SET CHARACTER_SET_RESULTS=@OLD_CHARACTER_SET_RESULTS */;
+/*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
+/*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
+
+-- Dump completed on 2025-10-25 16:07:37

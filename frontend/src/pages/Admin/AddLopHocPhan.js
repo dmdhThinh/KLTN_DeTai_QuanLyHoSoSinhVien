@@ -94,8 +94,8 @@ export default function AddLopHocPhan() {
 
   const loadGiangViens = async () => {
     try {
-      const data = await apiFetch('/api/giangviens')
-      setGiangViens(data || [])
+     const response = await apiFetch('/api/giangviens');
+    setGiangViens(response.data || []); // Extract the 'data' array from the response
     } catch {
       setGiangViens([])
     }
@@ -254,7 +254,7 @@ export default function AddLopHocPhan() {
                 >
                   <option value="">-- Chọn giảng viên --</option>
                   {giangViens.map((gv) => (
-                    <option key={gv.id} value={gv.id}>
+                    <option key={gv.id} value={gv.id}>                    
                       {gv.hoTen || gv.ho_ten}
                     </option>
                   ))}

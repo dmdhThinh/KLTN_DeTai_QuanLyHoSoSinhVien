@@ -2,7 +2,6 @@
 import React from 'react'
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import Login from './pages/login'
-import ChangePassword from './pages/changePassword'
 import StudentDashboard from './pages/SinhVien/StudentDashboard'
 import TeacherDashboard from './pages/GiangVien/TeacherDashboard'
 import AdminDashboard from './pages/Admin/AdminDashboard'
@@ -41,16 +40,20 @@ import GiangVienList from './pages/Admin/GiangVienList'
 import AddGiangVien from './pages/Admin/AddGiangVien'
 import EditGiangVien from './pages/Admin/EditGiangVien'
 
+import TeacherNhapDiem from './pages/GiangVien/NhapDiem.js'
+import LopHocPhanList2 from './pages/GiangVien/LopHocPhanList2.js'
+
 import AccountList from './pages/Admin/AccountList'
 
 import DiemSo from './pages/SinhVien/DiemSo.js'
+
+import ChangePassword from './pages/changePassword'
 
 
 
 function App() {
   return (
     <BrowserRouter>
-        
       <Routes>
         {/* Trang mặc định */}
         <Route path="/change-password" element={<ChangePassword />} />
@@ -76,6 +79,22 @@ function App() {
             </PrivateRoute>
           }
         />
+        <Route
+  path="/teacher/nhapdiem"
+  element={
+    <PrivateRoute allowRoles={['Giảng viên']}>
+      <TeacherNhapDiem />
+    </PrivateRoute>
+  }
+/>
+<Route
+  path="/teacher/lophocphan"
+  element={<PrivateRoute allowRoles={['Giảng viên']}><LopHocPhanList2 /></PrivateRoute>}
+/>
+<Route
+  path="/teacher/nhapdiem/:lopHocPhanId"
+  element={<PrivateRoute allowRoles={['Giảng viên']}><TeacherNhapDiem /></PrivateRoute>}
+/>
 
         {/* Quản trị */}
         <Route
