@@ -61,3 +61,17 @@ export async function deleteLopHocPhan(req, res) {
         res.status(500).json({ message: 'Error deleting LopHocPhan', error: err.message });
     }
 }
+// ✅ Hàm lấy lớp học phần theo giảng viên
+export async function getLopHocPhanByGiangVien(req, res) {
+  const { giangVienId } = req.params;
+  try {
+    const rows = await LopHocPhanModel.getLopHocPhanByGiangVien(giangVienId);
+    res.status(200).json(rows);
+  } catch (err) {
+    console.error('❌ Lỗi khi lấy lớp học phần theo giảng viên:', err);
+    res.status(500).json({
+      message: 'Lỗi khi lấy lớp học phần theo giảng viên',
+      error: err.message,
+    });
+  }
+}

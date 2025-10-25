@@ -4,6 +4,7 @@ import * as LopHocPhanController from '../controllers/lophocphanController.js';
 const router = Router();
 
 // CRUD operations for LopHocPhan
+router.get('/by-giangvien/:giangVienId', LopHocPhanController.getLopHocPhanByGiangVien);
 router.post('/', LopHocPhanController.create);  // Create
 router.get('/', LopHocPhanController.getAll);  // Read All
 router.get('/:id', LopHocPhanController.getById);  // Read by ID

@@ -138,3 +138,26 @@ export async function deleteLopHocPhan(id) {
         throw err;
     }
 }
+export async function getLopHocPhanByGiangVien(giangVienId) {
+  try {
+    const [rows] = await pool.execute(`
+      SELECT 
+        lhp.id,
+        lhp.ma_lop_hoc_phan AS maLopHocPhan,
+        hp.ten_hoc_phan AS tenHocPhan,
+        hp.so_tin_chi AS soTinChi,
+        l.ten_lop AS tenLop,
+        COUNT(DISTINCT sv.id) AS siSo
+      FROM LopHocPhan lhp
+      JOIN HocPhan hp ON lhp.hoc_phan_id = hp.id
+      JOIN Lop l ON lhp.lop_id = l.id
+      LEFT JOIN SinhVien sv ON sv.lop_id = l.id
+      WHERE lhp.giang_vien_id = ?
+      GROUP BY lhp.id
+    `, [giangVienId]);
+    return rows;
+  } catch (err) {
+    console.error('❌ Lỗi model getLopHocPhanByGiangVien:', err);
+    throw err;
+  }
+}
