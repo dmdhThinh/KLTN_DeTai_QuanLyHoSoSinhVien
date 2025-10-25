@@ -2,6 +2,7 @@
 import React from 'react'
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import Login from './pages/login'
+import ChangePassword from './pages/changePassword'
 import StudentDashboard from './pages/SinhVien/StudentDashboard'
 import TeacherDashboard from './pages/GiangVien/TeacherDashboard'
 import AdminDashboard from './pages/Admin/AdminDashboard'
@@ -49,8 +50,10 @@ import DiemSo from './pages/SinhVien/DiemSo.js'
 function App() {
   return (
     <BrowserRouter>
+        
       <Routes>
         {/* Trang mặc định */}
+        <Route path="/change-password" element={<ChangePassword />} />
         <Route path="/" element={<Navigate to="/login" replace />} />
         <Route path="/login" element={<Login />} />
 

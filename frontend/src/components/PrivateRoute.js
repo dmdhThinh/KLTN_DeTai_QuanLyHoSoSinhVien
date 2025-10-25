@@ -1,21 +1,14 @@
+// src/components/PrivateRoute.js
 import React from 'react'
 import { Navigate } from 'react-router-dom'
-import { getToken, getRole } from '../api'
+import { getRole } from '../api'
 
-export default function PrivateRoute({ children, allowRoles = [] }) {
-  const token = getToken()
+export default function PrivateRoute({ allowRoles, children }) {
   const role = getRole()
-
-  // Nếu chưa đăng nhập
-  if (!token) {
-    return <Navigate to="/login" replace />
-  }
-
-  // Nếu có danh sách quyền mà người dùng không khớp
-  if (allowRoles.length > 0 && !allowRoles.includes(role)) {
-    return <Navigate to="/" replace />
-  }
-
-  // Nếu hợp lệ thì render children
+  console.log('🔐 Kiểm tra quyền:', role)  // <== thêm log tạm
+  if (!role) return <Navigate to="/login" replace />
+  console.log('🔍 allowRoles:', allowRoles)
+  console.log('🔍 currentRole:', role)
+  if (!allowRoles.includes(role)) return <Navigate to="/login" replace />
   return children
 }

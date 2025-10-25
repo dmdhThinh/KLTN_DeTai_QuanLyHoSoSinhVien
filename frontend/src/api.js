@@ -64,9 +64,9 @@ export function getRole() {
 
   // fallback nếu tab chưa lưu sessionRole
   return (
+    localStorage.getItem(ROLE_KEYS['Quản trị']) ||
     localStorage.getItem(ROLE_KEYS['Sinh viên']) ||
     localStorage.getItem(ROLE_KEYS['Giảng viên']) ||
-    localStorage.getItem(ROLE_KEYS['Quản trị']) ||
     null
   )
 }
@@ -83,18 +83,11 @@ export function getGiangVienId() {
 
 // 🧠 Fetch API — luôn dùng token tương ứng role hiện tại
 export async function apiFetch(path, options = {}) {
-  const token = getToken()
   const headers = { 'Content-Type': 'application/json', ...(options.headers || {}) }
-  if (token) headers['Authorization'] = `Bearer ${token}`
-
-  const res = await fetch(`${API_BASE}${path}`, { ...options, headers })
+  const res = await fetch(path, { ...options, headers })
   if (!res.ok) {
-    let msg = 'Request failed'
-    try {
-      const t = await res.json()
-      msg = t?.message || msg
-    } catch {}
-    throw new Error(msg)
+    const text = await res.text()
+    throw new Error(text || 'Request failed')
   }
   if (res.status === 204) return null
   return res.json()
@@ -102,10 +95,14 @@ export async function apiFetch(path, options = {}) {
 
 // === Login, get info, CRUD ===
 export async function login(username, password) {
-  return apiFetch('/api/auth/login', {
+  const res = await fetch('/api/auth/login', {
     method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ username, password }),
   })
+  const data = await res.json()
+  if (!res.ok) throw new Error(data.message || 'Đăng nhập thất bại')
+  return data
 }
 
 export async function getSinhVienById(id) {

@@ -56,6 +56,11 @@ app.get('/api/health', (_req, res) => res.json({ status: 'ok' }))
 // 404
 app.use((req, res) => res.status(404).json({ message: 'Không tìm thấy endpoint' }))
 
+app.use(express.static('frontend/build'))
+app.get('*', (req, res) =>
+  res.sendFile(path.resolve('frontend', 'build', 'index.html'))
+)
+
 const PORT = process.env.PORT || 8080
 app.listen(PORT, () => {
   console.log(`Server listening on http://localhost:${PORT}`)
