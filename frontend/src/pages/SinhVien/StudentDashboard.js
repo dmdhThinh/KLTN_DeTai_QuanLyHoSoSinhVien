@@ -1,11 +1,13 @@
 import React, { useEffect, useState } from 'react'
 import { getSinhVienById, getSinhVienId, apiFetch } from '../../api'
-import Header from '../../components/Header'
+import StudentLayout from '../../components/StudentLayout'
 import dayjs from 'dayjs'
+import '../../styles/SinhVien/StudentDashboard.css'
 function StatCard({ title, value, variant, link }) {
   return (
     <div className={`border rounded-3 p-3 ${variant || ''}`}>
       <div className="d-flex align-items-center justify-content-between">
+      
         <div className="text-muted small">{title}</div>
         {link && <button className="btn btn-link p-0 small">{link}</button>}
       </div>
@@ -55,10 +57,11 @@ export default function StudentDashboard() {
   }, [])
 
   return (
-    <div>
-      <Header />
 
-      <div className="bg-white rounded-4 shadow p-4">
+        <StudentLayout title="Trang tổng quan sinh viên">
+        <div className="d-flex justify-content-center">
+      <div className="w-100" style={{ maxWidth: 1300 }}>
+          <div >
         <div className="row g-4">
           {/* Left: Profile summary */}
           <div className="col-lg-8">
@@ -86,40 +89,33 @@ export default function StudentDashboard() {
                 </div>
 
                 <div className="col-md-8">
-                  <div className="row row-cols-2 g-3 small">
+                 <div className="row row-cols-2 g-2 small " style={{fontSize: '15px',lineHeight: '1.9',marginTop: '4px', }}>
                     <div>
-                      <div className="text-muted">MSSV</div>
-                      <div className="fw-semibold">{sv?.maSv || '-'}</div>
-                    </div>
-                    <div>
-                      <div className="text-muted">Lớp học</div>
-                      <div className="fw-semibold">{sv?.tenLop || '-'}</div>
+                      <div><span className="text-muted">MSSV:</span> <span className="fw-semibold">{sv?.maSv || '-'}</span></div>
                     </div>
                     <div>
-                      <div className="text-muted">Giới tính</div>
-                      <div className="fw-semibold">{sv?.gioiTinh || '-'}</div>
+                      <div><span className="text-muted">Lớp học:</span> <span className="fw-semibold">{sv?.tenLop || '-'}</span></div>
                     </div>
                     <div>
-                      <div className="text-muted">Khóa học</div>
-                      <div className="fw-semibold">{sv?.khoaHoc || '-'}</div>
+                      <div><span className="text-muted">Giới tính:</span> <span className="fw-semibold">{sv?.gioiTinh || '-'}</span></div>
                     </div>
                     <div>
-                      <div className="text-muted">Ngày sinh</div>
-                      <div className="fw-semibold">{sv?.ngaySinh || '-'}</div>
+                      <div><span className="text-muted">Khóa học:</span> <span className="fw-semibold">{sv?.khoaHoc || '-'}</span></div>
                     </div>
                     <div>
-                      <div className="text-muted">Ngành</div>
-                      <div className="fw-semibold">{sv?.tenNganh || '-'}</div>
+                      <div><span className="text-muted">Ngày sinh:</span> <span className="fw-semibold">{sv?.ngaySinh || '-'}</span></div>
                     </div>
-                    <div className="col-12">
-                      <div className="text-muted">Nơi sinh</div>
-                      <div className="fw-semibold">{sv?.diaChi || '-'}</div>
+                    <div>
+                      <div><span className="text-muted">Ngành:</span> <span className="fw-semibold">{sv?.tenNganh || '-'}</span></div>
                     </div>
-                    <div className="col-12">
-                      <div className="text-muted">Khoa/Viện</div>
-                      <div className="fw-semibold">{sv?.tenKhoa || '-'}</div>
+                    <div>
+                      <div><span className="text-muted">Nơi sinh:</span> <span className="fw-semibold">{sv?.diaChi || '-'}</span></div>
+                    </div>
+                    <div >
+                      <div><span className="text-muted">Khoa/Viện:</span> <span className="fw-semibold">{sv?.tenKhoa || '-'}</span></div>
                     </div>
                   </div>
+
                 </div>
               </div>
             </div>
@@ -128,12 +124,12 @@ export default function StudentDashboard() {
           {/* Right: Stats */}
           <div className="col-lg-4 d-flex flex-column gap-3">
             <StatCard title="Nhắc nhở mới" value={0} link="Xem chi tiết" />
-            <div className="row g-3">
-              <div className="col-6">
+            <div className="row g-2 " >
+              <div className="col-6" >
                 <StatCard
                   title="Lịch học"
                   value={lichHocCount}
-                  variant="bg-light"
+                  variant="stat-lichhoc"
                   link={<a href="/lich?mode=hoc">Xem chi tiết</a>}
                 />
               </div>
@@ -141,7 +137,7 @@ export default function StudentDashboard() {
                 <StatCard
                   title="Lịch thi"
                   value={lichThiCount}
-                  variant="bg-light"
+                  variant="stat-lichthi" 
                   link={<a href="/lich?mode=thi">Xem chi tiết</a>}
                 />
               </div>
@@ -149,33 +145,11 @@ export default function StudentDashboard() {
           </div>
         </div>
 
-        {/* Bottom buttons */}
-        <div className="d-flex gap-2 gap-md-3 mt-4 overflow-auto pb-2">
-          {[
-            'Lịch theo tuần',
-            'Kết quả học tập',
-            'Đăng ký học phần',
-            'Hồ sơ điện tử',
-            'Tra cứu công nợ',
-            'Thanh toán trực tuyến',
-            'Phiếu thu tổng hợp',
-            'Lịch theo tiến độ',
-            'Nhắc nhở ',
-            'Khảo sát',
-          ].map((t) => (
-            <button key={t} className="btn btn-outline-secondary rounded-3">
-      {t === 'Kết quả học tập' ? (
-        <a href="/diemso" style={{ textDecoration: 'none', color: 'inherit' }}>
-          {t}
-        </a>
-      ) : (
-        t
-      )}
-    </button>
-          ))}
-          
-        </div>
+       
       </div>
-    </div>
+      </div>
+      </div>
+      </StudentLayout>
+    
   )
 }

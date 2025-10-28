@@ -32,7 +32,7 @@ export async function getAllHocPhan() {
 FROM HocPhan hp
 LEFT JOIN Khoa k ON k.id = hp.khoa_id
 LEFT JOIN Nganh n ON n.id = hp.nganh_id
-      ORDER BY hp.ten_hoc_phan DESC
+      ORDER BY hp.id ASC
     `)
     return rows
   } catch (err) {

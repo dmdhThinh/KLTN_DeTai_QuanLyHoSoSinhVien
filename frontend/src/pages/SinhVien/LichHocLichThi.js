@@ -3,7 +3,8 @@ import { getSinhVienId, apiFetch } from '../../api'
 import { useLocation } from 'react-router-dom'
 import dayjs from 'dayjs'
 import 'dayjs/locale/vi'
-import Header from '../../components/Header'
+import StudentLayout from '../../components/StudentLayout'
+
 import '../../styles/SinhVien/LichHocLichThi.css'
 
 // 🧭 Hàm lấy thứ 2 đầu tuần
@@ -36,29 +37,53 @@ export default function LichHocLichThi() {
 
   // 🧠 Gọi API lịch học hoặc lịch thi
   useEffect(() => {
-    const id = getSinhVienId()
-    if (!id) {
-      setLoading(false)
-      setError('Không tìm thấy thông tin sinh viên!')
-      return
-    }
+  const id = getSinhVienId()
+  if (!id) {
+    setLoading(false)
+    setError('Không tìm thấy thông tin sinh viên!')
+    return
+  }
 
-    setLoading(true)
-    setError(null)
+  setLoading(true)
+  setError(null)
 
-    const from = dayjs(weekStart).format('YYYY-MM-DD')
+  const from = dayjs(weekStart).format('YYYY-MM-DD')
 
-    apiFetch(`/api/lich/${mode}?sinhVienId=${id}&from=${from}`)
-      .then((data) => {
-        setLich(Array.isArray(data) ? data : [])
+  if (mode === 'tatca') {
+    // Lấy cả lịch học + lịch thi
+    Promise.all([
+      apiFetch(`/api/lich/hoc?sinhVienId=${id}&from=${from}`),
+      apiFetch(`/api/lich/thi?sinhVienId=${id}&from=${from}`)
+    ])
+      .then(([hoc, thi]) => {
+        setLich([
+          ...(Array.isArray(hoc) ? hoc : []),
+          ...(Array.isArray(thi) ? thi : [])
+        ])
       })
       .catch((err) => {
         console.error('❌ Lỗi khi tải lịch:', err)
-        setError('Không thể tải dữ liệu lịch học.')
+        setError('Không thể tải dữ liệu lịch.')
         setLich([])
       })
       .finally(() => setLoading(false))
-  }, [mode, weekStart])
+
+    return // ⬅️ tránh chạy tiếp lời gọi đơn lẻ bên dưới
+  }
+
+  // Chỉ lịch học hoặc chỉ lịch thi
+  apiFetch(`/api/lich/${mode}?sinhVienId=${id}&from=${from}`)
+    .then((data) => {
+      setLich(Array.isArray(data) ? data : [])
+    })
+    .catch((err) => {
+      console.error('❌ Lỗi khi tải lịch:', err)
+      setError('Không thể tải dữ liệu lịch.')
+      setLich([])
+    })
+    .finally(() => setLoading(false))
+}, [mode, weekStart])
+
 
   // 🕐 Loading
   if (loading)
@@ -72,8 +97,18 @@ export default function LichHocLichThi() {
   
 
   return (
-    <div className="page-lichhoc">
-      <Header />
+    <StudentLayout title='Lịch học lịch thi' div  className="page-lichhoc">
+      <div className="d-flex justify-content-center">
+      <div
+  className="w-100 bg-white"
+  style={{
+    maxWidth: 1370,
+    border: 'none',
+    boxShadow: 'none',
+  }}
+>
+
+      
       {/* Thông báo lỗi (hiển thị trên trang) */}
 {error && (
   <div className="text-center text-danger fw-semibold mt-3">
@@ -82,20 +117,48 @@ export default function LichHocLichThi() {
 )}
 
 
-      <div className="title-lg">Lịch học, lịch thi theo tuần</div>
+      
 
       <div className="toolbar d-flex align-items-center gap-2 flex-wrap">
-        <div className="form-check form-check-inline">
-          <input className="form-check-input" type="radio" checked={mode === 'hoc'} readOnly />
-          <label className="form-check-label ms-1">Lịch học</label>
-        </div>
-        <div className="form-check form-check-inline">
-          <input className="form-check-input" type="radio" checked={mode === 'thi'} readOnly />
-          <label className="form-check-label ms-1">Lịch thi</label>
-        </div>
+        <div className="form-check form-check-inline ms-2">
+  <input
+    className="form-check-input"
+    type="radio"
+    name="mode"
+    checked={mode === 'hoc'}
+    onChange={() => (window.location.search = '?mode=hoc')}
+  />
+  <label className="form-check-label ms-1">Lịch học</label>
+</div>
+
+<div className="form-check form-check-inline">
+  <input
+    className="form-check-input"
+    type="radio"
+    name="mode"
+    checked={mode === 'thi'}
+    onChange={() => (window.location.search = '?mode=thi')}
+  />
+  <label className="form-check-label ms-1">Lịch thi</label>
+</div>
+
+<div className="form-check form-check-inline">
+  <input
+    className="form-check-input"
+    type="radio"
+    name="mode"
+    checked={mode === 'tatca'}
+    onChange={() => (window.location.search = '?mode=tatca')}
+  />
+  <label className="form-check-label ms-1">Tất cả</label>
+</div>
+
+        
+        
         <input
           type="date"
           className="form-control form-control-sm"
+          style={{ width: 160, minWidth: 160 }}
           value={dayjs(weekStart).format('YYYY-MM-DD')}
           onChange={(e) => setWeekStart(getMonday(e.target.value))}
         />
@@ -229,6 +292,8 @@ export default function LichHocLichThi() {
           <span style={{ background: '#ef5350', border: '1px solid #b71c1c' }}></span> Lịch tạm ngưng
         </div>
       </div>
-    </div>
+      </div>
+      </div>
+    </StudentLayout>
   )
 }
