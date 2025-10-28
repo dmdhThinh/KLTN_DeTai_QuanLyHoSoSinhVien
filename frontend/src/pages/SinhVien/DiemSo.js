@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react'
 import { getSinhVienId, apiFetch } from '../../api' 
-import Header from '../../components/Header'
 
+import StudentLayout from '../../components/StudentLayout'
 export default function DiemSo() {
   const [diemSo, setDiemSo] = useState([])
   useEffect(() => {
@@ -15,11 +15,13 @@ export default function DiemSo() {
   }, [])
 
   return (
-    <div>
-      <Header />
+    <StudentLayout title="Kết quả học tập">
+     <div className="d-flex justify-content-center">
+      <div className="card shadow-sm w-100" style={{ maxWidth: 1300 }}>
+      
 
       <div className="container mt-4">
-        <h4>Kết quả học tập</h4>
+       
         <table className="table table-bordered">
           <thead>
             <tr>
@@ -109,7 +111,10 @@ export default function DiemSo() {
             ))}
           </tbody>
         </table>
+        
       </div>
-    </div>
+      </div>
+      </div>
+  </StudentLayout>
   )
 }

@@ -54,9 +54,17 @@ function Login() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-teal-300 via-sky-300 to-indigo-300 p-4">
-      <div className="bg-white rounded-2xl shadow-2xl p-8 w-full max-w-md">
-        <h1 className="text-2xl font-semibold text-gray-800 mb-6 text-center">Đăng nhập hệ thống</h1>
+   <div className="min-h-screen w-full flex items-center justify-center bg-gradient-to-br from-teal-300 via-sky-300 to-indigo-300 p-4">
+      <div className="w-full max-w-md bg-white/95 rounded-2xl shadow-2xl p-8">
+        <div className="flex flex-col items-center">
+          <div className="w-20 h-20 rounded-full bg-indigo-100 flex items-center justify-center mb-4 shadow-inner">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-10 h-10 text-indigo-500">
+              <path d="M12 12c2.761 0 5-2.686 5-6s-2.239-6-5-6-5 2.686-5 6 2.239 6 5 6zm0 2c-4.418 0-8 3.134-8 7v1h16v-1c0-3.866-3.582-7-8-7z" />
+            </svg>
+          </div>
+          <h1 className="text-2xl font-semibold text-gray-800 mb-6">Đăng nhập hệ thống</h1>
+        </div>
+
         <form onSubmit={handleSubmit} className="space-y-4">
           <input
             type="text"

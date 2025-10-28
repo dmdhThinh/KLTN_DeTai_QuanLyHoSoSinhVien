@@ -42,12 +42,15 @@ export async function getLichHoc(req, res) {
         AND lhp.lop_id = ?
         AND (
           (lh.ngay_hoc IS NOT NULL AND lh.ngay_hoc BETWEEN DATE(?) AND DATE_ADD(DATE(?), INTERVAL 6 DAY))
-          OR
-          (lh.ngay_hoc IS NULL)
+          OR (
+            lh.ngay_hoc IS NULL
+            AND (lhp.ngay_bat_dau IS NULL OR lhp.ngay_bat_dau <= DATE_ADD(DATE(?), INTERVAL 6 DAY))
+            AND (lhp.ngay_ket_thuc IS NULL OR lhp.ngay_ket_thuc >= DATE(?))
+          )
         )
       ORDER BY lh.thu ASC, lh.ca ASC, lh.tiet_bat_dau ASC
     `
-    const [rows] = await pool.execute(sql, [lopId, from, from])
+    const [rows] = await pool.execute(sql, [lopId, from, from, from, from])
     res.json(rows)
   } catch (err) {
     console.error('❌ Lỗi getLichHoc sinh viên:', err)

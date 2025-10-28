@@ -21,51 +21,47 @@ export async function getLichHocAdmin(req, res) {
   try {
     const { lopId, from } = req.query
     if (!lopId) return res.status(400).json({ message: 'Thiếu lopId' })
-
-    const params = [lopId]
-    let dateFilter = ''
-    if (from) {
-      dateFilter = ` AND DATE(?) BETWEEN lhp.ngay_bat_dau AND lhp.ngay_ket_thuc `
-      params.push(from)
-    }
+    if (!from) return res.status(400).json({ message: 'Thiếu ngày bắt đầu tuần (from)' })
 
     const sql = `
-  SELECT 
-    lh.id,
-    lh.thu,
-    lh.ca,
-    lh.tiet_bat_dau  AS tietBatDau,
-    lh.tiet_ket_thuc AS tietKetThuc,
-    lh.phong,
-    lh.co_so AS coSo,
-    lh.loai,
-    lh.ngay_hoc AS ngayHoc,
-    lhp.ma_lop_hoc_phan AS maLopHocPhan,
-    hp.ten_hoc_phan     AS tenHocPhan,
-    hp.ma_hoc_phan      AS maHocPhan,
-    gv.ho_ten           AS tenGiangVien
-  FROM LichHoc lh
-  JOIN LopHocPhan lhp ON lhp.id = lh.lop_hoc_phan_id
-  JOIN HocPhan hp ON hp.id = lhp.hoc_phan_id
-  JOIN GiangVien gv ON gv.id = lhp.giang_vien_id
-  WHERE lh.loai IN ('lythuyet','thuchanh','tructuyen')
-    AND lhp.lop_id = ?
-    AND (
-      -- 🧩 Nếu lịch có ngày cụ thể → chỉ hiển thị tuần chứa ngày đó
-      (lh.ngay_hoc IS NOT NULL AND lh.ngay_hoc BETWEEN DATE(?) AND DATE_ADD(DATE(?), INTERVAL 6 DAY))
-      OR
-      -- 🧩 Nếu không có ngày học cụ thể → là lịch lặp hàng tuần (hiển thị mọi tuần)
-      (lh.ngay_hoc IS NULL)
-    )
-  ORDER BY lh.thu ASC, lh.ca ASC, lh.tiet_bat_dau ASC
-`
-    const [rows] = await pool.execute(sql, [lopId, from, from])
+      SELECT 
+        lh.id,
+        lh.thu,
+        lh.ca,
+        lh.tiet_bat_dau  AS tietBatDau,
+        lh.tiet_ket_thuc AS tietKetThuc,
+        lh.phong,
+        lh.co_so         AS coSo,
+        lh.loai,
+        lh.ngay_hoc      AS ngayHoc,
+        lhp.ma_lop_hoc_phan AS maLopHocPhan,
+        hp.ten_hoc_phan     AS tenHocPhan,
+        hp.ma_hoc_phan      AS maHocPhan,
+        gv.ho_ten           AS tenGiangVien
+      FROM LichHoc lh
+      JOIN LopHocPhan lhp ON lhp.id = lh.lop_hoc_phan_id
+      JOIN HocPhan hp ON hp.id = lhp.hoc_phan_id
+      JOIN GiangVien gv ON gv.id = lhp.giang_vien_id
+      WHERE lh.loai IN ('lythuyet','thuchanh','tructuyen')
+        AND lhp.lop_id = ?
+        AND (
+          (lh.ngay_hoc IS NOT NULL AND lh.ngay_hoc BETWEEN DATE(?) AND DATE_ADD(DATE(?), INTERVAL 6 DAY))
+          OR (
+            lh.ngay_hoc IS NULL
+            AND (lhp.ngay_bat_dau IS NULL OR lhp.ngay_bat_dau <= DATE_ADD(DATE(?), INTERVAL 6 DAY))
+            AND (lhp.ngay_ket_thuc IS NULL OR lhp.ngay_ket_thuc >= DATE(?))
+          )
+        )
+      ORDER BY lh.thu ASC, lh.ca ASC, lh.tiet_bat_dau ASC
+    `
+    const [rows] = await pool.execute(sql, [lopId, from, from, from, from])
     res.json(rows)
   } catch (err) {
     console.error('❌ Lỗi getLichHocAdmin:', err)
     res.status(500).json({ message: 'Lỗi server khi lấy lịch học (Admin)' })
   }
 }
+
 // 🧩 Lịch thi (Admin)
 export async function getLichThiAdmin(req, res) {
   try {

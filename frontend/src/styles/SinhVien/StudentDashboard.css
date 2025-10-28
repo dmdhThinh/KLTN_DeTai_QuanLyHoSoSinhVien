@@ -1,0 +1,31 @@
+/* 🔹 Style cho card Lịch học */
+.stat-lichhoc {
+    background-color: #e3f2fd !important;
+    /* xanh dương nhạt */
+    color: #1565c0 !important;
+    /* xanh đậm */
+    border: none !important;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.08);
+    transition: 0.3s;
+}
+
+.stat-lichhoc:hover {
+    background-color: #bbdefb !important;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+}
+
+/* 🔹 Style cho card Lịch thi */
+.stat-lichthi {
+    background-color: #fff8e1 !important;
+    /* vàng nhạt */
+    color: #ef6c00 !important;
+    /* cam đậm */
+    border: none !important;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.08);
+    transition: 0.3s;
+}
+
+.stat-lichthi:hover {
+    background-color: #ffe0b2 !important;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+}
