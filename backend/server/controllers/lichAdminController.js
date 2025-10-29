@@ -21,10 +21,11 @@ export async function getLichHocAdmin(req, res) {
   try {
     const { lopId, from } = req.query
     if (!lopId) return res.status(400).json({ message: 'Thiếu lopId' })
+
     if (!from) return res.status(400).json({ message: 'Thiếu ngày bắt đầu tuần (from)' })
 
     const sql = `
-      SELECT 
+  SELECT 
         lh.id,
         lh.thu,
         lh.ca,
@@ -61,7 +62,6 @@ export async function getLichHocAdmin(req, res) {
     res.status(500).json({ message: 'Lỗi server khi lấy lịch học (Admin)' })
   }
 }
-
 // 🧩 Lịch thi (Admin)
 export async function getLichThiAdmin(req, res) {
   try {

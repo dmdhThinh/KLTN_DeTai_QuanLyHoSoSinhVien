@@ -1,0 +1,190 @@
+/* 🌈 nền tổng thể */
+.login-page {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #6fd6ff, #90a7ff);
+  font-family: 'Segoe UI', sans-serif;
+}
+
+/* 🔲 khung 2 cột */
+.login-container {
+  display: flex;
+  width: 100%;
+  max-width: 1200px;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 60px;
+}
+
+/* 📰 bên trái: danh sách tin */
+.news-panel {
+  flex: 2;
+  background: rgba(255, 255, 255, 0.96);
+  border-radius: 16px;
+  padding: 28px;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12);
+  display: flex;
+  flex-direction: column;
+  height: 560px;
+}
+
+.news-title {
+  text-align: center;
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: #1e3a8a;
+  margin-bottom: 16px;
+}
+
+.news-list {
+  overflow-y: auto;
+  flex: 1;
+  scrollbar-width: thin;
+  padding-right: 6px;
+}
+.news-list::-webkit-scrollbar {
+  width: 6px;
+}
+.news-list::-webkit-scrollbar-thumb {
+  background: #a5b4fc;
+  border-radius: 4px;
+}
+
+/* item tin tức */
+.news-item {
+  background: #f9faff;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 12px 16px;
+  margin-bottom: 10px;
+  transition: all 0.2s ease;
+}
+.news-item:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.25);
+}
+.news-header {
+  display: flex;
+  justify-content: space-between;
+  font-weight: 600;
+  color: #374151;
+}
+.news-item p {
+  margin-top: 4px;
+  font-size: 0.9rem;
+  color: #4b5563;
+}
+
+/* 🔐 bên phải: form đăng nhập */
+.login-form {
+  flex: 1;
+  background: rgba(255, 255, 255, 0.96);
+  border-radius: 16px;
+  padding: 32px 36px;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.login-form h2 {
+  font-weight: 700;
+  color: #1e3a8a;
+  margin-bottom: 20px;
+}
+
+.login-form form {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.login-form label {
+  font-weight: 600;
+  font-size: 0.9rem;
+  color: #374151;
+}
+
+.login-form input {
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  padding: 10px;
+  outline: none;
+  transition: all 0.2s;
+}
+.login-form input:focus {
+  border-color: #4f46e5;
+  box-shadow: 0 0 0 2px rgba(79, 70, 229, 0.15);
+}
+
+.login-form button {
+  margin-top: 6px;
+  background: linear-gradient(to right, #4f46e5, #06b6d4);
+  color: #fff;
+  font-weight: 600;
+  border: none;
+  border-radius: 8px;
+  padding: 10px;
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+.login-form button:hover {
+  opacity: 0.9;
+}
+.login-form button:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.alert {
+  background: #fee2e2;
+  color: #b91c1c;
+  border-radius: 6px;
+  padding: 8px;
+  width: 100%;
+  text-align: center;
+  font-size: 0.9rem;
+}
+
+.note {
+  font-size: 0.85rem;
+  color: #6b7280;
+  margin-top: 10px;
+  text-align: center;
+}
+.highlight {
+  color: #2563eb;
+  font-weight: 600;
+}
+
+/* ✨ hiệu ứng vào */
+.fade-in-left {
+  animation: fadeLeft 0.8s ease forwards;
+}
+.fade-in-right {
+  animation: fadeRight 0.8s ease forwards;
+}
+@keyframes fadeLeft {
+  from {opacity: 0; transform: translateX(-40px);}
+  to {opacity: 1; transform: translateX(0);}
+}
+@keyframes fadeRight {
+  from {opacity: 0; transform: translateX(40px);}
+  to {opacity: 1; transform: translateX(0);}
+}
+
+/* 📱 responsive */
+@media (max-width: 992px) {
+  .login-container {
+    flex-direction: column;
+    gap: 30px;
+  }
+  .news-panel,
+  .login-form {
+    width: 100%;
+    height: auto;
+  }
+}

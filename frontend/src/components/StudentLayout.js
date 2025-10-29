@@ -1,25 +1,65 @@
-import React, { useEffect, useState } from 'react'
-import { useLocation, Link } from 'react-router-dom'
-import { getSinhVienId, getSinhVienById } from '../api'
+import React, { useEffect, useState, useRef } from 'react'
+import { useLocation, Link, useNavigate } from 'react-router-dom'
+import {
+  getRole,
+  getSinhVienId,
+  getSinhVienById,
+  getGiangVienId,
+  getGiangVienById,
+  clearAuth,
+  getUnreadCount
+} from '../api'
+import { Bell } from 'lucide-react'
 import 'bootstrap-icons/font/bootstrap-icons.css'
+
 
 export default function StudentLayout({ children, title = '' }) {
   const location = useLocation()
+  const navigate = useNavigate()
   const [sv, setSv] = useState(null)
+  const [unread, setUnread] = useState(0)
+  const [showMenu, setShowMenu] = useState(false)
+  const menuRef = useRef(null)
 
+  // ✅ Lấy thông tin sinh viên + số tin chưa đọc
   useEffect(() => {
-    const id = getSinhVienId()
-    if (!id) return
+    const role = getRole()
+    if (role === 'Sinh viên') {
+      const id = getSinhVienId()
+      if (id) {
+        getSinhVienById(id)
+          .then((res) => setSv(res))
+          .catch(() => setSv(null))
 
-    getSinhVienById(id)
-      .then((res) => {
-        if (res) {
-          const name = res.hoTen || res.ho_ten || 'Sinh viên'
-          setSv({ ...res, hoTen: name })
-        }
-      })
-      .catch(() => setSv(null))
+        getUnreadCount(id)
+          .then((res) => setUnread(res.count || 0))
+          .catch(() => setUnread(0))
+      }
+    } else if (role === 'Giảng viên') {
+      const id = getGiangVienId()
+      if (id)
+        getGiangVienById(id)
+          .then((res) => setSv(res))
+          .catch(() => setSv(null))
+    }
   }, [])
+
+  // ✅ Đóng dropdown khi click ra ngoài
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (menuRef.current && !menuRef.current.contains(e.target)) {
+        setShowMenu(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [])
+
+  // ✅ Đăng xuất
+  const handleLogout = () => {
+    clearAuth()
+    window.location.href = '/login'
+  }
 
   return (
     <div className="d-flex" style={{ minHeight: '100vh', background: '#f4f6fa' }}>
@@ -28,7 +68,7 @@ export default function StudentLayout({ children, title = '' }) {
         className="text-white d-flex flex-column p-3 shadow"
         style={{
           width: 250,
-          background: 'linear-gradient(180deg, #0d3b66 0%, #133b5c 100%)',
+          background: 'linear-gradient(180deg, #0d3b66 0%, #133b5c 100%)'
         }}
       >
         <div className="d-flex align-items-center mb-4 ps-1">
@@ -41,16 +81,15 @@ export default function StudentLayout({ children, title = '' }) {
             <Link
               to="/student"
               className={`nav-link ${
-                location.pathname === '/student'
-                  ? 'active'
-                  : 'text-white-50'
+                location.pathname === '/student' ? 'active' : 'text-white-50'
               }`}
               style={{
                 backgroundColor:
                   location.pathname === '/student' ? '#1e6091' : 'transparent',
-                color: location.pathname === '/student' ? '#fff' : '#bcd0e8',
+                color:
+                  location.pathname === '/student' ? '#fff' : '#bcd0e8',
                 borderRadius: '8px',
-                transition: 'all 0.2s',
+                transition: 'all 0.2s'
               }}
             >
               <i className="bi bi-house-door me-2"></i> Trang chủ
@@ -66,7 +105,7 @@ export default function StudentLayout({ children, title = '' }) {
 
           <li>
             <Link
-              to="/student/chuong-trinh-khung"
+              to="/chuong-trinh-khung"
               className={`nav-link ${
                 location.pathname.includes('/chuong-trinh-khung')
                   ? 'active'
@@ -80,7 +119,7 @@ export default function StudentLayout({ children, title = '' }) {
                   ? '#fff'
                   : '#bcd0e8',
                 borderRadius: '8px',
-                transition: 'all 0.2s',
+                transition: 'all 0.2s'
               }}
             >
               <i className="bi bi-journal-text me-2"></i> Chương trình khung
@@ -101,7 +140,7 @@ export default function StudentLayout({ children, title = '' }) {
                   ? '#fff'
                   : '#bcd0e8',
                 borderRadius: '8px',
-                transition: 'all 0.2s',
+                transition: 'all 0.2s'
               }}
             >
               <i className="bi bi-bar-chart-line me-2"></i> Kết quả học tập
@@ -112,9 +151,7 @@ export default function StudentLayout({ children, title = '' }) {
             <Link
               to="/lich"
               className={`nav-link ${
-                location.pathname.includes('/lich')
-                  ? 'active'
-                  : 'text-white-50'
+                location.pathname.includes('/lich') ? 'active' : 'text-white-50'
               }`}
               style={{
                 backgroundColor: location.pathname.includes('/lich')
@@ -124,7 +161,7 @@ export default function StudentLayout({ children, title = '' }) {
                   ? '#fff'
                   : '#bcd0e8',
                 borderRadius: '8px',
-                transition: 'all 0.2s',
+                transition: 'all 0.2s'
               }}
             >
               <i className="bi bi-calendar-week me-2"></i> Lịch theo tuần
@@ -133,7 +170,7 @@ export default function StudentLayout({ children, title = '' }) {
 
           <li>
             <Link
-              to="/student/cong-no"
+              to="/cong-no"
               className={`nav-link ${
                 location.pathname.includes('/cong-no')
                   ? 'active'
@@ -147,7 +184,7 @@ export default function StudentLayout({ children, title = '' }) {
                   ? '#fff'
                   : '#bcd0e8',
                 borderRadius: '8px',
-                transition: 'all 0.2s',
+                transition: 'all 0.2s'
               }}
             >
               <i className="bi bi-cash-coin me-2"></i> Tra cứu công nợ
@@ -156,17 +193,17 @@ export default function StudentLayout({ children, title = '' }) {
         </ul>
 
         <div className="border-top pt-3 mt-3">
-          <a
-            href="/login"
+          <button
+            onClick={handleLogout}
             className="btn btn-outline-light w-100 d-flex align-items-center justify-content-center fw-semibold"
             style={{
               borderRadius: '8px',
               border: '1px solid #f28b82',
-              color: '#f28b82',
+              color: '#f28b82'
             }}
           >
             <i className="bi bi-box-arrow-right me-2"></i> Đăng xuất
-          </a>
+          </button>
         </div>
       </aside>
 
@@ -174,15 +211,51 @@ export default function StudentLayout({ children, title = '' }) {
       <main className="flex-grow-1 p-4">
         <div className="d-flex justify-content-between align-items-center mb-4">
           <h5 className="fw-semibold mb-0">{title}</h5>
-          <div className="d-flex align-items-center gap-2">
-            <input
-              type="text"
-              className="form-control form-control-sm"
-              placeholder="Tìm kiếm..."
-              style={{ maxWidth: 250 }}
-            />
-            <div className="text-muted small">
-              Xin chào, <b>{sv?.hoTen || 'Sinh viên'}</b>
+
+          {/* 🔔 Tin tức + User dropdown */}
+          <div className="d-flex align-items-center gap-4" ref={menuRef}>
+            {/* Tin tức */}
+            <div
+              className="position-relative text-secondary small d-flex align-items-center gap-1 iuh-hover-item"
+              style={{ cursor: 'pointer' }}
+              onClick={() => navigate('/student/thongbao')}
+            >
+              <Bell size={16} />
+              <span>Tin tức</span>
+              {unread > 0 && (
+                <span
+                  className="badge bg-danger position-absolute top-0 start-100 translate-middle rounded-pill"
+                  style={{ fontSize: 10 }}
+                >
+                  {unread}
+                </span>
+              )}
+            </div>
+
+            {/* Thông tin SV */}
+            <div className="text-muted small dropdown">
+              Xin chào,{' '}
+              <b
+                className="text-primary"
+                onClick={() => setShowMenu((prev) => !prev)}
+                style={{ cursor: 'pointer' }}
+              >
+                {sv?.hoTen || 'Sinh viên'}
+              </b>
+              {showMenu && (
+                <div className="iuh-dropdown shadow-sm border rounded-2 bg-white position-absolute end-0 mt-2">
+                  <button className="dropdown-item">Thông tin cá nhân</button>
+                  <hr className="my-1" />
+                  <button className="dropdown-item">Đổi mật khẩu</button>
+                  <hr className="my-1" />
+                  <button
+                    className="dropdown-item text-danger"
+                    onClick={handleLogout}
+                  >
+                    Đăng xuất
+                  </button>
+                </div>
+              )}
             </div>
             <div
               className="rounded-circle bg-light border"
@@ -190,6 +263,7 @@ export default function StudentLayout({ children, title = '' }) {
             ></div>
           </div>
         </div>
+
         <div>{children}</div>
       </main>
     </div>

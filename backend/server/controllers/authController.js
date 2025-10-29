@@ -14,15 +14,19 @@ export async function login(req, res) {
     }
 
     const acc = await findAccountByUsername(username)
-    if (!acc) return res.status(401).json({ message: 'Sai tài khoản hoặc mật khẩu' })
-    if (acc.trang_thai && acc.trang_thai !== 'Hoạt động') {
-      return res.status(403).json({ message: 'Tài khoản đã bị vô hiệu' })
+    if (!acc) {
+      return res.status(401).json({ message: 'Sai tài khoản hoặc mật khẩu' })
+    }
+
+    // ✅ Kiểm tra trạng thái hoạt động (chặn tài khoản bị khóa/vô hiệu)
+    if (acc.trang_thai && acc.trang_thai.toLowerCase() !== 'hoạt động') {
+      return res.status(403).json({ message: 'Tài khoản đã bị khóa hoặc ngừng hoạt động.' })
     }
 
     const ok = await comparePassword(password, acc.password_hash)
-    if (!ok) return res.status(401).json({ message: 'Sai tài khoản hoặc mật khẩu' })
-
-    console.log('🧩 DEBUG LOGIN:', acc.username, acc.da_doi_mat_khau, typeof acc.da_doi_mat_khau)
+    if (!ok) {
+      return res.status(401).json({ message: 'Sai tài khoản hoặc mật khẩu' })
+    }
 
     // ⚠️ Kiểm tra nếu chưa đổi mật khẩu
     if (!Number(acc.da_doi_mat_khau)) {
@@ -59,7 +63,7 @@ export async function login(req, res) {
   }
 }
 
-// ✅ API đổi mật khẩu lần đầu
+// ✅ API đổi mật khẩu lần đầu (giữ nguyên)
 export async function changePassword(req, res) {
   try {
     const { newPassword } = req.body

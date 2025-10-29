@@ -19,11 +19,11 @@ export default function ChangePassword() {
     try {
       await apiFetch('/api/auth/change-password', {
         method: 'POST',
-        headers: { Authorization: `Bearer ${localStorage.getItem('tempToken')}` },
+        headers: { Authorization: `Bearer ${sessionStorage.getItem('temp_token')}` },
         body: JSON.stringify({ newPassword: newPass }),
       })
       alert('Đổi mật khẩu thành công! Vui lòng đăng nhập lại.')
-      localStorage.removeItem('tempToken')
+      sessionStorage.removeItem('temp_token')
       navigate('/login')
     } catch (err) {
       setError(err.message || 'Không thể đổi mật khẩu')

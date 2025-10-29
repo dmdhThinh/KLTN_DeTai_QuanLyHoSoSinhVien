@@ -49,7 +49,11 @@ import DiemSo from './pages/SinhVien/DiemSo.js'
 
 import ChangePassword from './pages/changePassword'
 
-
+import ThongBaoList from './pages/Admin/ThongBaoList'
+import AddThongBao from './pages/Admin/AddThongBao'
+import EditThongBao from './pages/Admin/EditThongBao'
+import ThongBaoSinhVien from './pages/SinhVien/ThongBaoSinhVien'
+import ThongBaoChiTiet from './pages/SinhVien/ThongBaoChiTiet'
 
 function App() {
   return (
@@ -134,6 +138,7 @@ function App() {
         {/* Lịch học, lịch thi */}
         <Route path="/lich" element={<PrivateRoute allowRoles={['Sinh viên']}><LichHocLichThi /></PrivateRoute>} />
         <Route path="/diemso" element={<PrivateRoute allowRoles={['Sinh viên']}><DiemSo /></PrivateRoute>} />
+        <Route path="/student" element={<PrivateRoute allowRoles={['Sinh viên']}><StudentDashboard /></PrivateRoute>}/>
 
         <Route path="/admin/accounts" element={<PrivateRoute allowRoles={['Quản trị']}> <AccountList /></PrivateRoute>} />
 
@@ -164,6 +169,12 @@ function App() {
         <Route path="/admin/teachers" element={<PrivateRoute allowRoles={['Quản trị']}><GiangVienList /></PrivateRoute>} />
         <Route path="/admin/teachers/new" element={<PrivateRoute allowRoles={['Quản trị']}><AddGiangVien /></PrivateRoute>} />
         <Route path="/admin/teachers/edit/:id" element={<PrivateRoute allowRoles={['Quản trị']}><EditGiangVien /></PrivateRoute>} />
+        
+        <Route path="/admin/thongbao" element={<PrivateRoute allowRoles={['Quản trị']}><ThongBaoList /></PrivateRoute>} />
+        <Route path="/admin/thongbao/new" element={<PrivateRoute allowRoles={['Quản trị']}><AddThongBao /></PrivateRoute>} />
+        <Route path="/admin/thongbao/edit/:id" element={<PrivateRoute allowRoles={['Quản trị']}><EditThongBao /></PrivateRoute>}/>
+        <Route path="/student/thongbao" element={<PrivateRoute allowRoles={['Sinh viên']}><ThongBaoSinhVien /></PrivateRoute>}/>
+        <Route path="/student/thongbao/:id" element={<PrivateRoute allowRoles={['Sinh viên']}><ThongBaoChiTiet /></PrivateRoute>}/>
         {/* Trang không tồn tại → về login */}
         <Route path="*" element={<Navigate to="/login" replace />} />
       </Routes>

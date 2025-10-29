@@ -119,3 +119,23 @@ export async function createSinhVien(payload) {
     body: JSON.stringify(payload),
   })
 }
+
+// ================== TIN TỨC / THÔNG BÁO ===================
+export async function getUnreadCount(sinhVienId) {
+  const res = await fetch(`/api/thongbao-dadoc/${sinhVienId}`)
+  return res.json()
+}
+
+export async function getThongBaoById(id) {
+  const res = await fetch(`/api/thongbao/${id}`)
+  return res.json()
+}
+
+export async function markThongBaoAsRead(sinhVienId, thongBaoId) {
+  const res = await fetch('/api/thongbao-dadoc/read', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ sinhVienId, thongBaoId })
+  })
+  return res.json()
+}

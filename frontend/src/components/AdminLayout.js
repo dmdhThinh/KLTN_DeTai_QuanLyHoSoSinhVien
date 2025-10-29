@@ -31,6 +31,7 @@ export default function AdminLayout({ children, title = '', activeMenu = '' }) {
           <li><a href="/admin/khoa" className={`nav-link ${location.pathname.includes('/khoa') ? 'active bg-info' : 'text-white-50'}`}><i className="bi bi-building me-2"></i> Khoa</a></li>
           <li><a href="/admin/nganh" className={`nav-link ${location.pathname.includes('/nganh') ? 'active bg-info' : 'text-white-50'}`}><i className="bi bi-diagram-3 me-2"></i> Ngành</a></li>
           <li><a href="/admin/lop" className={`nav-link ${location.pathname === '/admin/lop' || location.pathname.startsWith('/admin/lop/')? 'active bg-info': 'text-white-50'}`}><i className="bi bi-easel me-2"></i> Lớp</a></li>
+          <li><a href="/admin/thongbao"className={`nav-link ${location.pathname.includes('/thongbao') ? 'active bg-info' : 'text-white-50'}`}><i className="bi bi-megaphone me-2"></i> Tin tức</a></li>
 
           <div className="text-uppercase small text-white-50 mt-3 mb-1 ps-3">Học phần</div>
           <li><a href="/admin/hocphan" className={`nav-link ${location.pathname.includes('/hocphan') ? 'active bg-info' : 'text-white-50'}`}><i className="bi bi-journal-text me-2"></i> Học phần</a></li>
