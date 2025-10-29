@@ -55,6 +55,8 @@ import EditThongBao from './pages/Admin/EditThongBao'
 import ThongBaoSinhVien from './pages/SinhVien/ThongBaoSinhVien'
 import ThongBaoChiTiet from './pages/SinhVien/ThongBaoChiTiet'
 
+import ChuongTrinhKhung from './pages/SinhVien/ChuongTrinhKhung.js'
+
 
 
 function App() {
@@ -140,6 +142,7 @@ function App() {
         {/* Lịch học, lịch thi */}
         <Route path="/lich" element={<PrivateRoute allowRoles={['Sinh viên']}><LichHocLichThi /></PrivateRoute>} />
         <Route path="/diemso" element={<PrivateRoute allowRoles={['Sinh viên']}><DiemSo /></PrivateRoute>} />
+        <Route path="/chuongtrinhkhung" element={<PrivateRoute allowRoles={['Sinh viên']}><ChuongTrinhKhung /></PrivateRoute>} />
 
         <Route path="/admin/accounts" element={<PrivateRoute allowRoles={['Quản trị']}> <AccountList /></PrivateRoute>} />
 

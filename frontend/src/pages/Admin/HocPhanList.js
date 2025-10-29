@@ -16,7 +16,18 @@ export default function HocPhanList() {
   const [loading, setLoading] = useState(true)
   const [message, setMessage] = useState('')
   const [confirmDelete, setConfirmDelete] = useState(null)
+  const [page, setPage] = useState(1)
+  const [totalPages, setTotalPages] = useState(1)
+  const limit = 10
 
+  // Khi filtered thay đổi, cập nhật tổng số trang và đảm bảo page hợp lệ
+  useEffect(() => {
+    const tp = Math.ceil((filtered?.length || 0) / limit) || 1
+    setTotalPages(tp)
+    if (page > tp) setPage(tp)
+  }, [filtered, limit, page])
+
+  
   // 🚀 Load dữ liệu ban đầu
   useEffect(() => {
     loadDropdowns()
@@ -97,6 +108,7 @@ export default function HocPhanList() {
     }
 
     setFiltered(result)
+    setPage(1)
   }
 
   // ===== Xử lý xoá
@@ -225,9 +237,11 @@ export default function HocPhanList() {
                   </tr>
                 </thead>
                 <tbody>
-                  {filtered.map((hp, i) => (
-                    <tr key={hp.id}>
-                      <td>{i + 1}</td>
+                  {filtered
+                    .slice((page - 1) * limit, page * limit)
+                    .map((hp, i) => (
+                      <tr key={hp.id}>
+                        <td>{(page - 1) * limit + i + 1}</td>
                       <td>{hp.maHocPhan}</td>
                       <td>{hp.tenHocPhan}</td>
                       <td>{hp.soTinChi}</td>
@@ -253,6 +267,27 @@ export default function HocPhanList() {
               </table>
             </div>
           )}
+        </div>
+      </div>
+
+      {/* Phân trang */}
+      <div className="d-flex justify-content-between align-items-center mt-3">
+        <div className="text-muted small">Trang {page} / {totalPages}</div>
+        <div className="d-flex gap-2">
+          <button
+            className="btn btn-outline-secondary btn-sm"
+            disabled={page <= 1}
+            onClick={() => setPage((p) => p - 1)}
+          >
+            ← Trước
+          </button>
+          <button
+            className="btn btn-outline-secondary btn-sm"
+            disabled={page >= totalPages}
+            onClick={() => setPage((p) => p + 1)}
+          >
+            Sau →
+          </button>
         </div>
       </div>
     </AdminLayout>
