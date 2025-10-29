@@ -119,7 +119,6 @@ export async function createSinhVien(payload) {
     body: JSON.stringify(payload),
   })
 }
-
 // ================== TIN TỨC / THÔNG BÁO ===================
 export async function getUnreadCount(sinhVienId) {
   const res = await fetch(`/api/thongbao-dadoc/${sinhVienId}`)

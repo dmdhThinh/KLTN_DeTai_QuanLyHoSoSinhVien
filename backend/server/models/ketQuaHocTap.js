@@ -163,6 +163,7 @@ export async function importGrades(grades) {
 
 
 // 📚 Lấy điểm theo sinh viên
+// 📚 Lấy điểm theo sinh viên (có học kỳ & năm học)
 export async function getKetQuaHocTapBySinhVienId(sinhVienId) {
   try {
     const [rows] = await pool.execute(`
@@ -173,6 +174,8 @@ export async function getKetQuaHocTapBySinhVienId(sinhVienId) {
         hp.ma_hoc_phan AS maLopHocPhan,
         hp.ten_hoc_phan AS tenMonHoc,
         hp.so_tin_chi AS soTinChi,
+        kq.hoc_ky AS hocKy,
+        kq.nam_hoc AS namHoc,
         kq.diem_ly_thuyet_1 AS diemThuongXuyen1,
         kq.diem_ly_thuyet_2 AS diemThuongXuyen2,
         kq.diem_ly_thuyet_3 AS diemThuongXuyen3,
@@ -191,6 +194,7 @@ export async function getKetQuaHocTapBySinhVienId(sinhVienId) {
       FROM KetQuaHocTap kq
       JOIN HocPhan hp ON kq.hoc_phan_id = hp.id
       WHERE kq.sinh_vien_id = ?
+      ORDER BY kq.nam_hoc ASC, kq.hoc_ky ASC
     `, [sinhVienId]);
     return rows;
   } catch (err) {
@@ -198,3 +202,4 @@ export async function getKetQuaHocTapBySinhVienId(sinhVienId) {
     throw err;
   }
 }
+
