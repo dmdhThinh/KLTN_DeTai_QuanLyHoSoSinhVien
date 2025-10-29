@@ -1,4 +1,3 @@
-// server/utils/password.js
 import bcrypt from 'bcrypt'
 
 // Với dữ liệu mẫu trong SQL, password hiện đang là plaintext '123456' trong cột password_hash.

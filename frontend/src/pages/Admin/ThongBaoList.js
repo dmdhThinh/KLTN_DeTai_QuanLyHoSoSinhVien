@@ -27,6 +27,8 @@ const loadData = () => {
  }
   return (
     <AdminLayout title="Danh sách tin tức" activeMenu="thongbao">
+    <div className="d-flex justify-content-center">
+        <div className="card shadow-sm w-100" style={{ maxWidth: 1370 }}>
       <div className="card shadow-sm p-4">
         <div className="d-flex justify-content-between align-items-center mb-3">
           <h5 className="fw-semibold mb-0">Tin tức / Thông báo</h5>
@@ -64,7 +66,9 @@ const loadData = () => {
                 <td>{i + 1}</td>
                 <td className="fw-semibold">{t.tieu_de}</td>
                 <td>{new Date(t.ngay_gui).toLocaleDateString('vi-VN')}</td>
-                <td>{t.noi_dung}</td>
+                <td style={{maxWidth: '400px',whiteSpace: 'nowrap',overflow: 'hidden',textOverflow: 'ellipsis',}}title={t.noi_dung}>{t.noi_dung}
+</td>
+
                 <td className="text-center">
                  <a href={`/admin/thongbao/edit/${t.id}`} className="btn btn-sm btn-warning me-2">
                    <i className="bi bi-pencil"></i>
@@ -81,6 +85,8 @@ const loadData = () => {
           </tbody>
         </table>
       </div>
+      </div>
+    </div>
     </AdminLayout>
   )
 }

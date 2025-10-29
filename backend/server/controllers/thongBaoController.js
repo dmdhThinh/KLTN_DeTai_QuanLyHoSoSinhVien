@@ -131,4 +131,3 @@ export async function deleteThongBao(req, res) {
     res.status(500).json({ message: 'Không thể xóa tin tức' })
   }
 }
-

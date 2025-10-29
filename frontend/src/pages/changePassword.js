@@ -19,7 +19,7 @@ export default function ChangePassword() {
     try {
       await apiFetch('/api/auth/change-password', {
         method: 'POST',
-        headers: { Authorization: `Bearer ${sessionStorage.getItem('temp_token')}` },
+         headers: { Authorization: `Bearer ${sessionStorage.getItem('temp_token')}` },
         body: JSON.stringify({ newPassword: newPass }),
       })
       alert('Đổi mật khẩu thành công! Vui lòng đăng nhập lại.')
