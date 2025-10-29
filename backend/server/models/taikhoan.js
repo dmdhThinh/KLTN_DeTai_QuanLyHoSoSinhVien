@@ -6,15 +6,8 @@ export async function getAll({ q = '', role = '' }) {
   const where = []
   const params = []
 
-  if (q) {
-    where.push('tk.username LIKE ?')
-    params.push(`%${q}%`)
-  }
-
-  if (role) {
-    where.push('tk.role = ?')
-    params.push(role)
-  }
+  if (q) { where.push('tk.username LIKE ?'); params.push(`%${q}%`) }
+  if (role) { where.push('tk.role = ?'); params.push(role) }
 
   const whereSQL = where.length ? `WHERE ${where.join(' AND ')}` : ''
 
@@ -26,15 +19,16 @@ export async function getAll({ q = '', role = '' }) {
       tk.role,
       tk.trang_thai,
       CASE
-        WHEN tk.role = 'Giảng viên' THEN 
-          COALESCE(gv.ho_ten, tk.ho_ten)
-        WHEN tk.role = 'Sinh viên' THEN 
-          COALESCE(sv.ho_ten, tk.ho_ten)
+        WHEN tk.role = 'Giảng viên' THEN COALESCE(gv.ho_ten, tk.ho_ten)
+        WHEN tk.role = 'Sinh viên'  THEN COALESCE(sv.ho_ten, tk.ho_ten)
         ELSE tk.ho_ten
-      END AS hoTen
+      END AS ho_ten
     FROM TaiKhoan tk
-    LEFT JOIN GiangVien gv ON gv.tai_khoan_id = tk.id
-    LEFT JOIN SinhVien sv ON sv.tai_khoan_id = tk.id
+    -- Ưu tiên liên kết theo tai_khoan_id; nếu chưa gán thì fallback theo ma_gv = username
+    LEFT JOIN GiangVien gv
+      ON (gv.tai_khoan_id = tk.id OR gv.ma_gv = tk.username)
+    LEFT JOIN SinhVien sv
+      ON sv.tai_khoan_id = tk.id
     ${whereSQL}
     ORDER BY tk.id DESC
     LIMIT 20
@@ -43,6 +37,7 @@ export async function getAll({ q = '', role = '' }) {
   )
   return rows
 }
+
 
 export async function createAccount({ username, password, role, ho_ten = '', trang_thai = 'Hoạt động' }) {
   const passwordHash = await bcrypt.hash(password, 10)

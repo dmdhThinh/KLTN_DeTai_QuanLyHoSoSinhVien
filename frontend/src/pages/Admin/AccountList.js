@@ -1,3 +1,4 @@
+// src/pages/Admin/AccountList.js
 import React, { useEffect, useState } from 'react'
 import AdminLayout from '../../components/AdminLayout'
 import { apiFetch } from '../../api'
@@ -128,7 +129,7 @@ export default function AccountList() {
                           <tr key={acc.id}>
                             <td>{(pageAdminTeacher - 1) * perPage + i + 1}</td>
                             <td>{acc.username}</td>
-                            <td>{acc.hoTen || '-'}</td>
+                            <td>{acc.ho_ten || '-'}</td>
                             <td>
                               <span
                                 className={`badge ${acc.trang_thai === 'Hoạt động' ? 'bg-success' : 'bg-secondary'}`}
@@ -192,7 +193,7 @@ export default function AccountList() {
                           <tr key={acc.id}>
                             <td>{(pageStudent - 1) * perPage + i + 1}</td>
                             <td>{acc.username}</td>
-                            <td>{acc.hoTen || '-'}</td>
+                            <td>{acc.ho_ten || '-'}</td>
                             <td>
                               <span
                                 className={`badge ${acc.trang_thai === 'Hoạt động' ? 'bg-success' : 'bg-secondary'}`}

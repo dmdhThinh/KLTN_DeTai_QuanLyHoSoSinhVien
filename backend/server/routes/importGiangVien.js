@@ -1,3 +1,4 @@
+// server/routes/importGiangVien.js
 import { Router } from 'express'
 import multer from 'multer'
 import XLSX from 'xlsx'
@@ -121,6 +122,7 @@ router.post('/teachers', upload.single('file'), async (req, res) => {
         try {
           const acc = await createAccount({
             username: ma_gv,
+            ho_ten,
             password: '123456',
             role: 'Giảng viên',
             trang_thai: 'Hoạt động'
