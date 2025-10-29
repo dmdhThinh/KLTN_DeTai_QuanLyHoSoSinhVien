@@ -26,6 +26,40 @@ SET @@SESSION.SQL_LOG_BIN= 0;
 SET @@GLOBAL.GTID_PURGED=/*!80000 '+'*/ '';
 
 --
+-- Table structure for table `ChuongTrinhKhung`
+--
+
+DROP TABLE IF EXISTS `ChuongTrinhKhung`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `ChuongTrinhKhung` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `hoc_ky` varchar(10) NOT NULL,
+  `nganh_id` int DEFAULT NULL,
+  `hoc_phan_id` int NOT NULL,
+  `loai_hoc_phan` enum('a','b','c') DEFAULT 'a',
+  `so_tiet_lt` int DEFAULT '0',
+  `so_tiet_th` int DEFAULT '0',
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uniq_khung` (`hoc_ky`,`nganh_id`,`hoc_phan_id`),
+  KEY `nganh_id` (`nganh_id`),
+  KEY `hoc_phan_id` (`hoc_phan_id`),
+  CONSTRAINT `ChuongTrinhKhung_ibfk_1` FOREIGN KEY (`nganh_id`) REFERENCES `Nganh` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `ChuongTrinhKhung_ibfk_2` FOREIGN KEY (`hoc_phan_id`) REFERENCES `HocPhan` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB AUTO_INCREMENT=44 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `ChuongTrinhKhung`
+--
+
+LOCK TABLES `ChuongTrinhKhung` WRITE;
+/*!40000 ALTER TABLE `ChuongTrinhKhung` DISABLE KEYS */;
+INSERT INTO `ChuongTrinhKhung` VALUES (9,'HK1',4,7,NULL,30,0),(10,'HK1',NULL,8,NULL,60,0),(11,'HK1',NULL,9,NULL,30,0),(12,'HK1',NULL,10,NULL,0,60),(13,'HK1',NULL,11,NULL,30,0),(14,'HK1',4,12,NULL,0,60),(15,'HK1',4,13,NULL,45,0),(16,'HK1',4,14,NULL,0,0),(17,'HK2',4,23,NULL,30,30),(18,'HK2',NULL,24,NULL,30,60),(19,'HK2',NULL,25,NULL,0,60),(20,'HK2',4,26,NULL,45,30),(21,'HK2',NULL,27,'a',30,0),(22,'HK2',NULL,28,'a',45,0),(23,'HK3',4,29,'',45,0),(24,'HK3',4,30,'',45,30),(25,'HK3',4,31,'',45,30),(26,'HK3',NULL,32,'',30,0),(27,'HK3',4,33,'',30,30),(28,'HK3',NULL,34,'',60,0),(29,'HK4',4,35,NULL,45,0),(30,'HK4',4,36,NULL,30,30),(31,'HK4',4,37,NULL,30,30),(32,'HK4',4,38,NULL,30,30),(33,'HK4',NULL,39,NULL,60,0),(34,'HK4',4,40,NULL,30,30),(35,'HK4',4,41,NULL,45,0),(36,'HK4',4,42,NULL,45,30),(37,'HK5',4,43,NULL,45,0),(38,'HK5',NULL,44,NULL,30,0),(39,'HK5',4,45,NULL,30,30),(40,'HK5',NULL,46,NULL,30,0),(41,'HK5',4,47,NULL,45,0),(42,'HK5',NULL,48,NULL,45,0),(43,'HK5',4,49,NULL,30,30);
+/*!40000 ALTER TABLE `ChuongTrinhKhung` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
 -- Table structure for table `DangKyHocPhan`
 --
 
@@ -181,7 +215,7 @@ CREATE TABLE `HocPhan` (
   KEY `nganh_id` (`nganh_id`),
   CONSTRAINT `HocPhan_ibfk_1` FOREIGN KEY (`khoa_id`) REFERENCES `Khoa` (`id`),
   CONSTRAINT `HocPhan_ibfk_2` FOREIGN KEY (`nganh_id`) REFERENCES `Nganh` (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=7 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=50 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -190,7 +224,7 @@ CREATE TABLE `HocPhan` (
 
 LOCK TABLES `HocPhan` WRITE;
 /*!40000 ALTER TABLE `HocPhan` DISABLE KEYS */;
-INSERT INTO `HocPhan` VALUES (1,'HP001','Lập trình WWW (Java)',4,NULL,1,4),(2,'HP003','Cơ sở dữ liệu MongoDB',3,'12321321sdfasdf',1,4),(4,'HP011','Big Data',3,NULL,1,2),(5,'HP1111','Toán cao cấp',3,'aaaaaaa',1,1),(6,'HP021','Lập trình thiết bị di động',4,NULL,1,4);
+INSERT INTO `HocPhan` VALUES (1,'HP001','Lập trình WWW (Java)',4,NULL,1,4),(2,'HP003','Cơ sở dữ liệu MongoDB',3,'12321321sdfasdf',1,4),(4,'HP011','Big Data',3,NULL,1,2),(5,'HP1111','Toán cao cấp',3,'aaaaaaa',1,1),(6,'HP021','Lập trình thiết bị di động',4,NULL,1,4),(7,'HP022','Nhập môn Tin học',2,NULL,1,4),(8,'HP023','Giáo dục Quốc phòng và an ninh 1 *',4,NULL,NULL,NULL),(9,'HP024','Kỹ năng làm việc nhóm',2,NULL,NULL,NULL),(10,'HP025','Giáo dục thể chất 1 *',2,NULL,NULL,NULL),(11,'HP026','Toán cao cấp 1',2,NULL,NULL,NULL),(12,'HP027','Nhập môn Lập trình',2,NULL,1,4),(13,'HP028','Triết học Mác - Lenin',3,NULL,NULL,NULL),(14,'HP029','Chứng chỉ Tiếng Anh *',0,NULL,NULL,NULL),(23,'HP030','Kỹ thuật lập trình',3,NULL,1,4),(24,'HP031','Giáo dục Quốc phòng và An ninh 2 *',4,NULL,1,NULL),(25,'HP032','Giáo dục thể chất 2 *',2,NULL,1,NULL),(26,'HP033','Hệ Thống Máy tính',4,NULL,1,4),(27,'HP034','Kinh tế chính trị Mác-Lênin',2,NULL,1,NULL),(28,'HP035','Anh văn 1',3,NULL,1,NULL),(29,'HP036','Cấu trúc rời rạc',3,NULL,1,4),(30,'HP037','Cấu trúc dữ liệu và giải thuật',4,NULL,1,4),(31,'HP038','Hệ cơ sở dữ liệu',4,NULL,1,4),(32,'HP039','Toán cao cấp 2',2,NULL,1,NULL),(33,'HP040','Lập trình hướng đối tượng',3,NULL,1,4),(34,'HP041','Anh văn 2',4,NULL,1,NULL),(35,'HP042','Mạng máy tính',3,NULL,1,4),(36,'HP043','Hệ Thống và Công nghệ Web',3,NULL,1,4),(37,'HP044','Phân tích thiết kế hệ thống',3,NULL,1,4),(38,'HP045','Hệ quản trị cơ sở dữ liệu NoSQL MongoDB',3,NULL,1,4),(39,'HP046','Anh văn 3',4,NULL,1,NULL),(40,'HP047','Hệ quản trị cơ sở dữ liệu',3,NULL,1,4),(41,'HP048','Tương tác người máy',3,NULL,1,4),(42,'HP049','Lập trình hướng sự kiện với công nghệ Java',4,NULL,1,4),(43,'HP050','Lý thuyết đồ thị',3,NULL,1,4),(44,'HP051','Phương pháp luận nghiên cứu khoa học',2,NULL,1,NULL),(45,'HP052','Phát triển ứng dụng',3,NULL,1,4),(46,'HP053','Chủ nghĩa xã hội khoa học',2,NULL,1,NULL),(47,'HP054','Mô hình hóa dữ liệu NoSQL MongoDB',3,NULL,1,4),(48,'HP055','Anh văn 4',3,NULL,1,NULL),(49,'HP056','Lập trình phân tích dữ liệu 1',3,NULL,1,4);
 /*!40000 ALTER TABLE `HocPhan` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -298,7 +332,7 @@ CREATE TABLE `KetQuaHocTap` (
 
 LOCK TABLES `KetQuaHocTap` WRITE;
 /*!40000 ALTER TABLE `KetQuaHocTap` DISABLE KEYS */;
-INSERT INTO `KetQuaHocTap` VALUES (44,1,1,'HK1','2025-2026',7.00,8.00,9.00,NULL,NULL,7.00,8.00,NULL,8.00,7.80,3.00,'B','Khá','Khá','Đạt'),(45,41,1,'HK1','2025-2026',6.00,7.00,8.00,7.00,NULL,8.00,8.00,NULL,7.00,7.00,3.00,'B','Khá','Khá','Đạt'),(64,1,2,'HK1','2025-2026',7.00,8.00,9.00,NULL,NULL,7.00,8.00,NULL,7.00,7.30,3.00,'B','Khá','Khá','Đạt'),(65,41,2,'HK1','2025-2026',6.00,7.00,8.00,7.00,NULL,8.00,8.00,NULL,7.00,7.00,3.00,'B','Khá','Khá','Đạt');
+INSERT INTO `KetQuaHocTap` VALUES (44,1,1,'HK1','2025-2026',7.00,8.00,9.00,NULL,NULL,7.00,8.00,NULL,8.00,7.80,3.00,'B','Khá','Khá','Đạt'),(45,41,1,'HK1','2025-2026',6.00,7.00,8.00,7.00,NULL,8.00,8.00,NULL,7.00,7.00,3.00,'B','Khá','Khá','Đạt'),(64,1,6,'HK1','2025-2026',7.00,8.00,9.00,NULL,NULL,7.00,8.00,NULL,7.00,7.30,3.00,'B','Khá','Khá','Đạt'),(65,41,6,'HK1','2025-2026',6.00,7.00,8.00,7.00,NULL,8.00,8.00,NULL,7.00,7.00,3.00,'B','Khá','Khá','Đạt');
 /*!40000 ALTER TABLE `KetQuaHocTap` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -613,7 +647,7 @@ CREATE TABLE `ThongBao` (
   `tep_dinh_kem` varchar(255) DEFAULT NULL,
   `mo_ta_file` varchar(255) DEFAULT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=13 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=16 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -622,7 +656,7 @@ CREATE TABLE `ThongBao` (
 
 LOCK TABLES `ThongBao` WRITE;
 /*!40000 ALTER TABLE `ThongBao` DISABLE KEYS */;
-INSERT INTO `ThongBao` VALUES (1,'Thông báo đăng ký học phần HK1','Sinh viên tiến hành đăng ký học phần từ ngày 10/09/2025 đến 20/09/2025.','2025-10-20 04:03:59',NULL,NULL,NULL,NULL),(2,'Thông báo nộp học phí','Hạn chót nộp học phí HK1 là ngày 15/10/2025.','2025-10-20 04:03:59',NULL,NULL,NULL,NULL),(3,'Thông báo khai giảng','Khai giảng năm học 2025','2025-10-27 06:44:43',NULL,NULL,NULL,NULL),(4,'Học bổng học kì I năm học 2025-2026','Danh sách học bổng học kì I năm học 2025-2026','2025-10-28 07:23:53',NULL,NULL,NULL,NULL),(5,'đấ',' xcbdfdfbxcb','2025-10-28 07:49:56','uploads\\1761637796559-Screenshot_2025-10-27_132324.png','uploads\\1761637796562-Screen_Recording_2025-10-27_131816.mp4','uploads\\1761637796581-KhoaLuan.docx',NULL),(6,'edsfsdf','ếdfsdf','2025-10-28 08:08:01',NULL,NULL,NULL,NULL),(7,'e12313','sdfsdf','2025-10-28 08:09:25',NULL,NULL,NULL,NULL),(8,'ểttre','sfsdfsdf','2025-10-28 08:37:54',NULL,'uploads\\1761640675178-Screen_Recording_2025-10-27_131816.mp4','uploads\\1761640675191-MauNhapSinhVien_(2)_(3).xlsx','Danh sách sinh viên được học bổng'),(9,'mới','dfdfbsf','2025-10-28 09:05:59',NULL,NULL,'uploads\\1761642360373-KhoaLuan.docx','file khóa luận'),(10,'1','1','2025-10-28 09:19:02',NULL,NULL,'uploads\\1761643142684-KhoaLuan.docx','file test'),(11,'2','233333','2025-10-28 09:30:24',NULL,'uploads\\1761705073327-Screen_Recording_2025-10-27_131750.mp4','uploads\\1761705073344-bt_ÄÃ£_xong.docx','File bài tập'),(12,'Đăng ký học phần hk2','THÔNG BÁO\r\nVề việc mở cổng đăng ký học phần học kỳ II, năm học 2025–2026\r\n\r\nPhòng Đào tạo thông báo đến toàn thể sinh viên về kế hoạch đăng ký học phần học kỳ II, năm học 2025–2026 như sau:\r\n\r\nThời gian mở cổng đăng ký:  Bắt đầu từ 06 giờ 00, ngày 08 tháng 11 năm 2025 (thứ Bảy).\r\nHình thức và địa chỉ đăng ký: Sinh viên thực hiện đăng ký học phần tại địa chỉ: https://dkhp.iuh.edu.vn/\r\nHướng dẫn trước khi đăng ký:\r\nSinh viên xem Chương trình đào tạo của ngành học để xác định các học phần cần đăng ký cho học kỳ II.\r\nThông tin chi tiết về Chương trình đào tạo, kế hoạch học tập và tiến độ học phần được công bố trên Cổng thông tin sinh viên.\r\nSinh viên cần kiểm tra kết quả học tập và các điều kiện tiên quyết của học phần trước khi đăng ký.\r\nLưu ý: Sau khi hoàn tất đăng ký, sinh viên phải kiểm tra lại danh sách học phần đã đăng ký.\r\nTrân trọng thông báo.','2025-10-29 04:01:24',NULL,NULL,NULL,NULL);
+INSERT INTO `ThongBao` VALUES (1,'Thông báo đăng ký học phần HK1','Sinh viên tiến hành đăng ký học phần từ ngày 10/09/2025 đến 20/09/2025.','2025-10-20 04:03:59',NULL,NULL,NULL,NULL),(2,'Thông báo nộp học phí','Hạn chót nộp học phí HK1 là ngày 15/10/2025.','2025-10-20 04:03:59',NULL,NULL,NULL,NULL),(3,'Thông báo khai giảng','Khai giảng năm học 2025','2025-10-27 06:44:43',NULL,NULL,NULL,NULL),(4,'Học bổng học kì I năm học 2025-2026','Danh sách học bổng học kì I năm học 2025-2026','2025-10-28 07:23:53',NULL,NULL,NULL,NULL),(5,'đấ',' xcbdfdfbxcb','2025-10-28 07:49:56','uploads\\1761637796559-Screenshot_2025-10-27_132324.png','uploads\\1761637796562-Screen_Recording_2025-10-27_131816.mp4','uploads\\1761637796581-KhoaLuan.docx',NULL),(6,'edsfsdf','ếdfsdf','2025-10-28 08:08:01',NULL,NULL,NULL,NULL),(7,'e12313','sdfsdf','2025-10-28 08:09:25',NULL,NULL,NULL,NULL),(8,'ểttre','sfsdfsdf','2025-10-28 08:37:54',NULL,'uploads\\1761640675178-Screen_Recording_2025-10-27_131816.mp4','uploads\\1761640675191-MauNhapSinhVien_(2)_(3).xlsx','Danh sách sinh viên được học bổng'),(9,'mới','dfdfbsf','2025-10-28 09:05:59',NULL,NULL,'uploads\\1761642360373-KhoaLuan.docx','file khóa luận'),(10,'1','1','2025-10-28 09:19:02',NULL,NULL,'uploads\\1761643142684-KhoaLuan.docx','file test'),(11,'2','233333','2025-10-28 09:30:24',NULL,'uploads\\1761705073327-Screen_Recording_2025-10-27_131750.mp4','uploads\\1761705073344-bt_ÄÃ£_xong.docx','File bài tập'),(15,'123','THÔNG BÁO\r\nVề việc mở cổng đăng ký học phần học kỳ II, năm học 2025–2026\r\n\r\nPhòng Đào tạo thông báo đến toàn thể sinh viên về kế hoạch đăng ký học phần học kỳ II, năm học 2025–2026 như sau:\r\n\r\nThời gian mở cổng đăng ký:  Bắt đầu từ 06 giờ 00, ngày 08 tháng 11 năm 2025 (thứ Bảy).\r\nHình thức và địa chỉ đăng ký: Sinh viên thực hiện đăng ký học phần tại địa chỉ: https://dkhp.iuh.edu.vn/\r\nHướng dẫn trước khi đăng ký:\r\nSinh viên xem Chương trình đào tạo của ngành học để xác định các học phần cần đăng ký cho học kỳ II.\r\nThông tin chi tiết về Chương trình đào tạo, kế hoạch học tập và tiến độ học phần được công bố trên Cổng thông tin sinh viên.\r\nSinh viên cần kiểm tra kết quả học tập và các điều kiện tiên quyết của học phần trước khi đăng ký.\r\nLưu ý: Sau khi hoàn tất đăng ký, sinh viên phải kiểm tra lại danh sách học phần đã đăng ký.\r\nTrân trọng thông báo.','2025-10-29 04:41:16',NULL,NULL,NULL,NULL);
 /*!40000 ALTER TABLE `ThongBao` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -649,7 +683,7 @@ CREATE TABLE `ThongBao_Anh` (
 
 LOCK TABLES `ThongBao_Anh` WRITE;
 /*!40000 ALTER TABLE `ThongBao_Anh` DISABLE KEYS */;
-INSERT INTO `ThongBao_Anh` VALUES (1,6,'uploads\\1761638881697-Screenshot_2025-10-25_230239.png'),(2,7,'uploads\\1761638965641-Screenshot_2025-10-23_165644.png'),(3,7,'uploads\\1761638965643-Screenshot_2025-10-23_165708.png'),(4,7,'uploads\\1761638965645-Screenshot_2025-10-23_165716.png'),(5,7,'uploads\\1761638965645-Screenshot_2025-10-23_165722.png'),(6,7,'uploads\\1761638965645-Screenshot_2025-10-25_150508.png'),(7,11,'uploads\\1761705073324-Screenshot_2025-10-29_075359.png');
+INSERT INTO `ThongBao_Anh` VALUES (1,6,'uploads\\1761638881697-Screenshot_2025-10-25_230239.png'),(2,7,'uploads\\1761638965641-Screenshot_2025-10-23_165644.png'),(3,7,'uploads\\1761638965643-Screenshot_2025-10-23_165708.png'),(4,7,'uploads\\1761638965645-Screenshot_2025-10-23_165716.png'),(5,7,'uploads\\1761638965645-Screenshot_2025-10-23_165722.png'),(6,7,'uploads\\1761638965645-Screenshot_2025-10-25_150508.png');
 /*!40000 ALTER TABLE `ThongBao_Anh` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -671,7 +705,7 @@ CREATE TABLE `ThongBao_DaDoc` (
   KEY `thong_bao_id` (`thong_bao_id`),
   CONSTRAINT `ThongBao_DaDoc_ibfk_1` FOREIGN KEY (`sinh_vien_id`) REFERENCES `SinhVien` (`id`),
   CONSTRAINT `ThongBao_DaDoc_ibfk_2` FOREIGN KEY (`thong_bao_id`) REFERENCES `ThongBao` (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=20 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=21 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -680,7 +714,7 @@ CREATE TABLE `ThongBao_DaDoc` (
 
 LOCK TABLES `ThongBao_DaDoc` WRITE;
 /*!40000 ALTER TABLE `ThongBao_DaDoc` DISABLE KEYS */;
-INSERT INTO `ThongBao_DaDoc` VALUES (1,1,1,'Đã đọc','2025-10-28 06:44:48'),(2,1,2,'Đã đọc','2025-10-29 03:55:39'),(3,1,3,'Đã đọc','2025-10-28 06:44:44'),(4,41,3,'Đã đọc','2025-10-28 06:45:57'),(5,41,1,'Đã đọc','2025-10-28 06:46:02'),(6,41,2,'Đã đọc','2025-10-28 06:46:05'),(7,38,3,'Đã đọc','2025-10-28 07:04:03'),(8,24,1,'Đã đọc','2025-10-28 07:16:55'),(9,24,3,'Đã đọc','2025-10-28 07:18:45'),(10,24,2,'Đã đọc','2025-10-28 07:18:52'),(11,1,5,'Đã đọc','2025-10-29 03:55:26'),(12,1,6,'Đã đọc','2025-10-29 00:28:29'),(13,1,7,'Đã đọc','2025-10-29 00:28:47'),(14,1,8,'Đã đọc','2025-10-29 00:28:42'),(15,1,9,'Đã đọc','2025-10-29 00:28:39'),(16,1,10,'Đã đọc','2025-10-29 00:28:27'),(17,1,11,'Đã đọc','2025-10-29 03:58:50'),(18,1,4,'Đã đọc','2025-10-29 03:55:35'),(19,1,12,'Đã đọc','2025-10-29 04:01:54');
+INSERT INTO `ThongBao_DaDoc` VALUES (1,1,1,'Đã đọc','2025-10-28 06:44:48'),(2,1,2,'Đã đọc','2025-10-29 03:55:39'),(3,1,3,'Đã đọc','2025-10-28 06:44:44'),(4,41,3,'Đã đọc','2025-10-28 06:45:57'),(5,41,1,'Đã đọc','2025-10-28 06:46:02'),(6,41,2,'Đã đọc','2025-10-28 06:46:05'),(7,38,3,'Đã đọc','2025-10-28 07:04:03'),(8,24,1,'Đã đọc','2025-10-28 07:16:55'),(9,24,3,'Đã đọc','2025-10-28 07:18:45'),(10,24,2,'Đã đọc','2025-10-28 07:18:52'),(11,1,5,'Đã đọc','2025-10-29 03:55:26'),(12,1,6,'Đã đọc','2025-10-29 00:28:29'),(13,1,7,'Đã đọc','2025-10-29 00:28:47'),(14,1,8,'Đã đọc','2025-10-29 00:28:42'),(15,1,9,'Đã đọc','2025-10-29 00:28:39'),(16,1,10,'Đã đọc','2025-10-29 00:28:27'),(17,1,11,'Đã đọc','2025-10-29 03:58:50'),(18,1,4,'Đã đọc','2025-10-29 04:07:36'),(20,1,15,'Đã đọc','2025-10-29 07:13:54');
 /*!40000 ALTER TABLE `ThongBao_DaDoc` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -726,4 +760,4 @@ SET @@SESSION.SQL_LOG_BIN = @MYSQLDUMP_TEMP_LOG_BIN;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2025-10-29 11:06:51
+-- Dump completed on 2025-10-29 15:49:24

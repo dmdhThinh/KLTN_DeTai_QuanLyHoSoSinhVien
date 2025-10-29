@@ -25,8 +25,8 @@ import ketQuaHocTapRoutes from './routes/ketQuaHocTap.js';
 
 import thongBaoRoutes from './routes/thongBao.js'
 import thongBaoDaDocRoutes from './routes/thongBaoDaDoc.js'
-
-
+// Trong index.js, thêm dòng này:
+import chuongtrinhkhungRoutes from './routes/chuongtrinhkhung.js'
 
 dotenv.config()
 const app = express()
@@ -61,6 +61,8 @@ app.use('/api/hocphan', hocphanRoutes)
 app.use('/api/ketquahoctap', ketQuaHocTapRoutes);
 app.use('/api/thongbao', thongBaoRoutes)
 app.use('/api/thongbao-dadoc', thongBaoDaDocRoutes)
+
+app.use('/api/chuongtrinhkhung', chuongtrinhkhungRoutes)
 
 // ✅ Public folder cho ảnh thẻ
 app.use('/uploads', express.static(path.resolve('uploads')))

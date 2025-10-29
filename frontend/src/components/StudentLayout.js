@@ -105,17 +105,17 @@ export default function StudentLayout({ children, title = '' }) {
 
           <li>
             <Link
-              to="/chuong-trinh-khung"
+              to="/chuongtrinhkhung"
               className={`nav-link ${
-                location.pathname.includes('/chuong-trinh-khung')
+                location.pathname.includes('/chuongtrinhkhung')
                   ? 'active'
                   : 'text-white-50'
               }`}
               style={{
-                backgroundColor: location.pathname.includes('/chuong-trinh-khung')
+                backgroundColor: location.pathname.includes('/chuongtrinhkhung')
                   ? '#1e6091'
                   : 'transparent',
-                color: location.pathname.includes('/chuong-trinh-khung')
+                color: location.pathname.includes('/chuongtrinhkhung')
                   ? '#fff'
                   : '#bcd0e8',
                 borderRadius: '8px',
