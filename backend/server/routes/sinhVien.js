@@ -1,4 +1,3 @@
-// server/routes/sinhVien.js
 import { Router } from 'express'
 import { getAll, getById, create, update, remove } from '../controllers/sinhVienController.js'
 

@@ -87,47 +87,32 @@ export async function getGiangVien(req, res) {
 export async function createGiangVien(req, res) {
   try {
     const payload = req.body
-
-    // 1️⃣ Thêm giảng viên vào bảng GiangVien
+    // thêm giảng viên vào bảng GiangVien
     const result = await GV.create(payload)
     const item = await GV.getById(result.id)
 
-    // 2️⃣ Tự động tạo tài khoản cho giảng viên mới
-    let accountId = null
+    // ✅ tự tạo tài khoản cho giảng viên mới
     try {
-      // Lấy mã giảng viên (ưu tiên từ item, fallback từ payload)
-      const username = item?.ma_gv || payload?.ma_gv
+      const accountId = await createAccount({
+        username: item.ma_gv,
+         ho_ten: item.ho_ten,           // dùng mã giảng viên làm tên đăng nhập
+        password: '123456',             // mật khẩu mặc định
+        role: 'Giảng viên',             // vai trò
+        trang_thai: 'Hoạt động'
+      })
 
-      if (username) {
-        // ✅ Tạo tài khoản tự động
-        accountId = await createAccount({
-          username,                  // tên đăng nhập = mã giảng viên
-          ho_ten: item.ho_ten || '', // họ tên hiển thị
-          password: '123456',        // mật khẩu mặc định
-          role: 'Giảng viên',        // quyền
-          trang_thai: 'Hoạt động'    // trạng thái ban đầu
-        })
-
-        // ✅ Cập nhật lại liên kết tài khoản vào bảng GiangVien
-        await pool.query(
-          'UPDATE GiangVien SET tai_khoan_id = ? WHERE id = ?',
-          [accountId, item.id]
-        )
-      } else {
-        console.warn('⚠️ Bỏ qua tạo tài khoản vì ma_gv rỗng.')
-      }
+      // cập nhật liên kết tài khoản vào GiangVien
+      await pool.query('UPDATE GiangVien SET tai_khoan_id = ? WHERE id = ?', [accountId, item.id])
     } catch (err) {
       console.error('⚠️ Lỗi khi tạo tài khoản giảng viên:', err)
     }
 
-    // 3️⃣ Trả về dữ liệu giảng viên vừa tạo
     res.status(201).json(item)
   } catch (err) {
-    console.error('❌ createGiangVien error:', err)
+    console.error('createGiangVien error:', err)
     res.status(500).json({ message: 'Không thể tạo giảng viên' })
   }
 }
-
 
 
 export async function updateGiangVien(req, res) {

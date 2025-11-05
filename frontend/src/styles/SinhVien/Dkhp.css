@@ -1,0 +1,19 @@
+.table th {
+    background-color: #f8f9fa;
+    font-weight: 600;
+}
+
+.badge {
+    font-size: 0.75rem;
+}
+
+.modal-header .btn-close {
+    filter: invert(1);
+}
+.dropdown-toggle::after {
+    display: none;
+}
+
+.dropdown-menu {
+    min-width: 140px;
+}
