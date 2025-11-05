@@ -1,4 +1,3 @@
-// src/pages/Admin/StudentList.js
 import React, { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import AdminLayout from '../../components/AdminLayout'

@@ -1,4 +1,3 @@
-// server/controllers/importController.js
 import multer from 'multer'
 import * as xlsx from 'xlsx'
 import { pool } from '../config/db.js'
@@ -92,7 +91,6 @@ export async function importStudents(req, res) {
         // ✅ 2. Tạo tài khoản tự động
         const acc = await createAccount({
           username: ma_sv,
-          ho_ten,
           password: '123456',
           role: 'Sinh viên',
           trang_thai: 'Hoạt động'
@@ -140,91 +138,5 @@ export async function downloadTemplate(req, res) {
   } catch (err) {
     console.error('❌ Lỗi tạo file mẫu:', err)
     res.status(500).json({ message: 'Không thể tạo file mẫu Excel.' })
-  }
-}
-
-
-// ===== Import giảng viên =====
-export async function importTeachers(req, res) {
-  try {
-    if (!req.file) return res.status(400).json({ message: 'Vui lòng chọn file CSV hoặc Excel.' })
-
-    const workbook = xlsx.read(req.file.buffer, { type: 'buffer' })
-    const sheet = workbook.Sheets[workbook.SheetNames[0]]
-    const rows = xlsx.utils.sheet_to_json(sheet)
-    if (!rows.length) return res.status(400).json({ message: 'File không có dữ liệu.' })
-
-    const errors = []
-    let added = 0
-
-    for (let [index, row] of rows.entries()) {
-      const ma_gv = String(row['Mã GV'] || '').trim()
-      const ho_ten = String(row['Họ tên'] || '').trim()
-      const ngay_sinh = row['Ngày sinh'] || null
-      const gioi_tinh = row['Giới tính'] || null
-      const email = row['Email'] || null
-      const so_dien_thoai = row['Số điện thoại'] || null
-      const dia_chi = row['Địa chỉ'] || null
-      const tenKhoa = String(row['Khoa'] || '').trim()
-      const tenNganh = String(row['Ngành'] || '').trim()
-
-      if (!ma_gv || !ho_ten || !tenKhoa || !tenNganh) {
-        errors.push({ dòng: index + 2, lỗi: ['Thiếu thông tin bắt buộc.'] })
-        continue
-      }
-
-      // ✅ kiểm tra khoa, ngành
-      const [khoaRows] = await pool.query('SELECT id FROM Khoa WHERE ten_khoa = ?', [tenKhoa])
-      if (!khoaRows.length) {
-        errors.push({ dòng: index + 2, lỗi: [`Khoa '${tenKhoa}' không tồn tại.`] })
-        continue
-      }
-      const khoa_id = khoaRows[0].id
-
-      const [nganhRows] = await pool.query(
-        'SELECT id FROM Nganh WHERE ten_nganh = ? AND khoa_id = ?',
-        [tenNganh, khoa_id]
-      )
-      if (!nganhRows.length) {
-        errors.push({ dòng: index + 2, lỗi: [`Ngành '${tenNganh}' không thuộc khoa '${tenKhoa}'.`] })
-        continue
-      }
-      const nganh_id = nganhRows[0].id
-
-      // ✅ kiểm tra trùng mã GV
-      const [exists] = await pool.query('SELECT id FROM GiangVien WHERE ma_gv = ?', [ma_gv])
-      if (exists.length) {
-        errors.push({ dòng: index + 2, lỗi: [`Mã GV '${ma_gv}' đã tồn tại.`] })
-        continue
-      }
-
-      try {
-        // 1️⃣ thêm giảng viên
-        const [rs] = await pool.query(
-          `INSERT INTO GiangVien (ma_gv, ho_ten, ngay_sinh, gioi_tinh, email, so_dien_thoai, dia_chi, khoa_id, nganh_id)
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-          [ma_gv, ho_ten, ngay_sinh, gioi_tinh, email, so_dien_thoai, dia_chi, khoa_id, nganh_id]
-        )
-        added++
-
-        // 2️⃣ tạo tài khoản tự động
-        const accId = await createAccount({
-          username: ma_gv,
-          ho_ten, // ✅ TRUYỀN HỌ TÊN VÀO ĐÂY
-          password: '123456',
-          role: 'Giảng viên',
-          trang_thai: 'Hoạt động'
-        })
-
-        await pool.query('UPDATE GiangVien SET tai_khoan_id = ? WHERE id = ?', [accId, rs.insertId])
-      } catch (err) {
-        errors.push({ dòng: index + 2, lỗi: err.message })
-      }
-    }
-
-    res.json({ message: `Đã thêm ${added} giảng viên.`, lỗi: errors })
-  } catch (err) {
-    console.error('❌ Lỗi import giảng viên:', err)
-    res.status(500).json({ message: 'Lỗi máy chủ khi import file giảng viên.' })
   }
 }

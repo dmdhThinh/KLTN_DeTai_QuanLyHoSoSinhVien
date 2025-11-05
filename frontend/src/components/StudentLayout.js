@@ -167,6 +167,26 @@ export default function StudentLayout({ children, title = '' }) {
               <i className="bi bi-calendar-week me-2"></i> Lịch theo tuần
             </Link>
           </li>
+          <li>
+            <Link
+              to="/dkhp"
+              className={`nav-link ${
+                location.pathname.includes('/dkhp') ? 'active' : 'text-white-50'
+              }`}
+              style={{
+                backgroundColor: location.pathname.includes('/dkhp')
+                  ? '#1e6091'
+                  : 'transparent',
+                color: location.pathname.includes('/dkhp')
+                  ? '#fff'
+                  : '#bcd0e8',
+                borderRadius: '8px',
+                transition: 'all 0.2s'
+              }}
+            >
+              <i className="bi bi-calendar-week me-2"></i> Đăng ký học phần
+            </Link>
+          </li>
 
           <li>
             <Link

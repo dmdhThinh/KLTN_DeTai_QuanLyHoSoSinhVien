@@ -27,7 +27,7 @@ import thongBaoRoutes from './routes/thongBao.js'
 import thongBaoDaDocRoutes from './routes/thongBaoDaDoc.js'
 // Trong index.js, thêm dòng này:
 import chuongtrinhkhungRoutes from './routes/chuongtrinhkhung.js'
-
+import dkhpRouter from './routes/dkhp.js'
 dotenv.config()
 const app = express()
 const __filename = fileURLToPath(import.meta.url)
@@ -63,6 +63,8 @@ app.use('/api/thongbao', thongBaoRoutes)
 app.use('/api/thongbao-dadoc', thongBaoDaDocRoutes)
 
 app.use('/api/chuongtrinhkhung', chuongtrinhkhungRoutes)
+app.use('/api/dkhp', dkhpRouter)
+
 
 // ✅ Public folder cho ảnh thẻ
 app.use('/uploads', express.static(path.resolve('uploads')))
