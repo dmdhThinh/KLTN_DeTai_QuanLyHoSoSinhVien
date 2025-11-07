@@ -1,6 +1,5 @@
 import * as KetQuaHocTapModel from '../models/ketQuaHocTap.js';
-import XLSX from "xlsx";
-import fs from "fs";
+import * as DiemTrungBinhModel from '../models/diemTrungBinh.js';
 import { pool } from "../config/db.js";
 // 🧮 Hàm tính điểm tổng kết IUH
 function tinhDiemTongKetIUH(data) {
@@ -53,6 +52,18 @@ export async function create(req, res) {
     const auto = tinhDiemTongKetIUH(data);
     data = { ...data, ...auto };
     const result = await KetQuaHocTapModel.createKetQuaHocTap(data);
+    
+    // 🔄 Tự động cập nhật bảng DiemTrungBinh
+    const { sinh_vien_id, hoc_ky, nam_hoc } = data;
+    if (sinh_vien_id && hoc_ky && nam_hoc) {
+      try {
+        await DiemTrungBinhModel.capNhatDiemTrungBinh(sinh_vien_id, hoc_ky, nam_hoc);
+        console.log('✅ Đã cập nhật điểm TB cho SV:', sinh_vien_id, hoc_ky, nam_hoc);
+      } catch (err) {
+        console.error('⚠️ Lỗi khi cập nhật điểm TB:', err.message);
+      }
+    }
+    
     res.status(201).json({ message: 'Điểm số đã được tạo và tính tự động', data: result });
   } catch (err) {
     res.status(500).json({ message: 'Lỗi khi tạo điểm số', error: err.message });
@@ -113,6 +124,17 @@ export async function update(req, res) {
     if (result.affectedRows === 0)
       return res.status(404).json({ message: 'Không tìm thấy điểm số để sửa' });
 
+    // 🔄 Tự động cập nhật bảng DiemTrungBinh
+    const { sinh_vien_id, hoc_ky, nam_hoc } = current;
+    if (sinh_vien_id && hoc_ky && nam_hoc) {
+      try {
+        await DiemTrungBinhModel.capNhatDiemTrungBinh(sinh_vien_id, hoc_ky, nam_hoc);
+        console.log('✅ Đã cập nhật điểm TB cho SV:', sinh_vien_id, hoc_ky, nam_hoc);
+      } catch (err) {
+        console.error('⚠️ Lỗi khi cập nhật điểm TB:', err.message);
+      }
+    }
+
     res.status(200).json({
       message: 'Điểm số đã được cập nhật và tính tự động thành công',
       data: auto
@@ -135,63 +157,46 @@ export async function deleteGrade(req, res) {
   }
 }
 
-// 📤 Nhập điểm từ file Excel (tự tính và lưu)
-export async function importGrades(req, res) {
-  if (!req.file) return res.status(400).json({ message: "Không có file Excel được tải lên" });
-
+// 📊 API lấy dữ liệu biểu đồ điểm theo học kỳ
+export async function getChartData(req, res) {
+ 
   try {
-    const buffer = fs.readFileSync(req.file.path);
-    const workbook = XLSX.read(buffer, { type: "buffer" }); // ✅ dùng read() thay vì readFile()
-    const sheetName = workbook.SheetNames[0];
-    const sheet = workbook.Sheets[sheetName];
-    const rows = XLSX.utils.sheet_to_json(sheet);
+    const { sinhVienId, hocKy, namHoc } = req.query;
 
-    // Chuẩn hóa & ánh xạ đồng loạt
-    const grades = [];
-    for (const r of rows) {
-      const maSV = r['Mã sinh viên'] ?? r['Ma sinh vien'] ?? r['ma_sv'];
-      const maHP = r['Mã học phần'] ?? r['Ma hoc phan'] ?? r['ma_hp'];
-
-      const sinh_vien_id = await getSinhVienIdByMa(String(maSV).trim());
-      const hoc_phan_id  = await getHocPhanIdByMa(String(maHP).trim());
-      if (!sinh_vien_id || !hoc_phan_id) continue; // bỏ dòng không hợp lệ
-
-      const v = (x) => (x === '' || x === undefined || x === null ? null : Number(x));
-
-      const item = {
-        sinh_vien_id,
-        hoc_phan_id,
-        diem_ly_thuyet_1: v(r['TX1']),
-        diem_ly_thuyet_2: v(r['TX2']),
-        diem_ly_thuyet_3: v(r['TX3']),
-        diem_ly_thuyet_4: v(r['TX4']),
-        diem_thuc_hanh_1: v(r['TH1']),
-        diem_thuc_hanh_2: v(r['TH2']),
-        diem_thuc_hanh_3: v(r['TH3']),
-        diem_giua_ky:     v(r['Giữa kỳ'] ?? r['Giua ky']),
-        diem_cuoi_ky:     v(r['Cuối kỳ'] ?? r['Cuoi ky']),
-      };
-
-      // CHỈ tính khi có điểm cuối kỳ
-      if (item.diem_cuoi_ky !== null) {
-        Object.assign(item, tinhDiemTongKetIUH(item));
-      }
-      grades.push(item);
+    if (!sinhVienId || !hocKy || !namHoc) {
+      return res.status(400).json({ 
+        message: 'Thiếu tham số: sinhVienId, hocKy, namHoc' 
+      });
     }
 
-    await KetQuaHocTapModel.importGrades(grades);
-    res.status(200).json({ message: 'Điểm đã được nhập (và tự tính nếu có "Cuối kỳ").' });
+    // Lấy điểm của sinh viên với điểm TB lớp học phần
+    const [rows] = await pool.execute(`
+      SELECT 
+        hp.ten_hoc_phan as tenMonHoc,
+        hp.ma_hoc_phan as maHocPhan,
+        kq.diem_tong_ket as diemCuaBan,
+        (
+          SELECT ROUND(AVG(kq2.diem_tong_ket), 2)
+          FROM KetQuaHocTap kq2
+          WHERE kq2.hoc_phan_id = hp.id
+            AND kq2.hoc_ky = ?
+            AND kq2.nam_hoc = ?
+            AND kq2.diem_tong_ket IS NOT NULL
+        ) as diemTBLop
+      FROM KetQuaHocTap kq
+      JOIN HocPhan hp ON kq.hoc_phan_id = hp.id
+      WHERE kq.sinh_vien_id = ?
+        AND kq.hoc_ky = ?
+        AND kq.nam_hoc = ?
+        AND kq.diem_tong_ket IS NOT NULL
+      ORDER BY hp.ten_hoc_phan
+    `, [hocKy, namHoc, sinhVienId, hocKy, namHoc]);
+
+    res.status(200).json(rows);
   } catch (err) {
-    res.status(500).json({ message: 'Lỗi khi nhập điểm từ file Excel', error: err.message });
+    res.status(500).json({ 
+      message: 'Lỗi khi lấy dữ liệu biểu đồ', 
+      error: err.message 
+    });
   }
-  fs.unlinkSync(req.file.path);
-}
-// tra cứu ID từ mã
-async function getSinhVienIdByMa(ma) {
-  const [rows] = await pool.execute('SELECT id FROM SinhVien WHERE ma_sv = ?', [ma]);
-  return rows[0]?.id || null;
-}
-async function getHocPhanIdByMa(ma) {
-  const [rows] = await pool.execute('SELECT id FROM HocPhan WHERE ma_hoc_phan = ?', [ma]);
-  return rows[0]?.id || null;
 }

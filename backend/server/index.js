@@ -23,6 +23,7 @@ import hocphanRoutes from './routes/hocphan.js'
 import importGiangVienRoutes from './routes/importGiangVien.js'
 import taiKhoanRoutes from './routes/taiKhoan.js'
 import ketQuaHocTapRoutes from './routes/ketQuaHocTap.js';
+import diemTrungBinhRoutes from './routes/diemTrungBinh.js';
 
 import thongBaoRoutes from './routes/thongBao.js'
 import thongBaoDaDocRoutes from './routes/thongBaoDaDoc.js'
@@ -59,7 +60,8 @@ app.use('/api/lich-admin', lichAdminRoutes)
 app.use('/api/lophocphan', lophocphanRoutes)
 app.use('/api/hocphan', hocphanRoutes)      
 
-app.use('/api/ketquahoctap', ketQuaHocTapRoutes);
+app.use('/api/ket-qua-hoc-tap', ketQuaHocTapRoutes);
+app.use('/api/diem-trung-binh', diemTrungBinhRoutes);
 app.use('/api/thongbao', thongBaoRoutes)
 app.use('/api/thongbao-dadoc', thongBaoDaDocRoutes)
 

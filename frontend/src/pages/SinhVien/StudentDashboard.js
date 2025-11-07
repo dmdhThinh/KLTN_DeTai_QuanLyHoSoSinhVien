@@ -5,6 +5,7 @@ import StudentLayout from '../../components/StudentLayout'
 import dayjs from 'dayjs'
 import '../../styles/SinhVien/StudentDashboard.css' // giữ nguyên đường dẫn cũ của bạn
 import StudentDetailModal from './StudentDetailModal' // ⬅️ thêm import modal
+import GradeChart from '../../components/GradeChart' // ⬅️ import biểu đồ
 
 function StatCard({ title, value, variant, link }) {
   return (
@@ -186,6 +187,13 @@ export default function StudentDashboard() {
                     />
                   </div>
                 </div>
+              </div>
+            </div>
+
+            {/* 📊 Biểu đồ kết quả học tập */}
+            <div className="row mt-4">
+              <div className="col-lg-4">
+                <GradeChart sinhVienId={studentId} />
               </div>
             </div>
 
