@@ -11,22 +11,30 @@ export default function ThongBaoChiTiet() {
   const [tin, setTin] = useState(null)
   const [loading, setLoading] = useState(true)
 
+  const loadData = async (forceRefresh = false) => {
+    setLoading(true)
+    try {
+      // Thêm timestamp để bypass cache nếu cần
+      const url = forceRefresh 
+        ? `${process.env.REACT_APP_API_URL || 'http://localhost:8080'}/api/thongbao/${id}?_t=${Date.now()}`
+        : `${process.env.REACT_APP_API_URL || 'http://localhost:8080'}/api/thongbao/${id}`
+      
+      const res = await fetch(url)
+      const data = await res.json()
+      setTin(data)
+      
+      // ✅ Đánh dấu là đã đọc
+      const svId = getSinhVienId()
+      if (svId) markThongBaoAsRead(svId, id)
+    } catch {
+      setTin(null)
+    } finally {
+      setLoading(false)
+    }
+  }
+
   useEffect(() => {
-    let mounted = true
-    ;(async () => {
-      try {
-        const data = await getThongBaoById(id)
-        if (mounted) setTin(data)
-        // ✅ Đánh dấu là đã đọc
-        const svId = getSinhVienId()
-        if (svId) markThongBaoAsRead(svId, id)
-      } catch {
-        if (mounted) setTin(null)
-      } finally {
-        if (mounted) setLoading(false)
-      }
-    })()
-    return () => (mounted = false)
+    loadData()
   }, [id])
 
   if (loading)
@@ -53,12 +61,21 @@ export default function ThongBaoChiTiet() {
   return (
     <StudentLayout title="Chi tiết tin tức">
       <div className="container py-4">
-        <button
-          className="btn btn-outline-secondary btn-sm mb-3"
-          onClick={() => navigate(-1)}
-        >
-          ← Quay lại danh sách
-        </button>
+        <div className="d-flex justify-content-between align-items-center mb-3">
+          <button
+            className="btn btn-outline-secondary btn-sm"
+            onClick={() => navigate(-1)}
+          >
+            ← Quay lại danh sách
+          </button>
+          <button
+            className="btn btn-outline-primary btn-sm"
+            onClick={() => loadData(true)}
+            disabled={loading}
+          >
+            <i className="bi bi-arrow-clockwise"></i> {loading ? 'Đang tải...' : 'Làm mới'}
+          </button>
+        </div>
 
         <div className="card shadow-sm p-4">
           <h5 className="fw-bold mb-2">{tin.tieu_de}</h5>
@@ -72,17 +89,12 @@ export default function ThongBaoChiTiet() {
           {tin.tep_dinh_kem && (
             <div className="mt-4">
               <span className="fw-semibold">
-                {tin.mo_ta_file || 'File đính kèm'}
+                {tin.mo_ta_file || tin.ten_file_goc || 'File đính kèm'}
               </span>{' '}
               (
               <a
-                href={`${
-                  process.env.REACT_APP_API_URL || 'http://localhost:8080'
-                }/${tin.tep_dinh_kem.replace(/\\/g, '/')}`}
-                download
+                href={`${process.env.REACT_APP_API_URL || 'http://localhost:8080'}/api/thongbao/${tin.id}/download`}
                 className="text-primary text-decoration-underline"
-                target="_blank"
-                rel="noreferrer"
               >
                 tải tại đây
               </a>
@@ -104,18 +116,17 @@ export default function ThongBaoChiTiet() {
                 }
               >
                 <div className="d-flex flex-wrap gap-3 justify-content-center">
-                  {tin.hinh_anh.map((url, i) => (
+                  {tin.hinh_anh.map((url, i) => {
+                    const imgUrl = url.startsWith('http') 
+                      ? url 
+                      : `${process.env.REACT_APP_API_URL || 'http://localhost:8080'}/${url.replace(/\\/g, '/')}`
+                    return (
                     <PhotoView
                       key={i}
-                      src={`${
-                        process.env.REACT_APP_API_URL || 'http://localhost:8080'
-                      }/${url.replace(/\\/g, '/')}`}
+                      src={imgUrl}
                     >
                       <img
-                        src={`${
-                          process.env.REACT_APP_API_URL ||
-                          'http://localhost:8080'
-                        }/${url.replace(/\\/g, '/')}`}
+                        src={imgUrl}
                         alt={`Ảnh ${i + 1}`}
                         className="rounded shadow-sm"
                         style={{
@@ -138,7 +149,7 @@ export default function ThongBaoChiTiet() {
                         }}
                       />
                     </PhotoView>
-                  ))}
+                  )})}
                 </div>
               </PhotoProvider>
             </div>
@@ -147,14 +158,17 @@ export default function ThongBaoChiTiet() {
           {/* 🎥 Hiển thị video */}
           {tin.video && (
             <div className="mt-4 text-center">
+              <h6 className="fw-semibold mb-2">Video</h6>
               <video
                 controls
                 className="w-100 rounded shadow-sm"
                 style={{ maxHeight: 480, animation: 'fadeIn 0.6s ease' }}
-                src={`${
-                  process.env.REACT_APP_API_URL || 'http://localhost:8080'
-                }/${tin.video.replace(/\\/g, '/')}`}
-              />
+                src={tin.video.startsWith('http') 
+                  ? tin.video 
+                  : `${process.env.REACT_APP_API_URL || 'http://localhost:8080'}/${tin.video.replace(/\\/g, '/')}`}
+              >
+                Trình duyệt của bạn không hỗ trợ video.
+              </video>
             </div>
           )}
         </div>

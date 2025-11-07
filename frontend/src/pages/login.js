@@ -62,6 +62,12 @@ export default function Login() {
 
   return (
     <div className="login-page">
+      {/* Header với logo và text */}
+      <div className="login-header">
+        <div className="logo-icon">🎓</div>
+        <h1 className="system-title">Quản lý hồ sơ sinh viên</h1>
+      </div>
+
       <div className="login-container">
         {/* Bên trái - danh sách tin tức */}
         <div className="news-panel fade-in-left">

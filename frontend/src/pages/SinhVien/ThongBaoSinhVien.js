@@ -8,30 +8,34 @@ export default function ThongBaoSinhVien() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
 
-  useEffect(() => {
-    let mounted = true
-    ;(async () => {
-      try {
-        const res = await fetch('/api/thongbao')
-        const data = await res.json()
-        if (mounted) setList(Array.isArray(data) ? data : [])
-      } catch {
-        if (mounted) {
-          setError('Không thể tải tin tức.')
-          setList([])
-        }
-      } finally {
-        if (mounted) setLoading(false)
-      }
-    })()
-    return () => {
-      mounted = false
+  const loadData = async () => {
+    setLoading(true)
+    setError('')
+    try {
+      const svId = getSinhVienId()
+      // Gửi sinhVienId để backend lấy trạng thái đọc
+      const res = await fetch(`/api/thongbao?sinhVienId=${svId}&_t=${Date.now()}`)
+      const data = await res.json()
+      setList(Array.isArray(data) ? data : [])
+    } catch {
+      setError('Không thể tải tin tức.')
+      setList([])
+    } finally {
+      setLoading(false)
     }
+  }
+
+  useEffect(() => {
+    loadData()
   }, [])
 
   const handleRead = (id) => {
     const svId = getSinhVienId()
-    if (svId) markThongBaoAsRead(svId, id).catch(() => {})
+    if (svId) {
+      markThongBaoAsRead(svId, id).catch((err) => {
+        console.error('Lỗi đánh dấu đã đọc:', err)
+      })
+    }
   }
 
   return (
@@ -39,6 +43,13 @@ export default function ThongBaoSinhVien() {
       <div className="container py-4">
         <div className="d-flex justify-content-between align-items-center mb-3">
           <h5 className="fw-semibold mb-0">Danh sách tin tức</h5>
+          <button 
+            className="btn btn-outline-primary btn-sm"
+            onClick={loadData}
+            disabled={loading}
+          >
+            <i className="bi bi-arrow-clockwise"></i> {loading ? 'Đang tải...' : 'Làm mới'}
+          </button>
         </div>
 
         <div className="card shadow-sm">

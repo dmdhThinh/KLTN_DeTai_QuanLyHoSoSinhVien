@@ -2,10 +2,54 @@
 .login-page {
     min-height: 100vh;
     display: flex;
+    flex-direction: column;
     align-items: center;
     justify-content: center;
     background: linear-gradient(135deg, #6fd6ff, #90a7ff);
     font-family: 'Segoe UI', sans-serif;
+    padding: 20px;
+}
+
+/* 🎯 Header với logo và title */
+.login-header {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 24px;
+    margin-bottom: 40px;
+    animation: fadeInDown 0.8s ease forwards;
+}
+
+.login-header .logo-icon {
+    font-size: 80px;
+    line-height: 1;
+    filter: drop-shadow(0 4px 12px rgba(79, 70, 229, 0.3));
+    transition: transform 0.3s ease;
+}
+
+.login-header .logo-icon:hover {
+    transform: scale(1.1) rotate(5deg);
+}
+
+.login-header .system-title {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    font-size: 2.5rem;
+    font-weight: 700;
+    color: #4f46e5;
+    margin: 0;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+}
+
+@keyframes fadeInDown {
+    from {
+        opacity: 0;
+        transform: translateY(-30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }
 
 /* 🔲 khung 2 cột */
@@ -204,6 +248,21 @@
 
 /* 📱 responsive */
 @media (max-width: 992px) {
+    .login-header {
+        flex-direction: column;
+        gap: 16px;
+        margin-bottom: 30px;
+    }
+
+    .login-header .logo-icon {
+        font-size: 60px;
+    }
+
+    .login-header .system-title {
+        font-size: 1.8rem;
+        text-align: center;
+    }
+
     .login-container {
         flex-direction: column;
         gap: 30px;
@@ -213,5 +272,15 @@
     .login-form {
         width: 100%;
         height: auto;
+    }
+}
+
+@media (max-width: 576px) {
+    .login-header .logo-icon {
+        font-size: 50px;
+    }
+
+    .login-header .system-title {
+        font-size: 1.5rem;
     }
 }

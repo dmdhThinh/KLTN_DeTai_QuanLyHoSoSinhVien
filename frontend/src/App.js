@@ -11,7 +11,7 @@ import AddStudent from './pages/Admin/AddStudent'
 import StudentList from './pages/Admin/StudentList'
 import EditStudent from './pages/Admin/EditStudent'
 import PrivateRoute from './components/PrivateRoute'
-
+ 
 import KhoaList from './pages/Admin/KhoaList'
 import AddKhoa from './pages/Admin/AddKhoa'
 import EditKhoa from './pages/Admin/EditKhoa'

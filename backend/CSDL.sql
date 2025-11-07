@@ -861,36 +861,65 @@ UNLOCK TABLES;
 --
 -- Table structure for table `YeuCauTuVan`
 --
+-- Tạo bảng Yêu Cầu Tư Vấn
 
-DROP TABLE IF EXISTS `YeuCauTuVan`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!50503 SET character_set_client = utf8mb4 */;
-CREATE TABLE `YeuCauTuVan` (
-  `id` int NOT NULL AUTO_INCREMENT,
-  `sinh_vien_id` int DEFAULT NULL,
-  `co_van_id` int DEFAULT NULL,
-  `noi_dung` text,
-  `ngay_gui` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
-  `trang_thai` enum('Chờ phản hồi','Đã phản hồi') DEFAULT 'Chờ phản hồi',
-  PRIMARY KEY (`id`),
-  KEY `sinh_vien_id` (`sinh_vien_id`),
-  KEY `co_van_id` (`co_van_id`),
-  CONSTRAINT `YeuCauTuVan_ibfk_1` FOREIGN KEY (`sinh_vien_id`) REFERENCES `SinhVien` (`id`),
-  CONSTRAINT `YeuCauTuVan_ibfk_2` FOREIGN KEY (`co_van_id`) REFERENCES `GiangVien` (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
-/*!40101 SET character_set_client = @saved_cs_client */;
 
---
--- Dumping data for table `YeuCauTuVan`
---
+CREATE TABLE IF NOT EXISTS YeuCauTuVan (
+  id INT NOT NULL AUTO_INCREMENT,
+  sinh_vien_id INT NOT NULL,
+  
+  -- Loại tư vấn
+  loai ENUM('mon_hoc', 'thong_tin_ca_nhan', 'khac') NOT NULL DEFAULT 'mon_hoc',
+  
+  -- Nếu là tư vấn môn học, cần lưu lớp học phần
+  lop_hoc_phan_id INT DEFAULT NULL,
+  
+  -- Nội dung yêu cầu
+  tieu_de VARCHAR(255) NOT NULL,
+  noi_dung TEXT NOT NULL,
+  
+  -- Trạng thái xử lý
+  trang_thai ENUM('cho_xu_ly', 'dang_xu_ly', 'da_hoan_thanh', 'da_huy') 
+    NOT NULL DEFAULT 'cho_xu_ly',
+  
+  -- Người phản hồi (admin hoặc giảng viên)
+  nguoi_phan_hoi_id INT DEFAULT NULL,
+  loai_nguoi_phan_hoi ENUM('admin', 'giang_vien') DEFAULT NULL,
+  
+  -- Nội dung phản hồi
+  noi_dung_phan_hoi TEXT DEFAULT NULL,
+  
+  -- Timestamps
+  ngay_tao TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  ngay_cap_nhat TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  
+  PRIMARY KEY (id),
+  
+  -- Foreign keys
+  CONSTRAINT FK_YeuCauTuVan_SinhVien 
+    FOREIGN KEY (sinh_vien_id) REFERENCES SinhVien(id) 
+    ON DELETE CASCADE,
+    
+  CONSTRAINT FK_YeuCauTuVan_LopHocPhan 
+    FOREIGN KEY (lop_hoc_phan_id) REFERENCES LopHocPhan(id) 
+    ON DELETE SET NULL,
+    
+  -- Indexes
+  INDEX idx_sinh_vien (sinh_vien_id),
+  INDEX idx_lop_hoc_phan (lop_hoc_phan_id),
+  INDEX idx_trang_thai (trang_thai),
+  INDEX idx_loai (loai),
+  INDEX idx_ngay_tao (ngay_tao)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-LOCK TABLES `YeuCauTuVan` WRITE;
-/*!40000 ALTER TABLE `YeuCauTuVan` DISABLE KEYS */;
-INSERT INTO `YeuCauTuVan` VALUES (1,1,1,'Em muốn được tư vấn về kế hoạch học tập.','2025-10-20 04:03:59','Chờ phản hồi');
-/*!40000 ALTER TABLE `YeuCauTuVan` ENABLE KEYS */;
-UNLOCK TABLES;
-SET @@SESSION.SQL_LOG_BIN = @MYSQLDUMP_TEMP_LOG_BIN;
-/*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
+-- Comments
+ALTER TABLE YeuCauTuVan 
+  COMMENT 'Bảng lưu yêu cầu tư vấn của sinh viên';
+
+-- Dữ liệu mẫu (optional)
+ INSERT INTO YeuCauTuVan (sinh_vien_id, loai, lop_hoc_phan_id, tieu_de, noi_dung) 
+ VALUES (1, 'mon_hoc', 1, 'Câu hỏi về bài tập lớn', 'Em muốn hỏi về deadline nộp bài tập lớn môn Cơ sở dữ liệu');
+
 
 /*!40101 SET SQL_MODE=@OLD_SQL_MODE */;
 /*!40014 SET FOREIGN_KEY_CHECKS=@OLD_FOREIGN_KEY_CHECKS */;
@@ -901,3 +930,32 @@ SET @@SESSION.SQL_LOG_BIN = @MYSQLDUMP_TEMP_LOG_BIN;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
 -- Dump completed on 2025-11-04 22:35:47
+
+CREATE TABLE `NguoiThan` (
+  `id` INT NOT NULL AUTO_INCREMENT,
+  `sinh_vien_id` INT NOT NULL,  -- Khóa ngoại đến bảng SinhVien
+  `quan_he` ENUM('Cha', 'Mẹ', 'Người giám hộ') NOT NULL,
+  `ho_ten` VARCHAR(100) NOT NULL,
+  `can_cuoc_cong_dan` VARCHAR(20) NULL,
+  `so_dien_thoai` VARCHAR(20) NULL,
+  `ngay_sinh` DATE NULL,
+  `nghe_nghiep` VARCHAR(50) NULL,
+  `email` VARCHAR(100) NULL,
+  `dia_chi` VARCHAR(255) NULL,
+  PRIMARY KEY (`id`),
+  KEY `sinh_vien_id` (`sinh_vien_id`),
+  CONSTRAINT `NguoiThan_ibfk_1` FOREIGN KEY (`sinh_vien_id`) REFERENCES `SinhVien` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+
+ALTER TABLE GiangVien DROP FOREIGN KEY GiangVien_ibfk_2;
+ALTER TABLE GiangVien
+ADD CONSTRAINT GiangVien_ibfk_2
+FOREIGN KEY (tai_khoan_id) REFERENCES TaiKhoan(id)
+ON DELETE CASCADE;
+
+
+
+ALTER TABLE ThongBao 
+ADD COLUMN ten_file_goc VARCHAR(255) DEFAULT NULL 
+AFTER mo_ta_file;

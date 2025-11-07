@@ -12,6 +12,15 @@ export default function EditThongBao() {
   const [video, setVideo] = useState(null)
   const [tep, setTep] = useState(null)
   const [message, setMessage] = useState('')
+  
+  // State để lưu data cũ (từ S3)
+  const [existingImages, setExistingImages] = useState([])
+  const [existingVideo, setExistingVideo] = useState(null)
+  const [existingFile, setExistingFile] = useState(null)
+  
+  // State để track items bị xóa
+  const [deleteVideo, setDeleteVideo] = useState(false)
+  const [deleteFile, setDeleteFile] = useState(false)
 
   useEffect(() => {
     fetch(`/api/thongbao/${id}`)
@@ -20,6 +29,11 @@ export default function EditThongBao() {
         setTieuDe(data.tieu_de)
         setNoiDung(data.noi_dung)
         setMoTaFile(data.mo_ta_file || '')
+        
+        // Lưu media đã có
+        setExistingImages(data.hinh_anh || [])
+        setExistingVideo(data.video || null)
+        setExistingFile(data.tep_dinh_kem || null)
       })
       .catch(() => setMessage('❌ Không tải được dữ liệu'))
   }, [id])
@@ -33,6 +47,16 @@ export default function EditThongBao() {
     formData.append('noi_dung', noiDung)
     formData.append('mo_ta_file', moTaFile)
 
+    // Gửi danh sách ảnh còn lại (sau khi xóa)
+    if (existingImages.length > 0) {
+      formData.append('keep_images', JSON.stringify(existingImages))
+    }
+    
+    // Đánh dấu xóa video/file
+    if (deleteVideo) formData.append('delete_video', 'true')
+    if (deleteFile) formData.append('delete_file', 'true')
+
+    // Upload file mới
     if (hinhAnh?.length)
       hinhAnh.forEach((file) => formData.append('hinh_anh', file))
     if (video) formData.append('video', video)
@@ -78,6 +102,130 @@ export default function EditThongBao() {
               required
             ></textarea>
           </div>
+          {/* Preview ảnh đã có */}
+          {existingImages.length > 0 && (
+            <div className="mb-3">
+              <label className="form-label fw-semibold">Ảnh hiện tại ({existingImages.length})</label>
+              <div className="d-flex flex-wrap gap-2">
+                {existingImages.map((url, i) => {
+                  const imgUrl = url.startsWith('http') 
+                    ? url 
+                    : `${process.env.REACT_APP_API_URL || 'http://localhost:8080'}/${url.replace(/\\/g, '/')}`
+                  return (
+                    <div key={i} className="position-relative">
+                      <img
+                        src={imgUrl}
+                        alt={`Ảnh ${i + 1}`}
+                        className="rounded border"
+                        style={{ width: 120, height: 120, objectFit: 'cover' }}
+                      />
+                      <button
+                        type="button"
+                        className="btn btn-danger btn-sm position-absolute top-0 end-0 m-1"
+                        style={{ padding: '2px 6px', fontSize: '12px' }}
+                        onClick={() => {
+                          if (window.confirm('Ảnh này sẽ bị xóa khi bạn lưu thay đổi. Tiếp tục?')) {
+                            setExistingImages(existingImages.filter((_, idx) => idx !== i))
+                          }
+                        }}
+                      >
+                        <i className="bi bi-x-lg"></i>
+                      </button>
+                    </div>
+                  )
+                })}
+              </div>
+              <small className="text-muted">Click nút X để xóa ảnh, hoặc upload ảnh mới bên dưới</small>
+            </div>
+          )}
+
+          {/* Preview video đã có */}
+          {existingVideo && !deleteVideo && (
+            <div className="mb-3">
+              <label className="form-label fw-semibold">Video hiện tại</label>
+              <div className="d-flex align-items-start gap-2">
+                <video
+                  controls
+                  className="rounded border"
+                  style={{ maxWidth: 400, maxHeight: 300 }}
+                  src={existingVideo.startsWith('http') 
+                    ? existingVideo 
+                    : `${process.env.REACT_APP_API_URL || 'http://localhost:8080'}/${existingVideo.replace(/\\/g, '/')}`}
+                />
+                <button
+                  type="button"
+                  className="btn btn-danger btn-sm"
+                  onClick={() => {
+                    if (window.confirm('Video này sẽ bị xóa khi bạn lưu thay đổi. Tiếp tục?')) {
+                      setDeleteVideo(true)
+                    }
+                  }}
+                >
+                  <i className="bi bi-trash"></i> Xóa video
+                </button>
+              </div>
+              <small className="text-muted">Click nút xóa để gỡ video, hoặc upload video mới bên dưới</small>
+            </div>
+          )}
+          {deleteVideo && (
+            <div className="mb-3 alert alert-warning">
+              <i className="bi bi-exclamation-triangle"></i> Video sẽ bị xóa khi lưu thay đổi. 
+              <button type="button" className="btn btn-link btn-sm" onClick={() => setDeleteVideo(false)}>Hoàn tác</button>
+            </div>
+          )}
+
+          {/* Preview file đính kèm đã có */}
+          {existingFile && !deleteFile && (() => {
+            const fileUrl = existingFile.startsWith('http') 
+              ? existingFile 
+              : `${process.env.REACT_APP_API_URL || 'http://localhost:8080'}/${existingFile.replace(/\\/g, '/')}`
+            
+            // Lấy extension từ URL
+            const urlParts = fileUrl.split('/')
+            const fileName = urlParts[urlParts.length - 1]
+            const extension = fileName.includes('.') ? fileName.split('.').pop() : 'file'
+            
+            // Tạo tên file từ mô tả
+            const downloadName = moTaFile 
+              ? `${moTaFile.replace(/[^a-zA-Z0-9\s-_]/g, '')}.${extension}`
+              : fileName
+            
+            return (
+            <div className="mb-3">
+              <label className="form-label fw-semibold">File đính kèm hiện tại</label>
+              <div className="d-flex align-items-center gap-2">
+                <a
+                  href={fileUrl}
+                  download={downloadName}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="btn btn-sm btn-outline-primary"
+                >
+                  <i className="bi bi-download"></i> {moTaFile || 'Tải file hiện tại'}
+                </a>
+                <button
+                  type="button"
+                  className="btn btn-danger btn-sm"
+                  onClick={() => {
+                    if (window.confirm('File này sẽ bị xóa khi bạn lưu thay đổi. Tiếp tục?')) {
+                      setDeleteFile(true)
+                    }
+                  }}
+                >
+                  <i className="bi bi-trash"></i> Xóa file
+                </button>
+              </div>
+              <small className="text-muted">Click nút xóa để gỡ file, hoặc upload file mới bên dưới</small>
+            </div>
+            )
+          })()}
+          {deleteFile && (
+            <div className="mb-3 alert alert-warning">
+              <i className="bi bi-exclamation-triangle"></i> File sẽ bị xóa khi lưu thay đổi. 
+              <button type="button" className="btn btn-link btn-sm" onClick={() => setDeleteFile(false)}>Hoàn tác</button>
+            </div>
+          )}
+
           <div className="row mb-3">
             <div className="col-md-4">
               <label className="form-label fw-semibold">Thay ảnh (nếu muốn)</label>
@@ -88,6 +236,7 @@ export default function EditThongBao() {
                 multiple
                 onChange={(e) => setHinhAnh([...e.target.files])}
               />
+              {hinhAnh && <small className="text-success">✅ {hinhAnh.length} ảnh mới đã chọn</small>}
             </div>
             <div className="col-md-4">
               <label className="form-label fw-semibold">Video mới (nếu có)</label>
@@ -97,6 +246,7 @@ export default function EditThongBao() {
                 accept="video/*"
                 onChange={(e) => setVideo(e.target.files[0])}
               />
+              {video && <small className="text-success">✅ Video mới đã chọn</small>}
             </div>
             <div className="col-md-4">
               <label className="form-label fw-semibold">File đính kèm mới</label>
@@ -106,6 +256,7 @@ export default function EditThongBao() {
                 accept=".pdf,.doc,.docx,.xls,.xlsx,.zip,.rar"
                 onChange={(e) => setTep(e.target.files[0])}
               />
+              {tep && <small className="text-success">✅ File mới đã chọn</small>}
             </div>
           </div>
           <div className="mb-3">

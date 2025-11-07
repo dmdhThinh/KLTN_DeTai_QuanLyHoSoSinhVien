@@ -6,12 +6,14 @@ import {
   getThongBaoById,
   updateThongBao,
   deleteThongBao,
+  downloadFile,
   upload
 } from '../controllers/thongBaoController.js'
 
 const router = express.Router()
 
 router.get('/', getThongBao)
+router.get('/:id/download', downloadFile)  // Download phải trước /:id
 router.get('/:id', getThongBaoById)
 
 // ✅ route thêm mới với upload nhiều loại file

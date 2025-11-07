@@ -1,3 +1,4 @@
+// server/index.js
 import express from 'express'
 import cors from 'cors'
 import dotenv from 'dotenv'
@@ -25,7 +26,7 @@ import ketQuaHocTapRoutes from './routes/ketQuaHocTap.js';
 
 import thongBaoRoutes from './routes/thongBao.js'
 import thongBaoDaDocRoutes from './routes/thongBaoDaDoc.js'
-// Trong index.js, thêm dòng này:
+
 import chuongtrinhkhungRoutes from './routes/chuongtrinhkhung.js'
 import dkhpRouter from './routes/dkhp.js'
 dotenv.config()

@@ -1,3 +1,4 @@
+// src/pages/Admin/StudentList.js
 import React, { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import AdminLayout from '../../components/AdminLayout'
@@ -13,12 +14,17 @@ export default function StudentList() {
   const [message, setMessage] = useState('')
   const [confirmDelete, setConfirmDelete] = useState(null)
   const [importResult, setImportResult] = useState(null)
+
   const [khoas, setKhoas] = useState([])
   const [nganhs, setNganhs] = useState([])
   const [lops, setLops] = useState([])
   const [selectedKhoa, setSelectedKhoa] = useState('')
   const [selectedNganh, setSelectedNganh] = useState('')
   const [selectedLop, setSelectedLop] = useState('')
+
+  // ✅ chọn/xoá nhiều
+  const [selectedIds, setSelectedIds] = useState([])
+
   const limit = 10
 
   useEffect(() => {
@@ -58,6 +64,12 @@ export default function StudentList() {
       const data = await apiFetch(`/api/sinhviens?${params.toString()}`)
       setStudents(data.data || [])
       setTotalPages(data.pagination?.totalPages || 1)
+
+      // khi tải trang mới, bỏ tick các hàng không còn trên trang
+      setSelectedIds(prev => {
+        const idsOnPage = new Set((data.data || []).map(s => s.id))
+        return prev.filter(id => idsOnPage.has(id))
+      })
     } catch (err) {
       console.error(err)
       setStudents([])
@@ -69,6 +81,8 @@ export default function StudentList() {
   const handleSearch = async (e) => {
     e.preventDefault()
     setPage(1)
+    // reset selection khi lọc mới
+    setSelectedIds([])
     await loadStudents(query.trim(), {
       khoaId: selectedKhoa,
       nganhId: selectedNganh,
@@ -87,6 +101,50 @@ export default function StudentList() {
       setMessage('Xoá thất bại: ' + err.message)
       setTimeout(() => setMessage(''), 3000)
     }
+  }
+
+  // ✅ bulk delete
+  const handleBulkDelete = async () => {
+    if (!selectedIds.length) return
+    if (!window.confirm(`Bạn chắc chắn xoá ${selectedIds.length} sinh viên đã chọn?`)) return
+    try {
+      await apiFetch('/api/sinhviens/bulk-delete', {
+        method: 'POST',
+        body: JSON.stringify({ ids: selectedIds })
+      })
+      setSelectedIds([])
+      setMessage('Đã xoá các sinh viên đã chọn!')
+      await loadStudents()
+      setTimeout(() => setMessage(''), 3000)
+    } catch (err) {
+      setMessage('Xoá nhiều thất bại: ' + (err.message || 'Lỗi'))
+      setTimeout(() => setMessage(''), 3000)
+    }
+  }
+
+  // tick tất cả hàng trên TRANG hiện tại
+  const toggleAllOnPage = (checked) => {
+    const idsOnPage = students.map(s => s.id)
+    setSelectedIds(prev => {
+      if (checked) {
+        const set = new Set([...prev, ...idsOnPage])
+        return Array.from(set)
+      } else {
+        const set = new Set(prev)
+        idsOnPage.forEach(id => set.delete(id))
+        return Array.from(set)
+      }
+    })
+  }
+
+  // tick từng hàng
+  const toggleOne = (id, checked) => {
+    setSelectedIds(prev => {
+      const set = new Set(prev)
+      if (checked) set.add(id)
+      else set.delete(id)
+      return Array.from(set)
+    })
   }
 
   const handleImport = async (e) => {
@@ -131,6 +189,10 @@ export default function StudentList() {
       alert(err.message)
     }
   }
+
+  // trạng thái checkbox master (của TRANG hiện tại)
+  const allOnPageChecked =
+    students.length > 0 && students.every(s => selectedIds.includes(s.id))
 
   return (
     <AdminLayout activeMenu="students" title="Danh sách sinh viên">
@@ -233,6 +295,12 @@ export default function StudentList() {
           📥 Import danh sách
         </button>
         <input id="fileInput" type="file" accept=".csv, .xlsx" style={{ display: 'none' }} onChange={handleImport} />
+
+        {/* 👇 xoá nhiều */}
+        <button className="btn btn-danger" disabled={!selectedIds.length} onClick={handleBulkDelete}>
+          🗑️ Xoá đã chọn ({selectedIds.length})
+        </button>
+
         <button className="btn btn-primary" onClick={() => navigate('/admin/students/new')}>
           ➕ Thêm sinh viên
         </button>
@@ -250,6 +318,13 @@ export default function StudentList() {
               <table className="table table-striped align-middle mb-0">
                 <thead className="table-light">
                   <tr>
+                    <th style={{ width: 40 }}>
+                      <input
+                        type="checkbox"
+                        onChange={(e) => toggleAllOnPage(e.target.checked)}
+                        checked={allOnPageChecked}
+                      />
+                    </th>
                     <th style={{ width: 60 }}>#</th>
                     <th>Mã SV</th>
                     <th>Họ tên</th>
@@ -264,6 +339,13 @@ export default function StudentList() {
                 <tbody>
                   {students.map((sv, i) => (
                     <tr key={sv.id}>
+                      <td>
+                        <input
+                          type="checkbox"
+                          checked={selectedIds.includes(sv.id)}
+                          onChange={(e) => toggleOne(sv.id, e.target.checked)}
+                        />
+                      </td>
                       <td>{(page - 1) * limit + i + 1}</td>
                       <td>{sv.maSv}</td>
                       <td>{sv.hoTen}</td>
