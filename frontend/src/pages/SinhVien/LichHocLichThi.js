@@ -49,8 +49,8 @@ export default function LichHocLichThi() {
 
   const from = dayjs(weekStart).format('YYYY-MM-DD')
 
-  if (mode === 'tatca') {
-    // Lấy cả lịch học + lịch thi
+  if (mode === 'hoc' || mode === 'tatca') {
+    // Lấy cả lịch học + lịch thi (mặc định hiển thị cả 2)
     Promise.all([
       apiFetch(`/api/lich/hoc?sinhVienId=${id}&from=${from}`),
       apiFetch(`/api/lich/thi?sinhVienId=${id}&from=${from}`)
@@ -67,21 +67,19 @@ export default function LichHocLichThi() {
         setLich([])
       })
       .finally(() => setLoading(false))
-
-    return // ⬅️ tránh chạy tiếp lời gọi đơn lẻ bên dưới
+  } else {
+    // Chỉ lịch thi
+    apiFetch(`/api/lich/thi?sinhVienId=${id}&from=${from}`)
+      .then((data) => {
+        setLich(Array.isArray(data) ? data : [])
+      })
+      .catch((err) => {
+        console.error('❌ Lỗi khi tải lịch:', err)
+        setError('Không thể tải dữ liệu lịch.')
+        setLich([])
+      })
+      .finally(() => setLoading(false))
   }
-
-  // Chỉ lịch học hoặc chỉ lịch thi
-  apiFetch(`/api/lich/${mode}?sinhVienId=${id}&from=${from}`)
-    .then((data) => {
-      setLich(Array.isArray(data) ? data : [])
-    })
-    .catch((err) => {
-      console.error('❌ Lỗi khi tải lịch:', err)
-      setError('Không thể tải dữ liệu lịch.')
-      setLich([])
-    })
-    .finally(() => setLoading(false))
 }, [mode, weekStart])
 
 
@@ -210,17 +208,27 @@ export default function LichHocLichThi() {
               <tr key={ca}>
                 <td className="ca-cell">{ca}</td>
                 {days.map((_, i) => {
-                  const cell = lich.find((x) => {
+                  const cells = lich.filter((x) => {
+  // Normalize ca: chuyển sang lowercase, bỏ dấu để so sánh
+  const normalizeCa = (str) => {
+    if (!str) return ''
+    return str.toLowerCase()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '') // bỏ dấu
+  }
+  
+  const matchCa = normalizeCa(x.ca) === normalizeCa(ca)
+  
   // Nếu là lịch học lặp hàng tuần
   if (x.thu && !x.ngayHoc) {
-    return Number(x.thu) === i + 2 && x.ca?.toLowerCase() === ca.toLowerCase()
+    return Number(x.thu) === i + 2 && matchCa
   }
 
   // Nếu là lịch học/thi có ngày cụ thể
   if (x.ngayHoc) {
     return (
       dayjs(x.ngayHoc).format('DD/MM/YYYY') === days[i].date &&
-      x.ca?.toLowerCase() === ca.toLowerCase()
+      matchCa
     )
   }
 
@@ -228,36 +236,48 @@ export default function LichHocLichThi() {
 })
 
                   return (
-                    <td key={i}>
-                      {cell ? (
-                        <div className={`monhoc-box ${cell.loai}`}>
-  <div className="fw-semibold">
-    {cell.tenHocPhan || cell.monHoc}
-  </div>
-  <div className="small text-muted">
-    {cell.maLopHocPhan || cell.lopHocPhan}
-  </div>
+                    <td key={i} style={{ padding: '8px', verticalAlign: 'top' }}>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                        {cells.map((cell) => {
+                          // Kiểm tra ngày nghỉ
+                          const isNghi = cell.danhSachNgayNghi && cell.danhSachNgayNghi.includes(days[i].date.split('/').reverse().join('-'))
+                          
+                          return (
+                          <div key={cell.id} className={`monhoc-box ${cell.loai} ${isNghi ? 'nghi' : ''}`} style={{ minHeight: '80px' }}>
+                            <div className="fw-semibold">
+                              {cell.tenHocPhan || cell.monHoc}
+                            </div>
+                            <div className="small text-muted">
+                              {cell.maLopHocPhan || cell.lopHocPhan}
+                            </div>
 
-  {cell.loai === 'thi' ? (
-    <>
-      <div className="small">Phòng: {cell.phong}</div>
-      <div className="small">GV: {cell.tenGiangVien || cell.giangVien}</div>
-      <div className="small text-danger fw-semibold">(Thi)</div>
-    </>
-  ) : (
-    <>
-      <div className="small">
-        Tiết: {cell.tietBatDau || cell.tiet?.split('-')[0]} -{' '}
-        {cell.tietKetThuc || cell.tiet?.split('-')[1]}
-      </div>
-      <div className="small">Phòng: {cell.phong}</div>
-      <div className="small">GV: {cell.tenGiangVien || cell.giangVien}</div>
-    </>
-  )}
-</div>
-                      ) : (
-                        <div style={{ height: 60 }}></div>
-                      )}
+                            {cell.loai === 'thi' ? (
+                              <>
+                                <div className="small">
+                                  Tiết: {cell.tietBatDau || cell.tiet?.split('-')[0]} -{' '}
+                                  {cell.tietKetThuc || cell.tiet?.split('-')[1]}
+                                </div>
+                                <div className="small">Phòng: {cell.phong}</div>
+                                <div className="small">GV: {cell.tenGiangVien || cell.giangVien}</div>
+                                <div className="small text-danger fw-semibold">(Thi)</div>
+                              </>
+                            ) : (
+                              <>
+                                <div className="small">
+                                  Tiết: {cell.tietBatDau || cell.tiet?.split('-')[0]} -{' '}
+                                  {cell.tietKetThuc || cell.tiet?.split('-')[1]}
+                                </div>
+                                <div className="small">Phòng: {cell.phong}</div>
+                                <div className="small">GV: {cell.tenGiangVien || cell.giangVien}</div>
+                              </>
+                            )}
+                            {isNghi && (
+                              <div className="small text-white fw-bold mt-1">❌ Nghỉ</div>
+                            )}
+                          </div>
+                        )}
+                        )}
+                      </div>
                     </td>
                   )
                 })}

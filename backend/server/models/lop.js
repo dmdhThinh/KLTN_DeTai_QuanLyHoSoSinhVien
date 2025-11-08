@@ -1,8 +1,8 @@
 import { pool } from '../config/db.js'
 
 // ===== LẤY DANH SÁCH LỚP (JOIN tên khoa & ngành) =====
-export async function getAllLop() {
-  const [rows] = await pool.execute(`
+export async function getAllLop(nganhId = null) {
+  let sql = `
     SELECT 
       l.id, 
       l.ten_lop AS tenLop,
@@ -13,8 +13,15 @@ export async function getAllLop() {
     FROM Lop l
     LEFT JOIN Khoa k ON l.khoa_id = k.id
     LEFT JOIN Nganh n ON l.nganh_id = n.id
-    ORDER BY l.id ASC
-  `)
+  `
+  const params = []
+  if (nganhId) {
+    sql += ' WHERE l.nganh_id = ?'
+    params.push(nganhId)
+  }
+  sql += ' ORDER BY l.id ASC'
+  
+  const [rows] = await pool.execute(sql, params)
   return rows
 }
 

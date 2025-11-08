@@ -16,11 +16,11 @@ export async function getAll(req, res) {
   }
 }
 
-// Lịch học (Admin) – hiển thị lặp theo tuần giống Sinh viên
+// Lịch học (Admin) – hiển thị theo lớp học phần
 export async function getLichHocAdmin(req, res) {
   try {
-    const { lopId, from } = req.query
-    if (!lopId) return res.status(400).json({ message: 'Thiếu lopId' })
+    const { lopHocPhanId, from } = req.query
+    if (!lopHocPhanId) return res.status(400).json({ message: 'Thiếu lopHocPhanId' })
     if (!from) return res.status(400).json({ message: 'Thiếu ngày bắt đầu tuần (from)' })
 
     const sql = `
@@ -37,13 +37,17 @@ export async function getLichHocAdmin(req, res) {
         lhp.ma_lop_hoc_phan AS maLopHocPhan,
         hp.ten_hoc_phan     AS tenHocPhan,
         hp.ma_hoc_phan      AS maHocPhan,
-        gv.ho_ten           AS tenGiangVien
+        gv.ho_ten           AS tenGiangVien,
+        -- Đánh dấu các ngày nghỉ trong tuần hiện tại
+        GROUP_CONCAT(DISTINCT DATE_FORMAT(ln.ngay_nghi, '%Y-%m-%d')) AS danhSachNgayNghi
       FROM LichHoc lh
       JOIN LopHocPhan lhp ON lhp.id = lh.lop_hoc_phan_id
       JOIN HocPhan hp ON hp.id = lhp.hoc_phan_id
-      JOIN GiangVien gv ON gv.id = lhp.giang_vien_id
+      LEFT JOIN GiangVien gv ON gv.id = lhp.giang_vien_id
+      LEFT JOIN LichNghi ln ON ln.lich_hoc_id = lh.id 
+        AND ln.ngay_nghi BETWEEN DATE(?) AND DATE_ADD(DATE(?), INTERVAL 6 DAY)
       WHERE lh.loai IN ('lythuyet','thuchanh','tructuyen')
-        AND lhp.lop_id = ?
+        AND lhp.id = ?
         AND (
           (lh.ngay_hoc IS NOT NULL AND lh.ngay_hoc BETWEEN DATE(?) AND DATE_ADD(DATE(?), INTERVAL 6 DAY))
           OR (
@@ -52,9 +56,10 @@ export async function getLichHocAdmin(req, res) {
             AND (lhp.ngay_ket_thuc IS NULL OR lhp.ngay_ket_thuc >= DATE(?))
           )
         )
+      GROUP BY lh.id
       ORDER BY lh.thu ASC, lh.ca ASC, lh.tiet_bat_dau ASC
     `
-    const [rows] = await pool.execute(sql, [lopId, from, from, from, from])
+    const [rows] = await pool.execute(sql, [from, from, lopHocPhanId, from, from, from, from])
     res.json(rows)
   } catch (err) {
     console.error('❌ Lỗi getLichHocAdmin:', err)
@@ -62,13 +67,13 @@ export async function getLichHocAdmin(req, res) {
   }
 }
 
-// 🧩 Lịch thi (Admin)
+// 🧩 Lịch thi (Admin) - theo lớp học phần
 export async function getLichThiAdmin(req, res) {
   try {
-    const { lopId, from } = req.query
-    if (!lopId) return res.status(400).json({ message: 'Thiếu lopId' })
+    const { lopHocPhanId, from } = req.query
+    if (!lopHocPhanId) return res.status(400).json({ message: 'Thiếu lopHocPhanId' })
 
-    const params = [lopId]
+    const params = [lopHocPhanId]
     let dateFilter = ''
     if (from) {
       // lọc trong tuần hiện tại
@@ -83,6 +88,8 @@ export async function getLichThiAdmin(req, res) {
         lh.id,
         lh.ngay_hoc       AS ngayHoc,
         lh.ca,
+        lh.tiet_bat_dau   AS tietBatDau,
+        lh.tiet_ket_thuc  AS tietKetThuc,
         lh.phong,
         lh.co_so          AS coSo,
         lh.loai,
@@ -92,9 +99,9 @@ export async function getLichThiAdmin(req, res) {
       FROM LichHoc lh
       JOIN LopHocPhan lhp ON lhp.id = lh.lop_hoc_phan_id
       JOIN HocPhan hp ON hp.id = lhp.hoc_phan_id
-      JOIN GiangVien gv ON gv.id = lhp.giang_vien_id
+      LEFT JOIN GiangVien gv ON gv.id = lhp.giang_vien_id
       WHERE lh.loai = 'thi'
-        AND lhp.lop_id = ?
+        AND lhp.id = ?
         ${dateFilter}
       ORDER BY lh.ngay_hoc ASC, lh.ca ASC
     `
@@ -181,6 +188,97 @@ export async function updateGiangVien(req, res) {
   } catch (err) {
     console.error('❌ Lỗi updateGiangVien:', err)
     res.status(500).json({ message: 'Lỗi server khi cập nhật giảng viên.' })
+  }
+}
+
+// ===== API LẤY DANH SÁCH CHO COMBOBOX =====
+
+// Lấy danh sách khoa
+export async function getKhoa(req, res) {
+  try {
+    const [rows] = await pool.execute('SELECT id, ma_khoa, ten_khoa FROM Khoa ORDER BY ten_khoa')
+    res.json(rows)
+  } catch (err) {
+    console.error('❌ Lỗi getKhoa:', err)
+    res.status(500).json({ message: 'Lỗi khi lấy danh sách khoa' })
+  }
+}
+
+// Lấy danh sách ngành theo khoa
+export async function getNganh(req, res) {
+  try {
+    const { khoaId } = req.query
+    let sql = 'SELECT id, ma_nganh, ten_nganh, khoa_id FROM Nganh'
+    const params = []
+    if (khoaId) {
+      sql += ' WHERE khoa_id = ?'
+      params.push(khoaId)
+    }
+    sql += ' ORDER BY ten_nganh'
+    const [rows] = await pool.execute(sql, params)
+    res.json(rows)
+  } catch (err) {
+    console.error('❌ Lỗi getNganh:', err)
+    res.status(500).json({ message: 'Lỗi khi lấy danh sách ngành' })
+  }
+}
+
+// Lấy danh sách lớp theo ngành
+export async function getLop(req, res) {
+  try {
+    const { nganhId } = req.query
+    let sql = 'SELECT id, ma_lop, ten_lop, nganh_id FROM Lop'
+    const params = []
+    if (nganhId) {
+      sql += ' WHERE nganh_id = ?'
+      params.push(nganhId)
+    }
+    sql += ' ORDER BY ten_lop'
+    const [rows] = await pool.execute(sql, params)
+    res.json(rows)
+  } catch (err) {
+    console.error('❌ Lỗi getLop:', err)
+    res.status(500).json({ message: 'Lỗi khi lấy danh sách lớp' })
+  }
+}
+
+// Lấy danh sách lớp học phần theo lớp
+export async function getLopHocPhan(req, res) {
+  try {
+    const { lopId, hocKy, namHoc } = req.query
+    let sql = `
+      SELECT 
+        lhp.id, 
+        lhp.ma_lop_hoc_phan, 
+        lhp.hoc_ky, 
+        lhp.nam_hoc,
+        hp.ten_hoc_phan,
+        hp.ma_hoc_phan,
+        gv.ho_ten AS giang_vien
+      FROM LopHocPhan lhp
+      JOIN HocPhan hp ON hp.id = lhp.hoc_phan_id
+      LEFT JOIN GiangVien gv ON gv.id = lhp.giang_vien_id
+      WHERE 1=1
+    `
+    const params = []
+    if (lopId) {
+      sql += ' AND lhp.lop_id = ?'
+      params.push(lopId)
+    }
+    if (hocKy) {
+      sql += ' AND lhp.hoc_ky = ?'
+      params.push(hocKy)
+    }
+    if (namHoc) {
+      sql += ' AND lhp.nam_hoc = ?'
+      params.push(namHoc)
+    }
+    sql += ' ORDER BY lhp.nam_hoc DESC, lhp.hoc_ky, hp.ten_hoc_phan'
+    const [rows] = await pool.execute(sql, params)
+    res.json(rows)
+  } catch (err) {
+    console.error('❌ Lỗi getLopHocPhan:', err)
+    res.status(500).json({ message: 'Lỗi khi lấy danh sách lớp học phần' })
   }
 }
 

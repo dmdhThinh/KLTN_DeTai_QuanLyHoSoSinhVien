@@ -37,20 +37,29 @@ function ChiTietLopHocPhan({ lhp, onClose, onRegister }) {
             <table className="table table-bordered table-sm">
               <thead className="table-primary">
                 <tr>
-                  <th>#</th><th>Thứ</th><th>Ca</th><th>Tiết</th><th>Phòng</th><th>Cơ sở</th><th>Ngày</th><th>Loại</th>
+                  <th>STT</th>
+                  <th>Lịch học</th>
+                  <th>Phòng</th>
+                  <th>Dãy nhà</th>
+                  <th>Cơ sở</th>
+                  <th>Giảng viên</th>
+                  <th>Thời gian</th>
                 </tr>
               </thead>
               <tbody>
                 {data.lich.map((r, i) => (
                   <tr key={r.id}>
                     <td>{i + 1}</td>
-                    <td>Thứ {r.thu}</td>
-                    <td>{r.ca}</td>
-                    <td>T{r.tiet_bat_dau} → T{r.tiet_ket_thuc}</td>
+                    <td>Thứ {r.thu} (T{r.tiet_bat_dau} → T{r.tiet_ket_thuc})</td>
                     <td>{r.phong}</td>
+                    <td>{r.day_nha || (r.phong ? r.phong.charAt(0) : '')}</td>
                     <td>{r.co_so}</td>
-                    <td>{r.ngay_hoc ? dayjs(r.ngay_hoc).format('DD/MM/YYYY') : ''}</td>
-                    <td>{r.loai}</td>
+                    <td>{data.header?.giang_vien || ''}</td>
+                    <td>
+                      {data.header?.ngay_bat_dau && data.header?.ngay_ket_thuc ? (
+                        `${dayjs(data.header.ngay_bat_dau).format('DD/MM/YYYY')} - ${dayjs(data.header.ngay_ket_thuc).format('DD/MM/YYYY')}`
+                      ) : ''}
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -79,6 +88,9 @@ export default function DkhpPage() {
   // Dropdown chọn học kỳ, năm học
   const [selectedHocKy, setSelectedHocKy] = useState('HK1');
   const [selectedNamHoc, setSelectedNamHoc] = useState('2025-2026');
+  
+  // Filter checkbox
+  const [hideConflictClasses, setHideConflictClasses] = useState(false);
   
   // state mới
 const [selectedClass, setSelectedClass] = useState(null);     // lớp học phần đã chọn ở bảng giữa
@@ -120,7 +132,7 @@ const loadClassDetail = async (lop) => {
         // Sử dụng học kỳ/năm học từ dropdown
         const [avail, regs, pend] = await Promise.all([
           apiFetch(`/api/dkhp/available?sinh_vien_id=${sinhVienId}&hoc_ky=${selectedHocKy}&nam_hoc=${selectedNamHoc}&dot_dang_ky_id=${d?.id || ''}`),
-          apiFetch(`/api/dkhp/my?sinh_vien_id=${sinhVienId}&dot_dang_ky_id=${d?.id || ''}`),
+          apiFetch(`/api/dkhp/my?sinh_vien_id=${sinhVienId}&hoc_ky=${selectedHocKy}&nam_hoc=${selectedNamHoc}&dot_dang_ky_id=${d?.id || ''}`),
           apiFetch(`/api/dkhp/hp/pending?sinh_vien_id=${sinhVienId}&hoc_ky=${selectedHocKy}&nam_hoc=${selectedNamHoc}&dot_dang_ky_id=${d?.id || ''}`)
         ]);
         setAvailable(avail);
@@ -139,6 +151,12 @@ const loadClassDetail = async (lop) => {
 
   // Đăng ký
   const handleRegister = async (lhp) => {
+  // Kiểm tra trùng lịch
+  if (lhp.xung_dot_lich) {
+    alert('⚠️ CẢNH BÁO: Lớp học phần này trùng lịch với các môn bạn đã đăng ký!\n\nVui lòng chọn lớp học phần khác.');
+    return;
+  }
+  
   if (!window.confirm('Xác nhận đăng ký lớp này?')) return;
 
   try {
@@ -166,7 +184,7 @@ const loadClassDetail = async (lop) => {
 
     // registered: các lớp SV đã đăng ký trong kỳ này
     const regs = await apiFetch(
-      `/api/dkhp/my?sinh_vien_id=${sinhVienId}&dot_dang_ky_id=${dot?.id || ''}`
+      `/api/dkhp/my?sinh_vien_id=${sinhVienId}&hoc_ky=${selectedHocKy}&nam_hoc=${selectedNamHoc}&dot_dang_ky_id=${dot?.id || ''}`
     );
     setRegistered(regs);
 
@@ -205,7 +223,7 @@ const handleCancel = async (dangKyId, lopHocPhanId) => {
     // 2) Refetch lại 2 danh sách để đồng bộ số "Đã đăng ký"/slot
     const [avail, regs] = await Promise.all([
       apiFetch(`/api/dkhp/available?sinh_vien_id=${sinhVienId}&hoc_ky=${selectedHocKy}&nam_hoc=${selectedNamHoc}&dot_dang_ky_id=${dot?.id || ''}`),
-      apiFetch(`/api/dkhp/my?sinh_vien_id=${sinhVienId}&dot_dang_ky_id=${dot?.id || ''}`)
+      apiFetch(`/api/dkhp/my?sinh_vien_id=${sinhVienId}&hoc_ky=${selectedHocKy}&nam_hoc=${selectedNamHoc}&dot_dang_ky_id=${dot?.id || ''}`)
     ]);
     setAvailable(avail);
     setRegistered(regs);
@@ -358,9 +376,24 @@ const getDaDangKy = (l) => {
               </div>
             </div>
             {/* ===== Bảng 2: LỚP HỌC PHẦN CHỜ ĐĂNG KÝ ===== */}
+{selectedHP && (
 <div className="card mb-4">
   <div className="card-header" style={{background:'#ffb100'}}>
-    <strong>LỚP HỌC PHẦN CHỜ ĐĂNG KÝ</strong>
+    <div className="d-flex justify-content-between align-items-center">
+      <strong>LỚP HỌC PHẦN CHỜ ĐĂNG KÝ</strong>
+      <div className="form-check">
+        <input 
+          className="form-check-input" 
+          type="checkbox" 
+          id="hideConflict"
+          checked={hideConflictClasses}
+          onChange={(e) => setHideConflictClasses(e.target.checked)}
+        />
+        <label className="form-check-label" htmlFor="hideConflict" style={{color: '#dc3545', fontWeight: 'bold'}}>
+          HIỂN THỊ LỚP HỌC PHẦN KHÔNG TRÙNG LỊCH
+        </label>
+      </div>
+    </div>
   </div>
   <div className="table-responsive">
     <table className="table table-hover mb-0">
@@ -378,17 +411,22 @@ const getDaDangKy = (l) => {
       </thead>
       <tbody>
         {available
-          .filter(l => !selectedHP || l.hoc_phan_id === selectedHP.hoc_phan_id)
+          .filter(l => l.hoc_phan_id === selectedHP.hoc_phan_id)
+          .filter(l => !hideConflictClasses || !l.xung_dot_lich)
           .map((l, i) => (
           <tr key={l.id}
-              className={selectedClass?.id===l.id ? 'table-warning' : ''}
+              className={selectedClass?.id===l.id ? 'table-warning' : (l.xung_dot_lich ? 'table-danger' : '')}
               onClick={() => loadClassDetail(l)}
-              style={{cursor:'pointer'}}>
+              style={{cursor:'pointer'}}
+              title={l.xung_dot_lich ? '⚠️ Lớp này trùng lịch với các môn đã đăng ký' : ''}>
             <td>
               <input type="radio" readOnly checked={selectedClass?.id===l.id}/>
             </td>
             <td>{i+1}</td>
-            <td>{l.ma_lop_hoc_phan || l.ma_lhp}</td>
+            <td>
+              {l.ma_lop_hoc_phan || l.ma_lhp}
+              {l.xung_dot_lich && <span className="badge bg-danger ms-1">Trùng lịch</span>}
+            </td>
             <td>{l.ten_lop_hoc_phan || l.ten_hoc_phan}</td>
             <td>{l.si_so_toi_da ?? ''}</td>
             
@@ -400,6 +438,7 @@ const getDaDangKy = (l) => {
     </table>
   </div>
 </div>
+)}
 
 
             {/* ===== Bảng 3: CHI TIẾT LỚP HỌC PHẦN ===== */}
@@ -412,11 +451,13 @@ const getDaDangKy = (l) => {
     <div className="p-3 text-muted">Hãy chọn 1 lớp học phần ở bảng trên.</div>
   ) : (
     <>
+     
+      
       <div className="table-responsive">
         <table className="table table-bordered table-sm mb-0">
           <thead className="table-primary">
             <tr>
-              <th>STT</th><th>Thứ</th><th>Ca</th><th>Tiết</th><th>Phòng</th><th>Cơ sở</th><th>Giảng viên</th><th>Ngày</th><th>Loại</th>
+              <th>STT</th><th>Thứ</th><th>Ca</th><th>Tiết</th><th>Phòng</th><th>Cơ sở</th><th>Giảng viên</th><th>Thời gian</th><th>Loại</th>
             </tr>
           </thead>
           <tbody>
@@ -430,7 +471,15 @@ const getDaDangKy = (l) => {
                 
                 <td>{r.co_so}</td>
                 <td>{classDetail.header?.giang_vien || ''}</td>
-                <td>{r.ngay_hoc ? dayjs(r.ngay_hoc).format('DD/MM/YYYY') : ''}</td>
+                <td>
+                  {classDetail.header?.ngay_bat_dau && classDetail.header?.ngay_ket_thuc ? (
+                    <>
+                      {dayjs(classDetail.header.ngay_bat_dau).format('DD/MM/YYYY')} → {dayjs(classDetail.header.ngay_ket_thuc).format('DD/MM/YYYY')}
+                    </>
+                  ) : (
+                    r.ngay_hoc ? dayjs(r.ngay_hoc).format('DD/MM/YYYY') : ''
+                  )}
+                </td>
                 <td>{r.loai}</td>
               </tr>
             ))}
@@ -442,6 +491,16 @@ const getDaDangKy = (l) => {
       </div>
 
       <div className="p-3">
+        {selectedClass?.xung_dot_lich && (
+          <div className="alert alert-danger mb-3" role="alert">
+            <strong>⚠️ CẢNH BÁO:</strong> Lớp học phần này trùng lịch với các môn bạn đã đăng ký!
+          </div>
+        )}
+        {!selectedClass?.du_dieu_kien && (
+          <div className="alert alert-warning mb-3" role="alert">
+            <strong>⚠️ CẢNH BÁO:</strong> Bạn chưa đủ điều kiện học môn này (chưa hoàn thành học phần tiên quyết).
+          </div>
+        )}
         <button
           className="btn btn-success"
           disabled={

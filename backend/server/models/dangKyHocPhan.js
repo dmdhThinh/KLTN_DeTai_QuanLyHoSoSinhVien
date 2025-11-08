@@ -78,17 +78,28 @@ export async function listAvailableLHP({ sinh_vien_id, hoc_ky, nam_hoc, dot_dang
 }
 
 // ------ Đăng ký của SV ------
-export async function listMyRegistrations({ sinh_vien_id, dot_dang_ky_id }) {
+export async function listMyRegistrations({ sinh_vien_id, dot_dang_ky_id, hoc_ky, nam_hoc }) {
   const params = [sinh_vien_id]
   let sql =
-    `SELECT d.*, lhp.hoc_ky, lhp.nam_hoc, hp.ten_hoc_phan
+    `SELECT d.*, 
+            lhp.ma_lop_hoc_phan, lhp.hoc_ky, lhp.nam_hoc, lhp.trang_thai AS trang_thai_lhp,
+            hp.ten_hoc_phan, hp.so_tin_chi AS so_tc
        FROM DangKyHocPhan d
        JOIN LopHocPhan lhp ON lhp.id = d.lop_hoc_phan_id
        JOIN HocPhan hp ON hp.id = lhp.hoc_phan_id
-      WHERE d.sinh_vien_id = ?`
+      WHERE d.sinh_vien_id = ? AND d.trang_thai_dk <> 'HUY'`
   if (dot_dang_ky_id) {
     sql += ` AND d.dot_dang_ky_id = ?`
     params.push(dot_dang_ky_id)
+  }
+  // Filter theo học kỳ và năm học nếu có
+  if (hoc_ky) {
+    sql += ` AND lhp.hoc_ky = ?`
+    params.push(hoc_ky)
+  }
+  if (nam_hoc) {
+    sql += ` AND lhp.nam_hoc = ?`
+    params.push(nam_hoc)
   }
   sql += ` ORDER BY d.thoi_diem_dk DESC`
   const [rows] = await pool.execute(sql, params)
@@ -302,7 +313,26 @@ async function checkPrereq({ conn, sinh_vien_id, hoc_phan_id, dot_dang_ky_id }) 
 // NEW: Gom “môn học phần đang chờ đăng ký” (group by hoc_phan_id)
 // === MÔN HỌC PHẦN ĐANG CHỜ ĐĂNG KÝ (gom theo hoc_phan_id) ===
 export async function listPendingCourses({ sinh_vien_id, hoc_ky, nam_hoc, dot_dang_ky_id }) {
+  // Lấy thông tin ngành/khoa của sinh viên
+  const [svRows] = await pool.execute(
+    `SELECT nganh_id, khoa_id FROM SinhVien WHERE id = ?`,
+    [sinh_vien_id]
+  )
+  const sv = svRows[0]
+  if (!sv) return []
+  
+  // Lấy danh sách học phần đã đăng ký THÀNH CÔNG (để loại ra)
+  const [registered] = await pool.execute(
+    `SELECT DISTINCT lhp.hoc_phan_id
+     FROM DangKyHocPhan d
+     JOIN LopHocPhan lhp ON lhp.id = d.lop_hoc_phan_id
+     WHERE d.sinh_vien_id = ? AND d.trang_thai_dk = 'THANH_CONG'`,
+    [sinh_vien_id]
+  )
+  const registeredHPIds = registered.map(r => r.hoc_phan_id)
+  
   // Lấy các HP có mở lớp trong kỳ + tổng số lớp/đã mở đăng ký
+  // Filter: chỉ lấy HP thuộc ngành của SV HOẶC HP chung (nganh_id IS NULL)
   const [rows] = await pool.execute(
     `SELECT hp.id AS hoc_phan_id, hp.ma_hoc_phan, hp.ten_hoc_phan, hp.so_tin_chi AS tc,
             COUNT(lhp.id)                   AS tong_so_lop,
@@ -310,11 +340,14 @@ export async function listPendingCourses({ sinh_vien_id, hoc_ky, nam_hoc, dot_da
      FROM LopHocPhan lhp
      JOIN HocPhan hp ON hp.id = lhp.hoc_phan_id
     WHERE lhp.hoc_ky = ? AND lhp.nam_hoc = ?
+      AND (hp.nganh_id = ? OR hp.nganh_id IS NULL)
     GROUP BY hp.id, hp.ma_hoc_phan, hp.ten_hoc_phan, hp.so_tin_chi
     ORDER BY hp.ten_hoc_phan`,
-    [hoc_ky, nam_hoc]
+    [hoc_ky, nam_hoc, sv.nganh_id]
   )
-  return rows
+  
+  // Loại bỏ những học phần đã đăng ký thành công
+  return rows.filter(hp => !registeredHPIds.includes(hp.hoc_phan_id))
 }
 
 // === CHI TIẾT LỊCH CỦA 1 LỚP HỌC PHẦN (cho modal “Xem”) ===

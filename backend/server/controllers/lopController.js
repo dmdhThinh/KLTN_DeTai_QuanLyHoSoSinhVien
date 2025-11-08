@@ -10,7 +10,8 @@ import {
 // ===== LẤY DANH SÁCH =====
 export async function getAll(req, res) {
   try {
-    const data = await getAllLop()
+    const { nganhId } = req.query
+    const data = await getAllLop(nganhId)
     res.json(data)
   } catch (err) {
     console.error('❌ Lỗi getAll Lop:', err)
