@@ -74,7 +74,7 @@ export async function getLopHocPhanByGiangVien(req, res) {
       error: err.message,
     });
   }
-}
+  }
 
 // ✅ Lấy danh sách sinh viên trong lớp học phần
 export async function getSinhVienByLopHocPhan(req, res) {

@@ -65,6 +65,9 @@ import DKHP from './pages/SinhVien/dkhp.js'
 import QuanLyDotNhapDiem from './pages/Admin/QuanLyDotNhapDiem.js'
 import CongNo from './pages/SinhVien/CongNo.js'
 import QuanLyHocPhi from './pages/Admin/QuanLyHocPhi.js'
+import YeuCauTuVanSinhVien from './pages/SinhVien/YeuCauTuVan.js'
+import YeuCauTuVanGiangVien from './pages/GiangVien/YeuCauTuVan.js'
+import YeuCauTuVanAdmin from './pages/Admin/YeuCauTuVan.js'
 
 
 function App() {
@@ -139,6 +142,10 @@ function App() {
   path="/teacher/sv-lop/:lopHocPhanId"
   element={<PrivateRoute allowRoles={['Giảng viên']}><SinhVienTrongLop /></PrivateRoute>}
 />
+<Route
+  path="/teacher/yeu-cau-tu-van"
+  element={<PrivateRoute allowRoles={['Giảng viên']}><YeuCauTuVanGiangVien /></PrivateRoute>}
+/>
 
         {/* Quản trị */}
         <Route
@@ -181,6 +188,7 @@ function App() {
         <Route path="/chuongtrinhkhung" element={<PrivateRoute allowRoles={['Sinh viên']}><ChuongTrinhKhung /></PrivateRoute>} />
         <Route path="/dkhp" element={<PrivateRoute allowRoles={['Sinh viên']}><DKHP /></PrivateRoute>} />
         <Route path="/congno" element={<PrivateRoute allowRoles={['Sinh viên']}><CongNo /></PrivateRoute>} />
+        <Route path="/yeu-cau-tu-van" element={<PrivateRoute allowRoles={['Sinh viên']}><YeuCauTuVanSinhVien /></PrivateRoute>} />
 
         <Route path="/admin/accounts" element={<PrivateRoute allowRoles={['Quản trị']}> <AccountList /></PrivateRoute>} />
 
@@ -217,6 +225,7 @@ function App() {
         <Route path="/admin/thongbao/edit/:id" element={<PrivateRoute allowRoles={['Quản trị']}><EditThongBao /></PrivateRoute>}/>
         <Route path="/admin/dot-nhap-diem" element={<PrivateRoute allowRoles={['Quản trị']}><QuanLyDotNhapDiem /></PrivateRoute>} />
          <Route path="/admin/hoc-phi" element={<PrivateRoute allowRoles={['Quản trị']}><QuanLyHocPhi /></PrivateRoute>} />
+        <Route path="/admin/tu-van" element={<PrivateRoute allowRoles={['Quản trị']}><YeuCauTuVanAdmin /></PrivateRoute>} />
         <Route path="/student/thongbao" element={<PrivateRoute allowRoles={['Sinh viên']}><ThongBaoSinhVien /></PrivateRoute>}/>
         <Route path="/student/thongbao/:id" element={<PrivateRoute allowRoles={['Sinh viên']}><ThongBaoChiTiet /></PrivateRoute>}/>
         {/* Trang không tồn tại → về login */}

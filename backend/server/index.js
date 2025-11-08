@@ -34,6 +34,8 @@ import dkhpRouter from './routes/dkhp.js'
 import dotNhapDiemRoutes from './routes/dotNhapDiem.js'
 import hocPhiRoutes from './routes/hocPhi.js'
 import dotDangKyRoutes from './routes/dotDangKy.js'
+import yeuCauTuVanRoutes from './routes/yeuCauTuVan.js'
+import tinNhanTuVanRoutes from './routes/tinNhanTuVan.js'
 dotenv.config()
 const app = express()
 const __filename = fileURLToPath(import.meta.url)
@@ -75,6 +77,8 @@ app.use('/api/dkhp', dkhpRouter)
 app.use('/api/dot-nhap-diem', dotNhapDiemRoutes)
 app.use('/api/hoc-phi', hocPhiRoutes)
 app.use('/api/dot-dang-ky', dotDangKyRoutes)
+app.use('/api/yeu-cau-tu-van', yeuCauTuVanRoutes)
+app.use('/api/tin-nhan-tu-van', tinNhanTuVanRoutes)
 
 // ✅ Public folder cho ảnh thẻ
 app.use('/uploads', express.static(path.resolve('uploads')))

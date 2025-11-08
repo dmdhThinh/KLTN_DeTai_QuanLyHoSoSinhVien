@@ -67,7 +67,7 @@ function ChiTietLopHocPhan({ lhp, onClose, onRegister }) {
           </div>
           <div className="modal-footer">
             <button className="btn btn-secondary" onClick={onClose}>Đóng</button>
-            
+            <button className="btn btn-success" onClick={() => onRegister(lhp)}>Đăng ký</button>
           </div>
         </div>
       </div>
@@ -163,6 +163,7 @@ const loadClassDetail = async (lop) => {
     setTimeout(() => setMessage(''), 5000);
     return;
   }
+  
 
   try {
     // Gọi API đăng ký
@@ -224,7 +225,8 @@ const handleCancel = async () => {
   if (!confirmCancel) return;
   const { dangKyId, lopHocPhanId } = confirmCancel;
   setConfirmCancel(null);
-  
+ 
+
   try {
     await apiFetch(`/api/dkhp/register/${dangKyId}`, { method: 'DELETE' });
 
@@ -249,7 +251,7 @@ const handleCancel = async () => {
     setMessageType('success');
     setTimeout(() => setMessage(''), 3000);
   } catch (err) {
-    // Parse message nếu backend trả về JSON string
+     // Parse message nếu backend trả về JSON string
     let errorMessage = err.message || 'Lỗi khi hủy đăng ký';
     try {
       const parsed = JSON.parse(errorMessage);
@@ -284,7 +286,6 @@ const getDaDangKy = (l) => {
     <StudentLayout title="Đăng ký học phần">
       <div className="container-fluid py-4">
         <h3 className="text-center text-primary mb-4">ĐĂNG KÝ HỌC PHẦN</h3>
-        
         {/* Thông báo thành công/lỗi */}
         {message && (
           <div className={`alert alert-${messageType === 'success' ? 'success' : 'danger'} alert-dismissible fade show`} role="alert">
@@ -571,7 +572,6 @@ const getDaDangKy = (l) => {
                       <th>Số TC</th>
                       <th>Học phí</th>
                       <th>Hạn nộp</th>
-                      <th>Thu</th>
                       
                       <th>Ngày ĐK</th>
                       <th>Trạng thái LHP</th>
@@ -579,7 +579,7 @@ const getDaDangKy = (l) => {
                   </thead>
                   <tbody>
                     {registered.length === 0 ? (
-                      <tr><td colSpan="11" className="text-center text-muted">Chưa đăng ký lớp nào</td></tr>
+                      <tr><td colSpan="10" className="text-center text-muted">Chưa đăng ký lớp nào</td></tr>
                     ) : (
                       registered.map((r, i) => (
                         <tr key={r.id}>
@@ -629,7 +629,6 @@ const getDaDangKy = (l) => {
                           <td>{r.so_tc || ''}</td>
                           <td>{r.hoc_phi ? `${r.hoc_phi.toLocaleString()}đ` : ''}</td>
                           <td>{r.han_nop ? dayjs(r.han_nop).format('DD/MM/YYYY') : ''}</td>
-                          <td>{r.lan_thu || ''}</td>
                           
                           <td>{formatDate(r.thoi_diem_dk)}</td>
                           <td>{r.trang_thai_lhp || ''}</td>
@@ -649,8 +648,7 @@ const getDaDangKy = (l) => {
                 onRegister={handleRegister}
               />
             )}
-
-            {/* Modal xác nhận hủy đăng ký */}
+             {/* Modal xác nhận hủy đăng ký */}
             {confirmCancel && (
               <div className="modal show d-block" style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}>
                 <div className="modal-dialog modal-dialog-centered">

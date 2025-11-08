@@ -20,4 +20,5 @@ router.get('/giangvien/thi', getLichThiGiangVien)
 // Lịch theo lớp học phần (cho điểm danh)
 router.get('/lop-hoc-phan/:lopHocPhanId', getLichByLopHocPhan)
 
+
 export default router

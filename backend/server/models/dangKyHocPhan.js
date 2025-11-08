@@ -208,7 +208,43 @@ export async function registerLHP({
     // 8) Tăng sĩ số hiển thị (nếu bạn có dùng cột đếm trong LHP)
     await conn.execute(`UPDATE LopHocPhan SET si_so_da_dk = si_so_da_dk + 1 WHERE id = ?`, [lop_hoc_phan_id])
 
-    // 9) Ghi log
+    // 9) Tạo bản ghi HocPhi tự động với hạn nộp từ đợt
+    // Lấy hạn nộp chung từ một bản ghi HocPhi khác trong cùng đợt (nếu có)
+    const [hanNopRows] = await conn.execute(
+      `SELECT h.han_nop 
+       FROM HocPhi h
+       JOIN DangKyHocPhan dk ON dk.id = h.dang_ky_id
+       WHERE dk.dot_dang_ky_id = ? AND h.han_nop IS NOT NULL
+       LIMIT 1`,
+      [dot.id]
+    )
+    const hanNopChung = hanNopRows[0]?.han_nop || null
+
+    // Lấy số tín chỉ và tính học phí
+    const [hpInfo] = await conn.execute(
+      `SELECT so_tin_chi FROM HocPhan WHERE id = ?`,
+      [lhp.hoc_phan_id]
+    )
+    const soTien = (hpInfo[0]?.so_tin_chi || 0) * 1000000
+
+    // Tạo bản ghi HocPhi
+    await conn.execute(
+      `INSERT INTO HocPhi 
+        (sinh_vien_id, hoc_phan_id, hoc_ky, nam_hoc, so_tien, tinh_trang, dang_ky_id, lop_hoc_phan_id, han_nop, lan_thu)
+       VALUES (?, ?, ?, ?, ?, 'Chưa nộp', ?, ?, ?, 1)`,
+      [
+        sinh_vien_id,
+        lhp.hoc_phan_id,
+        lhp.hoc_ky,
+        lhp.nam_hoc,
+        soTien,
+        ins.insertId,
+        lop_hoc_phan_id,
+        hanNopChung
+      ]
+    )
+
+    // 10) Ghi log
     await conn.execute(
       `INSERT INTO LichSuDangKyHP(dang_ky_id, hanh_dong, ghi_chu) VALUES(?, 'THEM', 'Đăng ký qua API')`,
       [ins.insertId]
@@ -236,8 +272,7 @@ export async function cancelRegistration({ dangKyId }) {
     const [rows] = await conn.execute(`SELECT * FROM DangKyHocPhan WHERE id = ? FOR UPDATE`, [dangKyId])
     const d = rows[0]
     if (!d) throw bizError('Không tìm thấy đăng ký')
-
-    // Kiểm tra trạng thái lớp học phần
+        // Kiểm tra trạng thái lớp học phần
     const [lhpRows] = await conn.execute(`SELECT trang_thai FROM LopHocPhan WHERE id = ?`, [d.lop_hoc_phan_id])
     const lhp = lhpRows[0]
     if (lhp && lhp.trang_thai === 'Chấp nhận mở lớp') {
@@ -254,6 +289,9 @@ export async function cancelRegistration({ dangKyId }) {
       `INSERT INTO LichSuDangKyHP(dang_ky_id, hanh_dong, ghi_chu) VALUES(?, 'HUY', 'Hủy qua API')`,
       [dangKyId]
     )
+
+    // Xóa bản ghi HocPhi liên quan
+    await conn.execute(`DELETE FROM HocPhi WHERE dang_ky_id = ?`, [dangKyId])
 
     // Xóa đăng ký
     await conn.execute(`DELETE FROM DangKyHocPhan WHERE id = ?`, [dangKyId])

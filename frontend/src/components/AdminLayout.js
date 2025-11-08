@@ -1,9 +1,29 @@
-import React, { useEffect } from 'react'
+import React, { useEffect, useState } from 'react'
 import { useLocation } from 'react-router-dom'
 import 'bootstrap-icons/font/bootstrap-icons.css'
+import { apiFetch } from '../api'
 
 export default function AdminLayout({ children, title = '', activeMenu = '' }) {
   const location = useLocation()
+  const [badgeCount, setBadgeCount] = useState(0)
+
+  // Load badge count
+  useEffect(() => {
+    const loadBadgeCount = async () => {
+      try {
+        const response = await apiFetch('/api/yeu-cau-tu-van/admin/count')
+        setBadgeCount(response.count || 0)
+      } catch (error) {
+        console.error('Lỗi khi tải badge count:', error)
+      }
+    }
+
+    loadBadgeCount()
+
+    // Auto-refresh mỗi 10 giây
+    const interval = setInterval(loadBadgeCount, 10000)
+    return () => clearInterval(interval)
+  }, [])
 
   // Custom scrollbar styling
   useEffect(() => {
@@ -69,6 +89,15 @@ export default function AdminLayout({ children, title = '', activeMenu = '' }) {
           <li>
             <a href="/admin" className={`nav-link ${location.pathname === '/admin' ? 'active bg-info' : 'text-white-50'}`}>
               <i className="bi bi-house-door me-2"></i> Tổng quan
+            </a>
+          </li>
+
+          <li>
+            <a href="/admin/tu-van" className={`nav-link ${location.pathname.includes('/tu-van') ? 'active bg-info' : 'text-white-50'} d-flex justify-content-between align-items-center`}>
+              <span><i className="bi bi-chat-left-text me-2"></i> Yêu cầu tư vấn</span>
+              {badgeCount > 0 && (
+                <span className="badge bg-danger rounded-pill">{badgeCount}</span>
+              )}
             </a>
           </li>
 

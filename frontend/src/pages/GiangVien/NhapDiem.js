@@ -13,7 +13,6 @@ function NhapDiem() {
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState('');
   const [trangThaiDot, setTrangThaiDot] = useState(null); // Trạng thái đợt nhập điểm từ DB
-  const [viewMode, setViewMode] = useState('input'); // 'input' hoặc 'view'
   const [showConfirm, setShowConfirm] = useState(false); // Modal xác nhận
 
   // Load thông tin lớp học phần và danh sách sinh viên
@@ -56,10 +55,8 @@ function NhapDiem() {
                     return matchHP && matchHK && matchNH;
                   }
                 );
-
                 // Lưu giá trị gốc từ DB để kiểm tra sau
                 const originalCK = existingScore?.diemCuoiKy || existingScore?.diem_cuoi_ky || '';
-                
                 return {
                   ...sv,
                   ketQuaId: existingScore?.id || null,
@@ -274,7 +271,7 @@ function NhapDiem() {
       return;
     }
 
-    // Chuẩn bị dữ liệu với thông tin lớp ở đầu
+    // Chuẩn bị dữ liệu
     const data = [];
     
     // Row 1-3: Thông tin lớp
@@ -596,7 +593,7 @@ function NhapDiem() {
                   >
                     {saving ? ' Đang lưu...' : ' Lưu tất cả điểm'}
                   </button>
-                 
+                  
                 </div>
               </div>
             </>
@@ -714,7 +711,6 @@ function NhapDiem() {
           )}
         </div>
       </div>
-
       {/* Modal xác nhận lưu điểm */}
       {showConfirm && (
         <div className="modal show d-block" style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}>

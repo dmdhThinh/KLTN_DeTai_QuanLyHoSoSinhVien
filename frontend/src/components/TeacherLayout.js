@@ -1,11 +1,12 @@
 import React, { useEffect, useState } from 'react'
 import { useLocation, Link } from 'react-router-dom'
-import { getGiangVienId, getGiangVienById } from '../api'
+import { getGiangVienId, getGiangVienById, apiFetch } from '../api'
 import 'bootstrap-icons/font/bootstrap-icons.css'
 
 export default function TeacherLayout({ children, title = '', activeMenu = '' }) {
   const location = useLocation()
   const [gv, setGv] = useState(null)
+  const [tuVanCount, setTuVanCount] = useState(0)
 
   // Lấy thông tin giảng viên đang đăng nhập
   useEffect(() => {
@@ -20,6 +21,25 @@ export default function TeacherLayout({ children, title = '', activeMenu = '' })
         }
       })
       .catch(() => setGv(null))
+
+    // Lấy số yêu cầu tư vấn mới
+    const fetchTuVanCount = () => {
+      apiFetch(`/api/yeu-cau-tu-van/giang-vien/${id}/count`)
+        .then((res) => setTuVanCount(res.count || 0))
+        .catch(() => setTuVanCount(0))
+    }
+    fetchTuVanCount()
+    
+    // Cập nhật mỗi 3 giây
+    const interval = setInterval(fetchTuVanCount, 3000)
+    
+    // Expose refresh function globally for child components
+    window.refreshTuVanCount = fetchTuVanCount
+    
+    return () => {
+      clearInterval(interval)
+      delete window.refreshTuVanCount
+    }
   }, [])
 
   // Custom scrollbar styling
@@ -157,16 +177,21 @@ export default function TeacherLayout({ children, title = '', activeMenu = '' })
           </li>
 
           <li>
-            <a
-              href="/teacher/yeu-cau"
-              className={`nav-link ${
-                location.pathname.includes('/yeu-cau')
+            <Link
+              to="/teacher/yeu-cau-tu-van"
+              className={`nav-link d-flex align-items-center justify-content-between ${
+                location.pathname.includes('/yeu-cau-tu-van')
                   ? 'active bg-success'
                   : 'text-white-50'
               }`}
             >
-              <i className="bi bi-chat-left-text me-2"></i> Yêu cầu tư vấn
-            </a>
+              <span>
+                <i className="bi bi-chat-dots me-2"></i> Yêu cầu tư vấn
+              </span>
+              {tuVanCount > 0 && (
+                <span className="badge bg-danger rounded-pill">{tuVanCount}</span>
+              )}
+            </Link>
           </li>
 
           <li>

@@ -25,25 +25,29 @@ export default function EditGiangVien() {
           apiFetch('/api/lop'),
           apiFetch(`/api/giangviens/${id}`)
         ])
+        
+        console.log('Dữ liệu giảng viên từ API:', gv)
+        
         setKhoas(k || [])
         setNganhs(n || [])
         setLops(l || [])
         setForm({
-          ma_gv: gv.maGv,
-          ho_ten: gv.hoTen,
+          ma_gv: gv.maGv || gv.ma_gv || '',
+          ho_ten: gv.hoTen || gv.ho_ten || '',
           email: gv.email || '',
-          so_dien_thoai: gv.soDienThoai || '',
-          gioi_tinh: gv.gioiTinh || 'Nam',
-          ngay_sinh: gv.ngaySinh ? gv.ngaySinh.substring(0,10) : '',
-          dia_chi: gv.diaChi || '',
-          khoa_id: gv.khoaId || '',
-          nganh_id: gv.nganhId || '',
-          lop_id: gv.lopId || '',
-          chuc_vu: gv.chucVu || '',
-          anh_the: gv.anhThe || ''
+          so_dien_thoai: gv.soDienThoai || gv.so_dien_thoai || '',
+          gioi_tinh: gv.gioiTinh || gv.gioi_tinh || 'Nam',
+          ngay_sinh: (gv.ngaySinh || gv.ngay_sinh) ? (gv.ngaySinh || gv.ngay_sinh).substring(0,10) : '',
+          dia_chi: gv.diaChi || gv.dia_chi || '',
+          khoa_id: gv.khoaId || gv.khoa_id || '',
+          nganh_id: gv.nganhId || gv.nganh_id || '',
+          lop_id: gv.lopId || gv.lop_id || '',
+          chuc_vu: gv.chucVu || gv.chuc_vu || '',
+          anh_the: gv.anhThe || gv.anh_the || ''
         })
       } catch (e) {
-        setError('Không thể tải dữ liệu giảng viên')
+        console.error('Lỗi load dữ liệu giảng viên:', e)
+        setError('Không thể tải dữ liệu giảng viên: ' + (e.message || ''))
       } finally {
         setLoading(false)
       }
@@ -92,9 +96,14 @@ export default function EditGiangVien() {
     }
   }
 
-  if (loading) {
+  if (loading || !form) {
     return <AdminLayout activeMenu="teachers" title="Đang tải...">
-      <div className="text-center mt-5">Đang tải dữ liệu...</div>
+      <div className="text-center mt-5">
+        <div className="spinner-border text-primary" role="status">
+          <span className="visually-hidden">Đang tải...</span>
+        </div>
+        <p className="mt-2">Đang tải dữ liệu giảng viên...</p>
+      </div>
     </AdminLayout>
   }
 
@@ -108,28 +117,28 @@ export default function EditGiangVien() {
           <form className="row g-3" onSubmit={onSubmit}>
             <div className="col-md-3">
               <label className="form-label">Mã GV *</label>
-              <input className="form-control" value={form.ma_gv} onChange={update('ma_gv')} />
+              <input className="form-control" value={form?.ma_gv || ''} onChange={update('ma_gv')} />
             </div>
             <div className="col-md-5">
               <label className="form-label">Họ tên *</label>
-              <input className="form-control" value={form.ho_ten} onChange={update('ho_ten')} />
+              <input className="form-control" value={form?.ho_ten || ''} onChange={update('ho_ten')} />
             </div>
             <div className="col-md-4">
               <label className="form-label">Chức vụ</label>
-              <input className="form-control" value={form.chuc_vu} onChange={update('chuc_vu')} placeholder="VD: Giảng viên chính" />
+              <input className="form-control" value={form?.chuc_vu || ''} onChange={update('chuc_vu')} placeholder="VD: Giảng viên chính" />
             </div>
 
             <div className="col-md-4">
               <label className="form-label">Email</label>
-              <input className="form-control" value={form.email} onChange={update('email')} />
+              <input className="form-control" value={form?.email || ''} onChange={update('email')} />
             </div>
             <div className="col-md-4">
               <label className="form-label">Số điện thoại</label>
-              <input className="form-control" value={form.so_dien_thoai} onChange={update('so_dien_thoai')} />
+              <input className="form-control" value={form?.so_dien_thoai || ''} onChange={update('so_dien_thoai')} />
             </div>
             <div className="col-md-4">
               <label className="form-label">Giới tính</label>
-              <select className="form-select" value={form.gioi_tinh} onChange={update('gioi_tinh')}>
+              <select className="form-select" value={form?.gioi_tinh || 'Nam'} onChange={update('gioi_tinh')}>
                 <option>Nam</option>
                 <option>Nữ</option>
               </select>
@@ -137,31 +146,31 @@ export default function EditGiangVien() {
 
             <div className="col-md-4">
               <label className="form-label">Ngày sinh</label>
-              <input type="date" className="form-control" value={form.ngay_sinh} onChange={update('ngay_sinh')} />
+              <input type="date" className="form-control" value={form?.ngay_sinh || ''} onChange={update('ngay_sinh')} />
             </div>
             <div className="col-md-8">
               <label className="form-label">Địa chỉ</label>
-              <input className="form-control" value={form.dia_chi} onChange={update('dia_chi')} />
+              <input className="form-control" value={form?.dia_chi || ''} onChange={update('dia_chi')} />
             </div>
 
             {/* Cascading */}
             <div className="col-md-4">
               <label className="form-label">Khoa *</label>
-              <select className="form-select" value={form.khoa_id} onChange={update('khoa_id')}>
+              <select className="form-select" value={form?.khoa_id || ''} onChange={update('khoa_id')}>
                 <option value="">-- Chọn Khoa --</option>
                 {khoas.map(k => <option key={k.id} value={k.id}>{k.tenKhoa || k.ten_khoa}</option>)}
               </select>
             </div>
             <div className="col-md-4">
               <label className="form-label">Ngành</label>
-              <select className="form-select" value={form.nganh_id} onChange={update('nganh_id')} disabled={!nganhsByKhoa.length}>
+              <select className="form-select" value={form?.nganh_id || ''} onChange={update('nganh_id')} disabled={!nganhsByKhoa.length}>
                 <option value="">{nganhsByKhoa.length ? '-- Chọn Ngành --' : '— Chưa có ngành —'}</option>
                 {nganhsByKhoa.map(n => <option key={n.id} value={n.id}>{n.tenNganh || n.ten_nganh}</option>)}
               </select>
             </div>
             <div className="col-md-4">
               <label className="form-label">Lớp</label>
-              <select className="form-select" value={form.lop_id} onChange={update('lop_id')} disabled={!lopsByNganh.length}>
+              <select className="form-select" value={form?.lop_id || ''} onChange={update('lop_id')} disabled={!lopsByNganh.length}>
                 <option value="">{lopsByNganh.length ? '-- Chọn Lớp --' : '— Chưa có lớp —'}</option>
                 {lopsByNganh.map(l => <option key={l.id} value={l.id}>{l.tenLop}</option>)}
               </select>
@@ -174,7 +183,7 @@ export default function EditGiangVien() {
                 type="text"
                 className="form-control mb-2"
                 placeholder="Dán URL ảnh (nếu có)"
-                value={form.anh_the}
+                value={form?.anh_the || ''}
                 onChange={update('anh_the')}
               />
               <input
@@ -186,7 +195,7 @@ export default function EditGiangVien() {
                   if (file) setForm(s => ({ ...s, anh_the: file.name }))
                 }}
               />
-              {form.anh_the && <small className="text-muted">Ảnh hiện tại: <b>{form.anh_the}</b></small>}
+              {form?.anh_the && <small className="text-muted">Ảnh hiện tại: <b>{form.anh_the}</b></small>}
             </div>
 
             <div className="col-12 d-flex justify-content-end">

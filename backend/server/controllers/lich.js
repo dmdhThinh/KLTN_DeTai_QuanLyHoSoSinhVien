@@ -182,6 +182,7 @@ export async function getLichThiGiangVien(req, res) {
   }
 }
 
+
 // 🧩 Lấy lịch học theo lớp học phần (cho điểm danh)
 export async function getLichByLopHocPhan(req, res) {
   try {

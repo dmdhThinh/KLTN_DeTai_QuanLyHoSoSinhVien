@@ -22,6 +22,10 @@ export default function QuanLyHocPhi() {
   const [dotDangKyList, setDotDangKyList] = useState([])
   const [selectedDot, setSelectedDot] = useState('')
   const [hanNop, setHanNop] = useState('')
+  
+  // Notification và confirm
+  const [notification, setNotification] = useState({ show: false, message: '', type: '' })
+  const [confirmAction, setConfirmAction] = useState(null)
 
   // Load dữ liệu
   useEffect(() => {
@@ -43,7 +47,8 @@ export default function QuanLyHocPhi() {
       setPagination(result.pagination || {})
     } catch (error) {
       console.error('Lỗi load dữ liệu:', error)
-      alert('Lỗi khi tải dữ liệu học phí')
+      setNotification({ show: true, message: 'Lỗi khi tải dữ liệu học phí', type: 'error' })
+      setTimeout(() => setNotification({ show: false, message: '', type: '' }), 3000)
     } finally {
       setLoading(false)
     }
@@ -69,7 +74,15 @@ export default function QuanLyHocPhi() {
 
   // Cập nhật trạng thái thanh toán
   const handleUpdateStatus = async (dangKyId, tinhTrang) => {
-    if (!window.confirm(`Xác nhận chuyển trạng thái sang "${tinhTrang}"?`)) return
+    setConfirmAction({
+      title: 'Xác nhận cập nhật',
+      message: `Xác nhận chuyển trạng thái sang "${tinhTrang}"?`,
+      onConfirm: () => executeUpdateStatus(dangKyId, tinhTrang)
+    })
+  }
+  
+  const executeUpdateStatus = async (dangKyId, tinhTrang) => {
+    setConfirmAction(null)
 
     try {
       await apiFetch(`/api/hoc-phi/${dangKyId}/trang-thai`, {
@@ -77,23 +90,34 @@ export default function QuanLyHocPhi() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ tinhTrang })
       })
-      alert('Cập nhật thành công!')
+      setNotification({ show: true, message: 'Cập nhật thành công!', type: 'success' })
+      setTimeout(() => setNotification({ show: false, message: '', type: '' }), 3000)
       loadData()
       loadThongKe()
     } catch (error) {
       console.error('Lỗi cập nhật trạng thái:', error)
-      alert('Lỗi khi cập nhật trạng thái')
+      setNotification({ show: true, message: 'Lỗi khi cập nhật trạng thái', type: 'error' })
+      setTimeout(() => setNotification({ show: false, message: '', type: '' }), 3000)
     }
   }
 
   // Cập nhật hạn nộp theo đợt
   const handleUpdateHanNopTheoDot = async () => {
     if (!selectedDot || !hanNop) {
-      alert('Vui lòng chọn đợt đăng ký và nhập hạn nộp')
+      setNotification({ show: true, message: 'Vui lòng chọn đợt đăng ký và nhập hạn nộp', type: 'error' })
+      setTimeout(() => setNotification({ show: false, message: '', type: '' }), 3000)
       return
     }
-
-    if (!window.confirm('Xác nhận cập nhật hạn nộp cho tất cả sinh viên trong đợt này?')) return
+    
+    setConfirmAction({
+      title: 'Xác nhận cập nhật hạn nộp',
+      message: 'Xác nhận cập nhật hạn nộp cho tất cả sinh viên trong đợt này?',
+      onConfirm: executeUpdateHanNop
+    })
+  }
+  
+  const executeUpdateHanNop = async () => {
+    setConfirmAction(null)
 
     try {
       const result = await apiFetch('/api/hoc-phi/admin/han-nop-dot', {
@@ -104,14 +128,16 @@ export default function QuanLyHocPhi() {
           hanNop
         })
       })
-      alert(result.message || 'Cập nhật thành công!')
+      setNotification({ show: true, message: result.message || 'Cập nhật thành công!', type: 'success' })
+      setTimeout(() => setNotification({ show: false, message: '', type: '' }), 3000)
       setShowModalHanNop(false)
       setSelectedDot('')
       setHanNop('')
       loadData()
     } catch (error) {
       console.error('Lỗi cập nhật hạn nộp:', error)
-      alert('Lỗi khi cập nhật hạn nộp')
+      setNotification({ show: true, message: 'Lỗi khi cập nhật hạn nộp', type: 'error' })
+      setTimeout(() => setNotification({ show: false, message: '', type: '' }), 3000)
     }
   }
 
@@ -455,6 +481,45 @@ export default function QuanLyHocPhi() {
                   onClick={handleUpdateHanNopTheoDot}
                 >
                   Cập nhật
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Notification Toast */}
+      {notification.show && (
+        <div
+          className={`position-fixed top-0 start-50 translate-middle-x mt-3`}
+          style={{ zIndex: 9999 }}
+        >
+          <div className={`alert alert-${notification.type === 'success' ? 'success' : 'danger'} alert-dismissible fade show shadow-lg`} role="alert">
+            <i className={`bi bi-${notification.type === 'success' ? 'check-circle' : 'exclamation-triangle'} me-2`}></i>
+            {notification.message}
+            <button type="button" className="btn-close" onClick={() => setNotification({ show: false, message: '', type: '' })}></button>
+          </div>
+        </div>
+      )}
+
+      {/* Confirm Modal */}
+      {confirmAction && (
+        <div className="modal show d-block" style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}>
+          <div className="modal-dialog modal-dialog-centered">
+            <div className="modal-content">
+              <div className="modal-header bg-warning text-dark">
+                <h5 className="modal-title">⚠️ {confirmAction.title}</h5>
+                <button type="button" className="btn-close" onClick={() => setConfirmAction(null)}></button>
+              </div>
+              <div className="modal-body">
+                <p className="mb-0">{confirmAction.message}</p>
+              </div>
+              <div className="modal-footer">
+                <button className="btn btn-secondary" onClick={() => setConfirmAction(null)}>
+                  Hủy
+                </button>
+                <button className="btn btn-primary" onClick={confirmAction.onConfirm}>
+                  <i className="bi bi-check-circle me-1"></i> Xác nhận
                 </button>
               </div>
             </div>

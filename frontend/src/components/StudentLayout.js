@@ -7,7 +7,8 @@ import {
   getGiangVienId,
   getGiangVienById,
   clearAuth,
-  getUnreadCount
+  getUnreadCount,
+  apiFetch
 } from '../api'
 import { Bell } from 'lucide-react'
 import 'bootstrap-icons/font/bootstrap-icons.css'
@@ -18,6 +19,7 @@ export default function StudentLayout({ children, title = '' }) {
   const navigate = useNavigate()
   const [sv, setSv] = useState(null)
   const [unread, setUnread] = useState(0)
+  const [tuVanCount, setTuVanCount] = useState(0)
   const [showMenu, setShowMenu] = useState(false)
   const menuRef = useRef(null)
 
@@ -74,6 +76,25 @@ export default function StudentLayout({ children, title = '' }) {
         getUnreadCount(id)
           .then((res) => setUnread(res.count || 0))
           .catch(() => setUnread(0))
+
+        // Lấy số phản hồi tư vấn mới
+        const fetchTuVanCount = () => {
+          apiFetch(`/api/yeu-cau-tu-van/sinh-vien/${id}/count`)
+            .then((res) => setTuVanCount(res.count || 0))
+            .catch(() => setTuVanCount(0))
+        }
+        fetchTuVanCount()
+        
+        // Cập nhật mỗi 3 giây
+        const interval = setInterval(fetchTuVanCount, 3000)
+        
+        // Expose refresh function globally for child components
+        window.refreshTuVanCount = fetchTuVanCount
+        
+        return () => {
+          clearInterval(interval)
+          delete window.refreshTuVanCount
+        }
       }
     } else if (role === 'Giảng viên') {
       const id = getGiangVienId()
@@ -254,6 +275,39 @@ export default function StudentLayout({ children, title = '' }) {
               }}
             >
               <i className="bi bi-cash-coin me-2"></i> Tra cứu công nợ
+            </Link>
+          </li>
+          <li className="mb-2">
+            <Link
+              to="/yeu-cau-tu-van"
+              className="d-flex align-items-center justify-content-between text-decoration-none px-3 py-2"
+              style={{
+                fontWeight:
+                  location.pathname === '/yeu-cau-tu-van'
+                    ? '600'
+                    : '400',
+                borderLeft:
+                  location.pathname === '/yeu-cau-tu-van'
+                    ? '4px solid #fff'
+                    : '4px solid transparent',
+                backgroundColor:
+                  location.pathname === '/yeu-cau-tu-van'
+                    ? 'rgba(255,255,255,0.15)'
+                    : 'transparent',
+                color:
+                  location.pathname === '/yeu-cau-tu-van'
+                    ? '#fff'
+                    : '#bcd0e8',
+                borderRadius: '8px',
+                transition: 'all 0.2s'
+              }}
+            >
+              <span>
+                <i className="bi bi-chat-dots me-2"></i> Yêu cầu tư vấn
+              </span>
+              {tuVanCount > 0 && (
+                <span className="badge bg-danger rounded-pill">{tuVanCount}</span>
+              )}
             </Link>
           </li>
         </ul>
