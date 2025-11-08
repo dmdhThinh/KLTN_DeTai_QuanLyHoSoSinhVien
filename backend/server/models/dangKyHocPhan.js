@@ -83,10 +83,14 @@ export async function listMyRegistrations({ sinh_vien_id, dot_dang_ky_id, hoc_ky
   let sql =
     `SELECT d.*, 
             lhp.ma_lop_hoc_phan, lhp.hoc_ky, lhp.nam_hoc, lhp.trang_thai AS trang_thai_lhp,
-            hp.ten_hoc_phan, hp.so_tin_chi AS so_tc
+            hp.ten_hoc_phan, hp.so_tin_chi AS so_tc,
+            (hp.so_tin_chi * 1000000) AS hoc_phi,
+            hocphi.han_nop,
+            hocphi.lan_thu
        FROM DangKyHocPhan d
        JOIN LopHocPhan lhp ON lhp.id = d.lop_hoc_phan_id
        JOIN HocPhan hp ON hp.id = lhp.hoc_phan_id
+       LEFT JOIN HocPhi hocphi ON hocphi.dang_ky_id = d.id
       WHERE d.sinh_vien_id = ? AND d.trang_thai_dk <> 'HUY'`
   if (dot_dang_ky_id) {
     sql += ` AND d.dot_dang_ky_id = ?`
@@ -313,7 +317,7 @@ async function checkPrereq({ conn, sinh_vien_id, hoc_phan_id, dot_dang_ky_id }) 
 // NEW: Gom “môn học phần đang chờ đăng ký” (group by hoc_phan_id)
 // === MÔN HỌC PHẦN ĐANG CHỜ ĐĂNG KÝ (gom theo hoc_phan_id) ===
 export async function listPendingCourses({ sinh_vien_id, hoc_ky, nam_hoc, dot_dang_ky_id }) {
-  // Lấy thông tin ngành/khoa của sinh viên
+   // Lấy thông tin ngành/khoa của sinh viên
   const [svRows] = await pool.execute(
     `SELECT nganh_id, khoa_id FROM SinhVien WHERE id = ?`,
     [sinh_vien_id]
@@ -322,6 +326,7 @@ export async function listPendingCourses({ sinh_vien_id, hoc_ky, nam_hoc, dot_da
   if (!sv) return []
   
   // Lấy danh sách học phần đã đăng ký THÀNH CÔNG (để loại ra)
+  // Filter: chỉ lấy HP thuộc ngành của SV HOẶC HP chung (nganh_id IS NULL)
   const [registered] = await pool.execute(
     `SELECT DISTINCT lhp.hoc_phan_id
      FROM DangKyHocPhan d
@@ -332,7 +337,6 @@ export async function listPendingCourses({ sinh_vien_id, hoc_ky, nam_hoc, dot_da
   const registeredHPIds = registered.map(r => r.hoc_phan_id)
   
   // Lấy các HP có mở lớp trong kỳ + tổng số lớp/đã mở đăng ký
-  // Filter: chỉ lấy HP thuộc ngành của SV HOẶC HP chung (nganh_id IS NULL)
   const [rows] = await pool.execute(
     `SELECT hp.id AS hoc_phan_id, hp.ma_hoc_phan, hp.ten_hoc_phan, hp.so_tin_chi AS tc,
             COUNT(lhp.id)                   AS tong_so_lop,
@@ -345,7 +349,7 @@ export async function listPendingCourses({ sinh_vien_id, hoc_ky, nam_hoc, dot_da
     ORDER BY hp.ten_hoc_phan`,
     [hoc_ky, nam_hoc, sv.nganh_id]
   )
-  
+    
   // Loại bỏ những học phần đã đăng ký thành công
   return rows.filter(hp => !registeredHPIds.includes(hp.hoc_phan_id))
 }

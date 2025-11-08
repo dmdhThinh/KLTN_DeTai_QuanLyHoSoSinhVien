@@ -32,6 +32,8 @@ import thongBaoDaDocRoutes from './routes/thongBaoDaDoc.js'
 import chuongtrinhkhungRoutes from './routes/chuongtrinhkhung.js'
 import dkhpRouter from './routes/dkhp.js'
 import dotNhapDiemRoutes from './routes/dotNhapDiem.js'
+import hocPhiRoutes from './routes/hocPhi.js'
+import dotDangKyRoutes from './routes/dotDangKy.js'
 dotenv.config()
 const app = express()
 const __filename = fileURLToPath(import.meta.url)
@@ -52,7 +54,7 @@ app.use('/api/sinhviens', sinhvienRoutes)
 app.use('/api/giangviens', giangvienRoutes)
 app.use('/api/import', importGiangVienRoutes)
 app.use('/api/taikhoan', taiKhoanRoutes)
-app.use('/api/lich', lichRoutes) 
+app.use('/api/lich', lichRoutes)
 app.use('/api/lich-nghi', lichNghiRoutes)
 
 app.use('/api/khoa', khoaRoutes)
@@ -71,6 +73,8 @@ app.use('/api/thongbao-dadoc', thongBaoDaDocRoutes)
 app.use('/api/chuongtrinhkhung', chuongtrinhkhungRoutes)
 app.use('/api/dkhp', dkhpRouter)
 app.use('/api/dot-nhap-diem', dotNhapDiemRoutes)
+app.use('/api/hoc-phi', hocPhiRoutes)
+app.use('/api/dot-dang-ky', dotDangKyRoutes)
 
 // ✅ Public folder cho ảnh thẻ
 app.use('/uploads', express.static(path.resolve('uploads')))

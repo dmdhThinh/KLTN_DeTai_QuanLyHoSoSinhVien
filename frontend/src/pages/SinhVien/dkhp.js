@@ -88,7 +88,6 @@ export default function DkhpPage() {
   // Dropdown chọn học kỳ, năm học
   const [selectedHocKy, setSelectedHocKy] = useState('HK1');
   const [selectedNamHoc, setSelectedNamHoc] = useState('2025-2026');
-  
   // Filter checkbox
   const [hideConflictClasses, setHideConflictClasses] = useState(false);
   
@@ -151,7 +150,7 @@ const loadClassDetail = async (lop) => {
 
   // Đăng ký
   const handleRegister = async (lhp) => {
-  // Kiểm tra trùng lịch
+     // Kiểm tra trùng lịch
   if (lhp.xung_dot_lich) {
     alert('⚠️ CẢNH BÁO: Lớp học phần này trùng lịch với các môn bạn đã đăng ký!\n\nVui lòng chọn lớp học phần khác.');
     return;
@@ -376,7 +375,7 @@ const getDaDangKy = (l) => {
               </div>
             </div>
             {/* ===== Bảng 2: LỚP HỌC PHẦN CHỜ ĐĂNG KÝ ===== */}
-{selectedHP && (
+            {selectedHP && (
 <div className="card mb-4">
   <div className="card-header" style={{background:'#ffb100'}}>
     <div className="d-flex justify-content-between align-items-center">
@@ -440,7 +439,6 @@ const getDaDangKy = (l) => {
 </div>
 )}
 
-
             {/* ===== Bảng 3: CHI TIẾT LỚP HỌC PHẦN ===== */}
 <div className="card mb-4">
   <div className="card-header bg-primary text-white">
@@ -451,8 +449,6 @@ const getDaDangKy = (l) => {
     <div className="p-3 text-muted">Hãy chọn 1 lớp học phần ở bảng trên.</div>
   ) : (
     <>
-     
-      
       <div className="table-responsive">
         <table className="table table-bordered table-sm mb-0">
           <thead className="table-primary">
@@ -537,7 +533,6 @@ const getDaDangKy = (l) => {
                       <th>Số TC</th>
                       <th>Học phí</th>
                       <th>Hạn nộp</th>
-                      <th>Thu</th>
                       
                       <th>Ngày ĐK</th>
                       <th>Trạng thái LHP</th>
@@ -545,7 +540,7 @@ const getDaDangKy = (l) => {
                   </thead>
                   <tbody>
                     {registered.length === 0 ? (
-                      <tr><td colSpan="11" className="text-center text-muted">Chưa đăng ký lớp nào</td></tr>
+                      <tr><td colSpan="10" className="text-center text-muted">Chưa đăng ký lớp nào</td></tr>
                     ) : (
                       registered.map((r, i) => (
                         <tr key={r.id}>
@@ -595,7 +590,6 @@ const getDaDangKy = (l) => {
                           <td>{r.so_tc || ''}</td>
                           <td>{r.hoc_phi ? `${r.hoc_phi.toLocaleString()}đ` : ''}</td>
                           <td>{r.han_nop ? dayjs(r.han_nop).format('DD/MM/YYYY') : ''}</td>
-                          <td>{r.lan_thu || ''}</td>
                           
                           <td>{formatDate(r.thoi_diem_dk)}</td>
                           <td>{r.trang_thai_lhp || ''}</td>

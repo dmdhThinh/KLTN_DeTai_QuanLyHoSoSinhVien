@@ -281,5 +281,3 @@ export async function getLopHocPhan(req, res) {
     res.status(500).json({ message: 'Lỗi khi lấy danh sách lớp học phần' })
   }
 }
-
-

@@ -1,16 +1,64 @@
-import React from 'react'
+import React, { useEffect } from 'react'
 import { useLocation } from 'react-router-dom'
 import 'bootstrap-icons/font/bootstrap-icons.css'
 
 export default function AdminLayout({ children, title = '', activeMenu = '' }) {
   const location = useLocation()
 
+  // Custom scrollbar styling
+  useEffect(() => {
+    const style = document.createElement('style')
+    style.innerHTML = `
+      .admin-scrollable-content::-webkit-scrollbar {
+        width: 8px;
+      }
+      .admin-scrollable-content::-webkit-scrollbar-track {
+        background: #f1f1f1;
+      }
+      .admin-scrollable-content::-webkit-scrollbar-thumb {
+        background: #888;
+        border-radius: 4px;
+      }
+      .admin-scrollable-content::-webkit-scrollbar-thumb:hover {
+        background: #555;
+      }
+      .admin-scrollable-content {
+        scrollbar-width: thin;
+        scrollbar-color: #888 #f1f1f1;
+        scroll-behavior: smooth;
+      }
+      .admin-sidebar::-webkit-scrollbar {
+        width: 6px;
+      }
+      .admin-sidebar::-webkit-scrollbar-track {
+        background: transparent;
+      }
+      .admin-sidebar::-webkit-scrollbar-thumb {
+        background: rgba(255, 255, 255, 0.3);
+        border-radius: 3px;
+      }
+      .admin-sidebar::-webkit-scrollbar-thumb:hover {
+        background: rgba(255, 255, 255, 0.5);
+      }
+    `
+    document.head.appendChild(style)
+    return () => document.head.removeChild(style)
+  }, [])
+
   return (
-    <div className="d-flex" style={{ minHeight: '100vh', background: '#f8f9fa' }}>
+    <div className="d-flex" style={{ height: '100vh', overflow: 'hidden' }}>
       {/* Sidebar */}
       <aside
-        className="bg-dark text-white d-flex flex-column p-3 shadow"
-        style={{ width: 250 }}
+        className="bg-dark text-white d-flex flex-column p-3 shadow admin-sidebar"
+        style={{
+          width: 250,
+          height: '100vh',
+          overflowY: 'auto',
+          position: 'sticky',
+          top: 0,
+          left: 0,
+          flexShrink: 0
+        }}
       >
         <div className="d-flex align-items-center mb-4">
           <i className="bi bi-mortarboard-fill fs-4 me-2 text-info"></i>
@@ -38,6 +86,7 @@ export default function AdminLayout({ children, title = '', activeMenu = '' }) {
           <li><a href="/admin/lophocphan" className={`nav-link ${location.pathname.includes('/lophocphan') ? 'active bg-info' : 'text-white-50'}`}><i className="bi bi-collection me-2"></i> Lớp học phần</a></li>
           <li><a href="/admin/lich" className={`nav-link ${location.pathname.includes('/lich') ? 'active bg-info' : 'text-white-50'}`}><i className="bi bi-calendar-event me-2"></i> Lịch học</a></li>
           <li><a href="/admin/dot-nhap-diem" className={`nav-link ${location.pathname.includes('/dot-nhap-diem') ? 'active bg-info' : 'text-white-50'}`}><i className="bi bi-clipboard-check me-2"></i> Đợt nhập điểm</a></li>
+          <li><a href="/admin/hoc-phi" className={`nav-link ${location.pathname.includes('/hoc-phi') ? 'active bg-info' : 'text-white-50'}`}><i className="bi bi-cash-coin me-2"></i> Quản lý học phí</a></li>
         </ul>
 
         <div className="border-top pt-3 mt-3">
@@ -53,8 +102,10 @@ export default function AdminLayout({ children, title = '', activeMenu = '' }) {
       </aside>
 
       {/* Main content */}
-      <main className="flex-grow-1 p-4">
-        <div className="d-flex justify-content-between align-items-center mb-4">
+      <main className="flex-grow-1 d-flex flex-column" style={{ height: '100vh', overflow: 'hidden' }}>
+        {/* Fixed Header */}
+        <div className="p-4 pb-3 bg-white shadow-sm" style={{ flexShrink: 0, zIndex: 100 }}>
+        <div className="d-flex justify-content-between align-items-center">
           <h5 className="fw-semibold mb-0">{title}</h5>
           <div className="d-flex align-items-center gap-2">
             <input
@@ -72,7 +123,12 @@ export default function AdminLayout({ children, title = '', activeMenu = '' }) {
             ></div>
           </div>
         </div>
-        <div>{children}</div>
+        </div>
+
+        {/* Scrollable Content Area */}
+        <div className="flex-grow-1 p-4 pt-3 admin-scrollable-content" style={{ overflowY: 'auto', overflowX: 'hidden', background: '#f8f9fa' }}>
+          {children}
+        </div>
       </main>
     </div>
   )

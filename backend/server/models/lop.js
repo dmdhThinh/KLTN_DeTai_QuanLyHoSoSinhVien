@@ -13,7 +13,7 @@ export async function getAllLop(nganhId = null) {
     FROM Lop l
     LEFT JOIN Khoa k ON l.khoa_id = k.id
     LEFT JOIN Nganh n ON l.nganh_id = n.id
-  `
+    `
   const params = []
   if (nganhId) {
     sql += ' WHERE l.nganh_id = ?'

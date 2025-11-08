@@ -21,6 +21,46 @@ export default function StudentLayout({ children, title = '' }) {
   const [showMenu, setShowMenu] = useState(false)
   const menuRef = useRef(null)
 
+  // Custom scrollbar styling
+  useEffect(() => {
+    const style = document.createElement('style')
+    style.innerHTML = `
+      .flex-grow-1[style*="overflowY"]::-webkit-scrollbar {
+        width: 8px;
+      }
+      .flex-grow-1[style*="overflowY"]::-webkit-scrollbar-track {
+        background: #f1f1f1;
+      }
+      .flex-grow-1[style*="overflowY"]::-webkit-scrollbar-thumb {
+        background: #888;
+        border-radius: 4px;
+      }
+      .flex-grow-1[style*="overflowY"]::-webkit-scrollbar-thumb:hover {
+        background: #555;
+      }
+      .flex-grow-1[style*="overflowY"] {
+        scrollbar-width: thin;
+        scrollbar-color: #888 #f1f1f1;
+        scroll-behavior: smooth;
+      }
+      aside::-webkit-scrollbar {
+        width: 6px;
+      }
+      aside::-webkit-scrollbar-track {
+        background: transparent;
+      }
+      aside::-webkit-scrollbar-thumb {
+        background: rgba(255, 255, 255, 0.3);
+        border-radius: 3px;
+      }
+      aside::-webkit-scrollbar-thumb:hover {
+        background: rgba(255, 255, 255, 0.5);
+      }
+    `
+    document.head.appendChild(style)
+    return () => document.head.removeChild(style)
+  }, [])
+
   // ✅ Lấy thông tin sinh viên + số tin chưa đọc
   useEffect(() => {
     const role = getRole()
@@ -62,13 +102,19 @@ export default function StudentLayout({ children, title = '' }) {
   }
 
   return (
-    <div className="d-flex" style={{ minHeight: '100vh', background: '#f4f6fa' }}>
+    <div className="d-flex" style={{ height: '100vh', overflow: 'hidden' }}>
       {/* Sidebar */}
       <aside
         className="text-white d-flex flex-column p-3 shadow"
         style={{
           width: 250,
-          background: 'linear-gradient(180deg, #0d3b66 0%, #133b5c 100%)'
+          height: '100vh',
+          background: 'linear-gradient(180deg, #0d3b66 0%, #133b5c 100%)',
+          overflowY: 'auto',
+          position: 'sticky',
+          top: 0,
+          left: 0,
+          flexShrink: 0
         }}
       >
         <div className="d-flex align-items-center mb-4 ps-1">
@@ -190,17 +236,17 @@ export default function StudentLayout({ children, title = '' }) {
 
           <li>
             <Link
-              to="/cong-no"
+              to="/congno"
               className={`nav-link ${
-                location.pathname.includes('/cong-no')
+                location.pathname.includes('/congno')
                   ? 'active'
                   : 'text-white-50'
               }`}
               style={{
-                backgroundColor: location.pathname.includes('/cong-no')
+                backgroundColor: location.pathname.includes('/congno')
                   ? '#1e6091'
                   : 'transparent',
-                color: location.pathname.includes('/cong-no')
+                color: location.pathname.includes('/congno')
                   ? '#fff'
                   : '#bcd0e8',
                 borderRadius: '8px',
@@ -228,8 +274,10 @@ export default function StudentLayout({ children, title = '' }) {
       </aside>
 
       {/* Main content */}
-      <main className="flex-grow-1 p-4">
-        <div className="d-flex justify-content-between align-items-center mb-4">
+      <main className="flex-grow-1 d-flex flex-column" style={{ height: '100vh', overflow: 'hidden' }}>
+        {/* Fixed Header */}
+        <div className="p-4 pb-3 bg-white shadow-sm" style={{ flexShrink: 0, zIndex: 100 }}>
+        <div className="d-flex justify-content-between align-items-center">
           <h5 className="fw-semibold mb-0">{title}</h5>
 
           {/* 🔔 Tin tức + User dropdown */}
@@ -323,8 +371,12 @@ export default function StudentLayout({ children, title = '' }) {
             </div>
           </div>
         </div>
+        </div>
 
-        <div>{children}</div>
+        {/* Scrollable Content Area */}
+        <div className="flex-grow-1 p-4 pt-3" style={{ overflowY: 'auto', overflowX: 'hidden', background: '#f4f6fa' }}>
+          {children}
+        </div>
       </main>
     </div>
   )

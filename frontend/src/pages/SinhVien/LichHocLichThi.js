@@ -67,7 +67,8 @@ export default function LichHocLichThi() {
         setLich([])
       })
       .finally(() => setLoading(false))
-  } else {
+
+    } else {
     // Chỉ lịch thi
     apiFetch(`/api/lich/thi?sinhVienId=${id}&from=${from}`)
       .then((data) => {
@@ -250,8 +251,7 @@ export default function LichHocLichThi() {
                             <div className="small text-muted">
                               {cell.maLopHocPhan || cell.lopHocPhan}
                             </div>
-
-                            {cell.loai === 'thi' ? (
+                       {cell.loai === 'thi' ? (
                               <>
                                 <div className="small">
                                   Tiết: {cell.tietBatDau || cell.tiet?.split('-')[0]} -{' '}

@@ -24,13 +24,60 @@ export default function TeacherLayout({ children, title = '', activeMenu = '' })
     .catch(() => setGv(null))
 }, [])
 
+  // Custom scrollbar styling
+  useEffect(() => {
+    const style = document.createElement('style')
+    style.innerHTML = `
+      .teacher-scrollable-content::-webkit-scrollbar {
+        width: 8px;
+      }
+      .teacher-scrollable-content::-webkit-scrollbar-track {
+        background: #f1f1f1;
+      }
+      .teacher-scrollable-content::-webkit-scrollbar-thumb {
+        background: #888;
+        border-radius: 4px;
+      }
+      .teacher-scrollable-content::-webkit-scrollbar-thumb:hover {
+        background: #555;
+      }
+      .teacher-scrollable-content {
+        scrollbar-width: thin;
+        scrollbar-color: #888 #f1f1f1;
+        scroll-behavior: smooth;
+      }
+      .teacher-sidebar::-webkit-scrollbar {
+        width: 6px;
+      }
+      .teacher-sidebar::-webkit-scrollbar-track {
+        background: transparent;
+      }
+      .teacher-sidebar::-webkit-scrollbar-thumb {
+        background: rgba(255, 255, 255, 0.3);
+        border-radius: 3px;
+      }
+      .teacher-sidebar::-webkit-scrollbar-thumb:hover {
+        background: rgba(255, 255, 255, 0.5);
+      }
+    `
+    document.head.appendChild(style)
+    return () => document.head.removeChild(style)
+  }, [])
 
   return (
-    <div className="d-flex" style={{ minHeight: '100vh', background: '#f8f9fa' }}>
+    <div className="d-flex" style={{ height: '100vh', overflow: 'hidden' }}>
       {/* Sidebar */}
       <aside
-        className="bg-dark text-white d-flex flex-column p-3 shadow"
-        style={{ width: 250 }}
+        className="bg-dark text-white d-flex flex-column p-3 shadow teacher-sidebar"
+        style={{
+          width: 250,
+          height: '100vh',
+          overflowY: 'auto',
+          position: 'sticky',
+          top: 0,
+          left: 0,
+          flexShrink: 0
+        }}
       >
         <div className="d-flex align-items-center mb-4">
           <i className="bi bi-mortarboard-fill fs-4 me-2 text-success"></i>
@@ -127,8 +174,10 @@ export default function TeacherLayout({ children, title = '', activeMenu = '' })
       </aside>
 
       {/* Main content */}
-      <main className="flex-grow-1 p-4">
-        <div className="d-flex justify-content-between align-items-center mb-4">
+      <main className="flex-grow-1 d-flex flex-column" style={{ height: '100vh', overflow: 'hidden' }}>
+        {/* Fixed Header */}
+        <div className="p-4 pb-3 bg-white shadow-sm" style={{ flexShrink: 0, zIndex: 100 }}>
+        <div className="d-flex justify-content-between align-items-center">
           <h5 className="fw-semibold mb-0">{title}</h5>
           <div className="d-flex align-items-center gap-2">
             <input
@@ -146,8 +195,12 @@ export default function TeacherLayout({ children, title = '', activeMenu = '' })
             ></div>
           </div>
         </div>
+        </div>
 
-        <div>{children}</div>
+        {/* Scrollable Content Area */}
+        <div className="flex-grow-1 p-4 pt-3 teacher-scrollable-content" style={{ overflowY: 'auto', overflowX: 'hidden', background: '#f8f9fa' }}>
+          {children}
+        </div>
       </main>
     </div>
   )

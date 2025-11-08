@@ -37,7 +37,6 @@ export default function LichList() {
   const [selectedLich, setSelectedLich] = useState(null)
   const [selectedNgay, setSelectedNgay] = useState(null)
   const [lyDoNghi, setLyDoNghi] = useState('')
-  
 
   const navigate = useNavigate()
 
@@ -72,7 +71,7 @@ export default function LichList() {
     }
   }, [nganhId]);
 
-  // 🚀 Load Lớp Học Phần based on selected Lớp
+ // 🚀 Load Lớp Học Phần based on selected Lớp
   useEffect(() => {
     if (lopId) {
       console.log('🔍 Fetching LopHocPhan for lopId:', lopId);
@@ -90,7 +89,6 @@ export default function LichList() {
       setLopHocPhanId('');
     }
   }, [lopId]);
-
 
 
   const days = Array.from({ length: 7 }, (_, i) => {
@@ -168,7 +166,6 @@ const handleDanhDauNghi = async () => {
     alert('Lỗi: ' + (err.message || 'Không thể đánh dấu nghỉ'))
   }
 }
-
   return (
     <AdminLayout title="Lịch học của sinh viên" activeMenu="lich">
         <div
@@ -235,7 +232,6 @@ const handleDanhDauNghi = async () => {
             </option>
           ))}
         </select>
-
         <select
           className="form-select"
           style={{ width: 300 }}
@@ -250,7 +246,6 @@ const handleDanhDauNghi = async () => {
             </option>
           ))}
         </select>
-
           <input
             type="date"
             className="form-control form-control-sm"
@@ -440,8 +435,7 @@ const handleDanhDauNghi = async () => {
             <span style={{ background: '#ef5350', border: '1px solid #b71c1c' }}></span> Tạm ngưng
           </div>
         </div>
-
-        {/* Modal đánh dấu nghỉ */}
+         {/* Modal đánh dấu nghỉ */}
         {showNghiModal && (
           <div className="modal fade show d-block" style={{ background: 'rgba(0,0,0,0.5)' }}>
             <div className="modal-dialog">
