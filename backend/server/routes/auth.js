@@ -1,5 +1,6 @@
 // server/routes/auth.js
 import { Router } from 'express'
+
 import { login, changePassword, updatePassword } from '../controllers/authController.js'
 
 const router = Router()

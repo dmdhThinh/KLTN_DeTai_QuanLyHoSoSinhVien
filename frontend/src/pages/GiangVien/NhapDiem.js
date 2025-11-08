@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { apiFetch } from "../../api";
 import TeacherLayout from "../../components/TeacherLayout";
+import * as XLSX from 'xlsx';
 
 function NhapDiem() {
   const { lopHocPhanId } = useParams();
@@ -17,8 +18,6 @@ function NhapDiem() {
   // Load thông tin lớp học phần và danh sách sinh viên
   const loadData = async () => {
     if (!lopHocPhanId) return;
-
-    
       setLoading(true);
       setMessage("");
 
@@ -33,7 +32,6 @@ function NhapDiem() {
 
         // Lấy danh sách sinh viên đã đăng ký từ API mới
         const svData = await apiFetch(`/api/dkhp/lop-hoc-phan/${lopHocPhanId}`);
- 
         
         if (Array.isArray(svData)) {
           // Lấy điểm hiện tại của từng sinh viên (API đã trả về camelCase)
@@ -44,7 +42,7 @@ function NhapDiem() {
           const sinhVienWithScores = await Promise.all(
             svData.map(async (sv) => {
               try {
-               // Lấy điểm của sinh viên cho học phần này
+                // Lấy điểm của sinh viên cho học phần này
                 const ketQuaData = await apiFetch(`/api/ket-qua-hoc-tap/by-sinhvien?sinhVienId=${sv.sinh_vien_id}`);
                 
                 // Tìm điểm của học phần + học kỳ này (xử lý cả snake_case và camelCase)
@@ -98,14 +96,16 @@ function NhapDiem() {
         }
       } catch (err) {
         console.error('Error loading data:', err);
-        setMessage('❌ Lỗi khi tải dữ liệu!');
+        setMessage(' Lỗi khi tải dữ liệu!');
       } finally {
         setLoading(false);
       }
   };
+
   // useEffect để gọi loadData khi component mount
   useEffect(() => {
     loadData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [lopHocPhanId]);
 
   // Cập nhật điểm cho một sinh viên
@@ -114,7 +114,9 @@ function NhapDiem() {
     newList[svIndex][field] = value;
     setSinhVienList(newList);
   };
-   const isInputDisabled = (sv, field) => {
+
+  // Kiểm tra xem cột nào được phép nhập (dựa vào trạng thái đợt từ DB)
+  const isInputDisabled = (sv, field) => {
     // Nếu chưa có trạng thái đợt hoặc chưa mở → Khóa tất cả
     if (!trangThaiDot || trangThaiDot === 'CHUA_MO' || trangThaiDot === 'DA_KHOA') {
       return true;
@@ -171,7 +173,7 @@ function NhapDiem() {
   const isFullyLocked = (sv) => {
     return getDotNhap(sv) === 'HOAN_TAT';
   };
-  
+
   // Lưu điểm tất cả sinh viên
   const handleSaveAll = async () => {
     if (!lopHocPhan) return;
@@ -184,6 +186,7 @@ function NhapDiem() {
 
     try {
       for (const sv of sinhVienList) {
+        
         // Skip nếu sinh viên không có dữ liệu gì để lưu
         const hasAnyData = sv.diem_ly_thuyet_1 || sv.diem_ly_thuyet_2 || sv.diem_ly_thuyet_3 || 
                           sv.diem_ly_thuyet_4 || sv.diem_thuc_hanh_1 || sv.diem_thuc_hanh_2 || 
@@ -202,6 +205,7 @@ function NhapDiem() {
           hoc_ky: lopHocPhan.hocKy,
           nam_hoc: lopHocPhan.namHoc,
         };
+        
         if (isDot2AndHasRecord) {
           // Đợt 2: CHỈ gửi điểm cuối kỳ (nếu có)
           if (sv.diem_cuoi_ky) {
@@ -219,6 +223,7 @@ function NhapDiem() {
           if (sv.diem_giua_ky) scoreData.diem_giua_ky = sv.diem_giua_ky;
           if (sv.diem_cuoi_ky) scoreData.diem_cuoi_ky = sv.diem_cuoi_ky;
         }
+
         try {
           // Luôn dùng UPSERT (POST) - backend tự xử lý
           await apiFetch('/api/ket-qua-hoc-tap', {
@@ -227,7 +232,7 @@ function NhapDiem() {
           });
           successCount++;
         } catch (err) {
-          console.error(`❌ Lỗi lưu điểm cho SV ${sv.ma_sv}:`, err);
+          console.error(` Lỗi lưu điểm cho SV ${sv.ma_sv}:`, err);
           errorCount++;
         }
       }
@@ -236,11 +241,50 @@ function NhapDiem() {
       
       // Reload để cập nhật ketQuaId và điểm tính toán
       await loadData();
+      
     } catch (err) {
-      setMessage('❌ Có lỗi xảy ra khi lưu điểm!');
+      setMessage(' Có lỗi xảy ra khi lưu điểm!');
+      console.error('Error in handleSaveAll:', err);
     } finally {
       setSaving(false);
     }
+  };
+
+  // Xuất danh sách điểm ra Excel
+  const exportToExcel = () => {
+    if (!sinhVienList || sinhVienList.length === 0) {
+      alert('Không có dữ liệu để xuất!');
+      return;
+    }
+
+    // Chuẩn bị dữ liệu
+    const data = sinhVienList.map((sv, index) => ({
+      'STT': index + 1,
+      'Mã SV': sv.ma_sv,
+      'Họ và tên': sv.ho_ten,
+      'TX1': sv.diem_ly_thuyet_1 || '',
+      'TX2': sv.diem_ly_thuyet_2 || '',
+      'TX3': sv.diem_ly_thuyet_3 || '',
+      'TX4': sv.diem_ly_thuyet_4 || '',
+      'TH1': sv.diem_thuc_hanh_1 || '',
+      'TH2': sv.diem_thuc_hanh_2 || '',
+      'TH3': sv.diem_thuc_hanh_3 || '',
+      'Giữa kỳ': sv.diem_giua_ky || '',
+      'Cuối kỳ': sv.diem_cuoi_ky || '',
+      'Tổng kết': sv.diem_tong_ket || '',
+      'Chữ': sv.diem_chu || '',
+    }));
+
+    // Tạo worksheet và workbook
+    const ws = XLSX.utils.json_to_sheet(data);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Bảng điểm');
+
+    // Tạo tên file
+    const fileName = `BangDiem_${lopHocPhan?.maLopHocPhan || 'LopHocPhan'}_${lopHocPhan?.hocKy || ''}_${lopHocPhan?.namHoc || ''}.xlsx`;
+    
+    // Xuất file
+    XLSX.writeFile(wb, fileName);
   };
 
   return (
@@ -248,7 +292,7 @@ function NhapDiem() {
       <div className="container-fluid mt-4">
         <div className="d-flex justify-content-between align-items-center mb-3">
           <div className="d-flex align-items-center gap-3">
-            <h3 className="mb-0">📝 Quản lý điểm</h3>
+            <h3 className="mb-0"> Quản lý điểm</h3>
             
             {/* Tab chuyển đổi */}
             <div className="btn-group" role="group">
@@ -256,16 +300,17 @@ function NhapDiem() {
                 className={`btn ${viewMode === 'input' ? 'btn-primary' : 'btn-outline-primary'}`}
                 onClick={() => setViewMode('input')}
               >
-                ✏️ Nhập điểm
+                 Nhập điểm
               </button>
               <button
                 className={`btn ${viewMode === 'view' ? 'btn-primary' : 'btn-outline-primary'}`}
                 onClick={() => setViewMode('view')}
               >
-                👁️ Xem điểm
+                 Xem điểm
               </button>
             </div>
           </div>
+          
           <button className="btn btn-outline-secondary" onClick={() => navigate('/teacher/lophocphan')}>
             ← Quay lại danh sách lớp
           </button>
@@ -286,27 +331,27 @@ function NhapDiem() {
             {/* Thông báo trạng thái đợt */}
             {trangThaiDot === 'CHUA_MO' && (
               <div className="alert alert-warning">
-                ⏸️ <strong>Đợt nhập điểm chưa mở.</strong> Vui lòng chờ phòng Đào tạo mở đợt nhập điểm.
+                ⏸ <strong>Đợt nhập điểm chưa mở.</strong> Vui lòng chờ phòng Đào tạo mở đợt nhập điểm.
               </div>
             )}
             {trangThaiDot === 'DOT_1_DANG_MO' && (
               <div className="alert alert-success">
-                ✅ <strong>Đợt 1 đang mở:</strong> Nhập điểm TX1-4, TH1-3, GK (KHÔNG nhập CK)
+                 <strong>Đợt 1 đang mở:</strong> Nhập điểm TX1-4, TH1-3, GK (KHÔNG nhập CK)
               </div>
             )}
             {trangThaiDot === 'DOT_1_DA_DONG' && (
               <div className="alert alert-secondary">
-                🔒 <strong>Đợt 1 đã đóng.</strong> Chờ mở đợt 2 để nhập điểm cuối kỳ.
+                 <strong>Đợt 1 đã đóng.</strong> Chờ mở đợt 2 để nhập điểm cuối kỳ.
               </div>
             )}
             {trangThaiDot === 'DOT_2_DANG_MO' && (
               <div className="alert alert-success">
-                ⚡ <strong>Đợt 2 đang mở:</strong> Chỉ nhập điểm Cuối kỳ (TX, TH, GK đã khóa)
+                 <strong>Đợt 2 đang mở:</strong> Chỉ nhập điểm Cuối kỳ (TX, TH, GK đã khóa)
               </div>
             )}
             {trangThaiDot === 'DA_KHOA' && (
               <div className="alert alert-danger">
-                🔒 <strong>Đã khóa điểm.</strong> Không thể nhập/sửa điểm nữa.
+                 <strong>Đã khóa điểm.</strong> Không thể nhập/sửa điểm nữa.
               </div>
             )}
           </>
@@ -320,7 +365,7 @@ function NhapDiem() {
           )}
 
           {loading && (
-            <p className="text-center text-muted py-5">⏳ Đang tải danh sách sinh viên...</p>
+            <p className="text-center text-muted py-5"> Đang tải danh sách sinh viên...</p>
           )}
 
           {!loading && sinhVienList.length > 0 && viewMode === 'input' && (
@@ -347,7 +392,7 @@ function NhapDiem() {
                   </thead>
                   <tbody>
                     {sinhVienList.map((sv, index) => (
-                       <tr key={sv.sinh_vien_id} style={{ backgroundColor: isFullyLocked(sv) ? '#f0f0f0' : 'transparent' }}>
+                      <tr key={sv.sinh_vien_id} style={{ backgroundColor: isFullyLocked(sv) ? '#f0f0f0' : 'transparent' }}>
                         <td className="text-center">{index + 1}</td>
                         <td>{sv.ma_sv}</td>
                         <td>{sv.ho_ten}</td>
@@ -360,9 +405,9 @@ function NhapDiem() {
                             className="form-control form-control-sm"
                             value={sv.diem_ly_thuyet_1}
                             onChange={(e) => handleScoreChange(index, 'diem_ly_thuyet_1', e.target.value)}
-                            disabled={isInputDisabled(sv, 'diem_ly_thuyet_2')}
-                            style={{ backgroundColor: isInputDisabled(sv, 'diem_ly_thuyet_2') ? '#e9ecef' : 'white' }}
-                            title={isInputDisabled(sv, 'diem_ly_thuyet_2') ? '🔒 Đã khóa' : ''}
+                            disabled={isInputDisabled(sv, 'diem_ly_thuyet_1')}
+                            style={{ backgroundColor: isInputDisabled(sv, 'diem_ly_thuyet_1') ? '#e9ecef' : 'white' }}
+                            title={isInputDisabled(sv, 'diem_ly_thuyet_1') ? ' Đã khóa' : ''}
                           />
                         </td>
                         <td>
@@ -374,6 +419,9 @@ function NhapDiem() {
                             className="form-control form-control-sm"
                             value={sv.diem_ly_thuyet_2}
                             onChange={(e) => handleScoreChange(index, 'diem_ly_thuyet_2', e.target.value)}
+                            disabled={isInputDisabled(sv, 'diem_ly_thuyet_2')}
+                            style={{ backgroundColor: isInputDisabled(sv, 'diem_ly_thuyet_2') ? '#e9ecef' : 'white' }}
+                            title={isInputDisabled(sv, 'diem_ly_thuyet_2') ? ' Đã khóa' : ''}
                           />
                         </td>
                         <td>
@@ -387,7 +435,7 @@ function NhapDiem() {
                             onChange={(e) => handleScoreChange(index, 'diem_ly_thuyet_3', e.target.value)}
                             disabled={isInputDisabled(sv, 'diem_ly_thuyet_3')}
                             style={{ backgroundColor: isInputDisabled(sv, 'diem_ly_thuyet_3') ? '#e9ecef' : 'white' }}
-                            title={isInputDisabled(sv, 'diem_ly_thuyet_3') ? '🔒 Đã khóa' : ''}
+                            title={isInputDisabled(sv, 'diem_ly_thuyet_3') ? ' Đã khóa' : ''}
                           />
                         </td>
                         <td>
@@ -401,7 +449,7 @@ function NhapDiem() {
                             onChange={(e) => handleScoreChange(index, 'diem_ly_thuyet_4', e.target.value)}
                             disabled={isInputDisabled(sv, 'diem_ly_thuyet_4')}
                             style={{ backgroundColor: isInputDisabled(sv, 'diem_ly_thuyet_4') ? '#e9ecef' : 'white' }}
-                            title={isInputDisabled(sv, 'diem_ly_thuyet_4') ? '🔒 Đã khóa' : ''}
+                            title={isInputDisabled(sv, 'diem_ly_thuyet_4') ? ' Đã khóa' : ''}
                           />
                         </td>
                         <td>
@@ -415,7 +463,7 @@ function NhapDiem() {
                             onChange={(e) => handleScoreChange(index, 'diem_thuc_hanh_1', e.target.value)}
                             disabled={isInputDisabled(sv, 'diem_thuc_hanh_1')}
                             style={{ backgroundColor: isInputDisabled(sv, 'diem_thuc_hanh_1') ? '#e9ecef' : 'white' }}
-                            title={isInputDisabled(sv, 'diem_thuc_hanh_1') ? '🔒 Đã khóa' : ''}
+                            title={isInputDisabled(sv, 'diem_thuc_hanh_1') ? ' Đã khóa' : ''}
                           />
                         </td>
                         <td>
@@ -427,6 +475,9 @@ function NhapDiem() {
                             className="form-control form-control-sm"
                             value={sv.diem_thuc_hanh_2}
                             onChange={(e) => handleScoreChange(index, 'diem_thuc_hanh_2', e.target.value)}
+                            disabled={isInputDisabled(sv, 'diem_thuc_hanh_2')}
+                            style={{ backgroundColor: isInputDisabled(sv, 'diem_thuc_hanh_2') ? '#e9ecef' : 'white' }}
+                            title={isInputDisabled(sv, 'diem_thuc_hanh_2') ? ' Đã khóa' : ''}
                           />
                         </td>
                         <td>
@@ -438,9 +489,9 @@ function NhapDiem() {
                             className="form-control form-control-sm"
                             value={sv.diem_thuc_hanh_3}
                             onChange={(e) => handleScoreChange(index, 'diem_thuc_hanh_3', e.target.value)}
-                             disabled={isInputDisabled(sv, 'diem_thuc_hanh_3')}
+                            disabled={isInputDisabled(sv, 'diem_thuc_hanh_3')}
                             style={{ backgroundColor: isInputDisabled(sv, 'diem_thuc_hanh_3') ? '#e9ecef' : 'white' }}
-                            title={isInputDisabled(sv, 'diem_thuc_hanh_3') ? '🔒 Đã khóa' : ''}
+                            title={isInputDisabled(sv, 'diem_thuc_hanh_3') ? ' Đã khóa' : ''}
                           />
                         </td>
                         <td>
@@ -454,7 +505,7 @@ function NhapDiem() {
                             onChange={(e) => handleScoreChange(index, 'diem_giua_ky', e.target.value)}
                             disabled={isInputDisabled(sv, 'diem_giua_ky')}
                             style={{ backgroundColor: isInputDisabled(sv, 'diem_giua_ky') ? '#e9ecef' : 'white' }}
-                            title={isInputDisabled(sv, 'diem_giua_ky') ? '🔒 Đã khóa' : ''}
+                            title={isInputDisabled(sv, 'diem_giua_ky') ? ' Đã khóa' : ''}
                           />
                         </td>
                         <td>
@@ -468,7 +519,7 @@ function NhapDiem() {
                             onChange={(e) => handleScoreChange(index, 'diem_cuoi_ky', e.target.value)}
                             disabled={isInputDisabled(sv, 'diem_cuoi_ky')}
                             style={{ backgroundColor: isInputDisabled(sv, 'diem_cuoi_ky') ? '#e9ecef' : getDotNhap(sv) === 'DOT_1' ? '#fff3cd' : 'white', borderColor: isInputDisabled(sv, 'diem_cuoi_ky') ? '#28a745' : getDotNhap(sv) === 'DOT_2' ? '#ffc107' : '#ced4da' }}
-                            title={isInputDisabled(sv, 'diem_cuoi_ky') ? '🔒 Đã lưu điểm' : getDotNhap(sv) === 'DOT_2' ? '⚡ Đợt 2: Chỉ nhập CK' : '⏳ Đợt 1: Chưa được nhập CK'}
+                            title={isInputDisabled(sv, 'diem_cuoi_ky') ? ' Đã lưu điểm' : getDotNhap(sv) === 'DOT_2' ? '⚡ Đợt 2: Chỉ nhập CK' : '⏳ Đợt 1: Chưa được nhập CK'}
                           />
                         </td>
                         <td className="text-center fw-bold">{sv.diem_tong_ket || '-'}</td>
@@ -481,41 +532,58 @@ function NhapDiem() {
 
               <div className="mt-3 d-flex justify-content-between align-items-center">
                 <div className="small mb-0">
-                  <p className="mb-2"><strong>📋 Hướng dẫn nhập điểm:</strong></p>
+                  <p className="mb-2"><strong> Hướng dẫn nhập điểm:</strong></p>
                   <div className="d-flex gap-4">
                     <div>
                       <span className="badge bg-primary">Đợt 1</span>
-                      <p className="mb-0 mt-1 text-muted">Nhập TX1-4, TH1-3, GK<br/>❌ KHÔNG nhập CK (ô màu vàng)</p>
+                      <p className="mb-0 mt-1 text-muted">Nhập TX1-4, TH1-3, GK<br/> KHÔNG nhập CK (ô màu vàng)</p>
                     </div>
                     <div>
                       <span className="badge bg-warning text-dark">Đợt 2</span>
-                      <p className="mb-0 mt-1 text-muted">Chỉ nhập CK (ô viền vàng)<br/>🔒 TX, TH, GK đã khóa</p>
+                      <p className="mb-0 mt-1 text-muted">Chỉ nhập CK (ô viền vàng)<br/> TX, TH, GK đã khóa</p>
                     </div>
                     <div>
                       <span className="badge bg-success">Hoàn tất</span>
-                      <p className="mb-0 mt-1 text-muted">Đã nhập đủ 2 đợt<br/>🔒 Tất cả đã khóa</p>
+                      <p className="mb-0 mt-1 text-muted">Đã nhập đủ 2 đợt<br/> Tất cả đã khóa</p>
                     </div>
                   </div>
-                  <p className="mb-0 mt-2 text-danger"><strong>⚠️ Không thể sửa điểm sau khi lưu!</strong></p>
+                  <p className="mb-0 mt-2 text-danger"><strong> Không thể sửa điểm sau khi lưu!</strong></p>
                 </div>
-                <button 
-                  className="btn btn-success btn-lg" 
-                  onClick={handleSaveAll}
-                  disabled={saving}
-                >
-                  {saving ? '⏳ Đang lưu...' : '💾 Lưu tất cả điểm'}
-                </button>
+                <div className="d-flex gap-2">
+                  <button 
+                    className="btn btn-success btn-lg" 
+                    onClick={handleSaveAll}
+                    disabled={saving}
+                  >
+                    {saving ? ' Đang lưu...' : ' Lưu tất cả điểm'}
+                  </button>
+                  <button 
+                    className="btn btn-primary btn-lg" 
+                    onClick={exportToExcel}
+                  >
+                     Xuất Excel
+                  </button>
+                </div>
               </div>
             </>
           )}
-           {/* Chế độ xem điểm (read-only) */}
+
+          {/* Chế độ xem điểm (read-only) */}
           {!loading && sinhVienList.length > 0 && viewMode === 'view' && (
             <>
-              <div className="mb-3">
-                <h5>📊 Bảng điểm tổng hợp</h5>
-                <p className="text-muted small mb-0">
-                  Hiển thị tất cả điểm đã nhập. Chỉ để xem, không chỉnh sửa.
-                </p>
+              <div className="mb-3 d-flex justify-content-between align-items-center">
+                <div>
+                  <h5 className="mb-1"> Bảng điểm tổng hợp</h5>
+                  <p className="text-muted small mb-0">
+                    Hiển thị tất cả điểm đã nhập. Chỉ để xem, không chỉnh sửa.
+                  </p>
+                </div>
+                <button 
+                  className="btn btn-primary" 
+                  onClick={exportToExcel}
+                >
+                   Xuất Excel
+                </button>
               </div>
 
               <div className="table-responsive" style={{ maxHeight: '500px', overflowY: 'auto' }}>
@@ -596,6 +664,7 @@ function NhapDiem() {
               </div>
             </>
           )}
+
           {!loading && sinhVienList.length === 0 && lopHocPhan && (
             <p className="text-center text-muted py-5">Không có sinh viên nào đăng ký lớp học phần này.</p>
           )}
