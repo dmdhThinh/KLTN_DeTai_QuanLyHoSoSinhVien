@@ -1,14 +1,13 @@
 import React, { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import TeacherLayout from '../../components/TeacherLayout'
-import { apiFetch, getGiangVienId } from '../../api' // ✅ dùng apiFetch & getGiangVienId
+import { apiFetch, getGiangVienId } from '../../api'
 
-export default function LopHocPhanList() {
+export default function LopHocPhanList3() {
   const [list, setList] = useState([])
   const [loading, setLoading] = useState(true)
   const navigate = useNavigate()
 
-  // ✅ lấy ID giảng viên đang đăng nhập (giống TeacherDashboard)
   const giangVienId = getGiangVienId()
 
   useEffect(() => {
@@ -16,7 +15,6 @@ export default function LopHocPhanList() {
       if (!giangVienId) return
       setLoading(true)
       try {
-        // ✅ dùng apiFetch để backend tự nhận base URL
         const data = await apiFetch(`/api/lophocphan/by-giangvien/${giangVienId}`);
         setList(data || [])
       } catch (err) {
@@ -31,12 +29,19 @@ export default function LopHocPhanList() {
   }, [giangVienId])
 
   return (
-    <TeacherLayout title="Danh sách Lớp học phần" activeMenu="lophocphan">
+    <TeacherLayout title="Danh sách sinh viên theo lớp" activeMenu="sv-lop">
       <div className="container mt-4">
-        <h3 className="mb-3"> Danh sách lớp học phần giảng dạy</h3>
+        <h3 className="mb-3">
+          <i className="bi bi-people me-2"></i>
+          Danh sách lớp học phần
+        </h3>
 
         {loading ? (
-          <div className="text-center text-muted p-3">Đang tải...</div>
+          <div className="text-center p-5">
+            <div className="spinner-border text-primary" role="status">
+              <span className="visually-hidden">Đang tải...</span>
+            </div>
+          </div>
         ) : list.length === 0 ? (
           <div className="alert alert-info text-center mt-3">
             Không có lớp học phần nào được phân công.
@@ -45,32 +50,32 @@ export default function LopHocPhanList() {
           <div className="card shadow-sm">
             <div className="card-body p-0">
               <div className="table-responsive">
-                <table className="table table-striped align-middle mb-0">
+                <table className="table table-striped table-hover align-middle mb-0">
                   <thead className="table-light">
                     <tr>
-                      <th>#</th>
+                      <th style={{ width: '50px' }}>#</th>
                       <th>Mã lớp học phần</th>
                       <th>Tên học phần</th>
                       <th>Tên lớp</th>
-                      <th>Sĩ số</th>
-                      <th style={{ width: 120 }}>Thao tác</th>
+                      <th style={{ width: '100px' }}>Sĩ số</th>
+                      <th style={{ width: '120px' }}>Thao tác</th>
                     </tr>
                   </thead>
                   <tbody>
                     {list.map((lop, i) => (
                       <tr key={lop.id}>
-                        <td>{i + 1}</td>
+                        <td className="text-center">{i + 1}</td>
                         <td>{lop.maLopHocPhan}</td>
                         <td>{lop.tenHocPhan}</td>
                         <td>{lop.tenLop}</td>
-                        <td>{lop.siSo || '—'}</td>
+                        <td className="text-center">{lop.siSo || '—'}</td>
                         <td>
                           <button
-                            className="btn btn-sm btn-outline-primary"
-                            onClick={() => navigate(`/teacher/nhapdiem/${lop.id}`)}
+                            className="btn btn-sm btn-success"
+                            onClick={() => navigate(`/teacher/sv-lop/${lop.id}`)}
                           >
-                          
-                            Nhập điểm
+                            
+                            Xem sinh viên
                           </button>
                         </td>
                       </tr>

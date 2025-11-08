@@ -181,3 +181,33 @@ export async function getLichThiGiangVien(req, res) {
     res.status(500).json({ message: 'Lỗi server khi lấy lịch thi giảng viên' })
   }
 }
+
+// 🧩 Lấy lịch học theo lớp học phần (cho điểm danh)
+export async function getLichByLopHocPhan(req, res) {
+  try {
+    const { lopHocPhanId } = req.params
+    if (!lopHocPhanId) return res.status(400).json({ message: 'Thiếu lopHocPhanId' })
+
+    const sql = `
+      SELECT 
+        lh.id,
+        lh.thu,
+        lh.ca,
+        lh.tiet_bat_dau  AS tietBatDau,
+        lh.tiet_ket_thuc AS tietKetThuc,
+        lh.phong,
+        lh.co_so         AS coSo,
+        lh.loai,
+        lh.ngay_hoc      AS ngayHoc
+      FROM LichHoc lh
+      WHERE lh.lop_hoc_phan_id = ?
+        AND lh.loai IN ('lythuyet','thuchanh','tructuyen')
+      ORDER BY lh.thu ASC, lh.ca ASC
+    `
+    const [rows] = await pool.execute(sql, [lopHocPhanId])
+    res.json(rows)
+  } catch (err) {
+    console.error('❌ Lỗi getLichByLopHocPhan:', err)
+    res.status(500).json({ message: 'Lỗi server khi lấy lịch học theo lớp' })
+  }
+}

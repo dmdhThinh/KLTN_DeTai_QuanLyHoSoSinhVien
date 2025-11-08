@@ -45,6 +45,8 @@ import EditGiangVien from './pages/Admin/EditGiangVien'
 
 import TeacherNhapDiem from './pages/GiangVien/NhapDiem.js'
 import LopHocPhanList2 from './pages/GiangVien/LopHocPhanList2.js'
+import LopHocPhanList3 from './pages/GiangVien/LopHocPhanList3.js'
+import SinhVienTrongLop from './pages/GiangVien/SinhVienTrongLop.js'
 
 import AccountList from './pages/Admin/AccountList'
 
@@ -128,6 +130,14 @@ function App() {
 <Route
   path="/teacher/lich"
   element={<PrivateRoute allowRoles={['Giảng viên']}><LichGiangDay /></PrivateRoute>}
+/>
+<Route
+  path="/teacher/sv-lop"
+  element={<PrivateRoute allowRoles={['Giảng viên']}><LopHocPhanList3 /></PrivateRoute>}
+/>
+<Route
+  path="/teacher/sv-lop/:lopHocPhanId"
+  element={<PrivateRoute allowRoles={['Giảng viên']}><SinhVienTrongLop /></PrivateRoute>}
 />
 
         {/* Quản trị */}

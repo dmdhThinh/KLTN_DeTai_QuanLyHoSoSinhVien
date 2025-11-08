@@ -186,3 +186,32 @@ export async function getLopHocPhanByGiangVien(giangVienId) {
     throw err;
   }
 }
+
+// ✅ Lấy danh sách sinh viên trong lớp học phần với giới tính và SĐT
+export async function getSinhVienByLopHocPhan(lopHocPhanId) {
+  try {
+    const [rows] = await pool.execute(`
+      SELECT 
+        d.id as dang_ky_id,
+        d.sinh_vien_id,
+        sv.ma_sv,
+        sv.ho_ten,
+        sv.ngay_sinh,
+        sv.gioi_tinh,
+        sv.so_dien_thoai,
+        sv.email,
+        d.loai_dang_ky,
+        d.thoi_diem_dk,
+        d.trang_thai_dk
+      FROM DangKyHocPhan d
+      JOIN SinhVien sv ON sv.id = d.sinh_vien_id
+      WHERE d.lop_hoc_phan_id = ?
+        AND d.trang_thai_dk <> 'HUY'
+      ORDER BY sv.ma_sv
+    `, [lopHocPhanId]);
+    return rows;
+  } catch (err) {
+    console.error('❌ Lỗi model getSinhVienByLopHocPhan:', err);
+    throw err;
+  }
+}
