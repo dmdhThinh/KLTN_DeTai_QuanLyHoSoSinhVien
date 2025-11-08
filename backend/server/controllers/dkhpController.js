@@ -30,7 +30,7 @@ export async function listAvailableLHP(req, res) {
   }
 }
 
-// GET /api/dkhp/my?sinh_vien_id=&dot_dang_ky_id=
+// GET /api/dkhp/my?sinh_vien_id=&dot_dang_ky_id=&hoc_ky=&nam_hoc=
 export async function listMyRegistrations(req, res) {
   try {
     const { sinh_vien_id, dot_dang_ky_id, hoc_ky, nam_hoc } = req.query

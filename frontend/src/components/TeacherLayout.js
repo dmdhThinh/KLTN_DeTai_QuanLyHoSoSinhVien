@@ -1,8 +1,7 @@
 import React, { useEffect, useState } from 'react'
-import { useLocation,Link } from 'react-router-dom'
+import { useLocation, Link } from 'react-router-dom'
 import { getGiangVienId, getGiangVienById } from '../api'
 import 'bootstrap-icons/font/bootstrap-icons.css'
-
 
 export default function TeacherLayout({ children, title = '', activeMenu = '' }) {
   const location = useLocation()
@@ -10,19 +9,18 @@ export default function TeacherLayout({ children, title = '', activeMenu = '' })
 
   // Lấy thông tin giảng viên đang đăng nhập
   useEffect(() => {
-  const id = getGiangVienId()
-  if (!id) return
+    const id = getGiangVienId()
+    if (!id) return
 
-  getGiangVienById(id)
-    .then((res) => {
-      if (res) {
-        // Hỗ trợ cả 2 dạng ho_ten và hoTen
-        const name = res.hoTen || res.ho_ten || 'Giảng viên'
-        setGv({ ...res, hoTen: name })
-      }
-    })
-    .catch(() => setGv(null))
-}, [])
+    getGiangVienById(id)
+      .then((res) => {
+        if (res) {
+          const name = res.hoTen || res.ho_ten || 'Giảng viên'
+          setGv({ ...res, hoTen: name })
+        }
+      })
+      .catch(() => setGv(null))
+  }, [])
 
   // Custom scrollbar styling
   useEffect(() => {
@@ -33,6 +31,7 @@ export default function TeacherLayout({ children, title = '', activeMenu = '' })
       }
       .teacher-scrollable-content::-webkit-scrollbar-track {
         background: #f1f1f1;
+        border-radius: 4px;
       }
       .teacher-scrollable-content::-webkit-scrollbar-thumb {
         background: #888;
@@ -61,7 +60,11 @@ export default function TeacherLayout({ children, title = '', activeMenu = '' })
       }
     `
     document.head.appendChild(style)
-    return () => document.head.removeChild(style)
+    return () => {
+      if (document.head.contains(style)) {
+        document.head.removeChild(style)
+      }
+    }
   }, [])
 
   return (
@@ -76,7 +79,7 @@ export default function TeacherLayout({ children, title = '', activeMenu = '' })
           position: 'sticky',
           top: 0,
           left: 0,
-          flexShrink: 0
+          flexShrink: 0,
         }}
       >
         <div className="d-flex align-items-center mb-4">
@@ -99,6 +102,7 @@ export default function TeacherLayout({ children, title = '', activeMenu = '' })
           <div className="text-uppercase small text-white-50 mt-3 mb-1 ps-3">
             Chức năng
           </div>
+
           <li>
             <a
               href="/teacher/lop-covan"
@@ -111,6 +115,7 @@ export default function TeacherLayout({ children, title = '', activeMenu = '' })
               <i className="bi bi-people me-2"></i> Lớp cố vấn
             </a>
           </li>
+
           <li>
             <a
               href="/teacher/sv-lop"
@@ -123,19 +128,34 @@ export default function TeacherLayout({ children, title = '', activeMenu = '' })
               <i className="bi bi-person-lines-fill me-2"></i> SV trong lớp
             </a>
           </li>
-          <li>
-           <Link
-  to="/teacher/lophocphan"
-  className={`nav-link ${
-    location.pathname.includes('/teacher/lophocphan')
-      ? 'active bg-success'
-      : 'text-white-50'
-  }`}
->
-  <i className="bi bi-pencil-square me-2"></i> Nhập điểm
-</Link>
 
+          <li>
+            <Link
+              to="/teacher/lophocphan"
+              className={`nav-link ${
+                location.pathname.includes('/teacher/lophocphan')
+                  ? 'active bg-success'
+                  : 'text-white-50'
+              }`}
+            >
+              <i className="bi bi-pencil-square me-2"></i> Nhập điểm
+            </Link>
           </li>
+
+          {/* ĐÃ THÊM LẠI: Lịch giảng dạy */}
+          <li>
+            <Link
+              to="/teacher/lich"
+              className={`nav-link ${
+                location.pathname.includes('/teacher/lich')
+                  ? 'active bg-success'
+                  : 'text-white-50'
+              }`}
+            >
+              <i className="bi bi-calendar3 me-2"></i> Lịch giảng dạy
+            </Link>
+          </li>
+
           <li>
             <a
               href="/teacher/yeu-cau"
@@ -148,6 +168,7 @@ export default function TeacherLayout({ children, title = '', activeMenu = '' })
               <i className="bi bi-chat-left-text me-2"></i> Yêu cầu tư vấn
             </a>
           </li>
+
           <li>
             <a
               href="/teacher/thong-bao"
@@ -177,28 +198,31 @@ export default function TeacherLayout({ children, title = '', activeMenu = '' })
       <main className="flex-grow-1 d-flex flex-column" style={{ height: '100vh', overflow: 'hidden' }}>
         {/* Fixed Header */}
         <div className="p-4 pb-3 bg-white shadow-sm" style={{ flexShrink: 0, zIndex: 100 }}>
-        <div className="d-flex justify-content-between align-items-center">
-          <h5 className="fw-semibold mb-0">{title}</h5>
-          <div className="d-flex align-items-center gap-2">
-            <input
-              type="text"
-              className="form-control form-control-sm"
-              placeholder="Tìm kiếm..."
-              style={{ maxWidth: 250 }}
-            />
-            <div className="text-muted small">
-  Xin chào, <b>{gv?.hoTen || 'Giảng viên'}</b>
-</div>
-            <div
-              className="rounded-circle bg-light border"
-              style={{ width: 32, height: 32 }}
-            ></div>
+          <div className="d-flex justify-content-between align-items-center">
+            <h5 className="fw-semibold mb-0">{title}</h5>
+            <div className="d-flex align-items-center gap-2">
+              <input
+                type="text"
+                className="form-control form-control-sm"
+                placeholder="Tìm kiếm..."
+                style={{ maxWidth: 250 }}
+              />
+              <div className="text-muted small">
+                Xin chào, <b>{gv?.hoTen || 'Giảng viên'}</b>
+              </div>
+              <div
+                className="rounded-circle bg-light border"
+                style={{ width: 32, height: 32 }}
+              ></div>
+            </div>
           </div>
-        </div>
         </div>
 
         {/* Scrollable Content Area */}
-        <div className="flex-grow-1 p-4 pt-3 teacher-scrollable-content" style={{ overflowY: 'auto', overflowX: 'hidden', background: '#f8f9fa' }}>
+        <div
+          className="flex-grow-1 p-4 pt-3 teacher-scrollable-content"
+          style={{ overflowY: 'auto', overflowX: 'hidden', background: '#f8f9fa' }}
+        >
           {children}
         </div>
       </main>
