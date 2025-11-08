@@ -70,7 +70,31 @@ ORDER BY lhp.nam_hoc DESC, lhp.hoc_ky ASC, lhp.ma_lop_hoc_phan ASC
 export async function getLopHocPhanById(id) {
     try {
         const [rows] = await pool.execute(`
-            SELECT * FROM LopHocPhan WHERE id = ?`, [id]);
+            SELECT 
+                lhp.id,
+                lhp.ma_lop_hoc_phan AS maLopHocPhan,
+                lhp.hoc_phan_id AS hocPhanId,
+                lhp.giang_vien_id AS giangVienId,
+                lhp.lop_id AS lopId,
+                lhp.hoc_ky AS hocKy,
+                lhp.nam_hoc AS namHoc,
+                lhp.trang_thai AS trangThai,
+                lhp.ngay_bat_dau AS ngayBatDau,
+                lhp.ngay_ket_thuc AS ngayKetThuc,
+                lhp.so_tuan_hoc AS soTuanHoc,
+                lhp.si_so_toi_da AS siSoToiDa,
+                lhp.trang_thai_dk AS trangThaiDk,
+                hp.ten_hoc_phan AS tenHocPhan,
+                hp.ma_hoc_phan AS maHocPhan,
+                hp.so_tin_chi AS soTinChi,
+                gv.ho_ten AS tenGiangVien,
+                l.ten_lop AS tenLop
+            FROM LopHocPhan lhp
+            LEFT JOIN HocPhan hp ON hp.id = lhp.hoc_phan_id
+            LEFT JOIN GiangVien gv ON gv.id = lhp.giang_vien_id
+            LEFT JOIN Lop l ON l.id = lhp.lop_id
+            WHERE lhp.id = ?
+        `, [id]);
         return rows[0];
     } catch (err) {
         console.error('❌ Error fetching LopHocPhan by ID:', err);

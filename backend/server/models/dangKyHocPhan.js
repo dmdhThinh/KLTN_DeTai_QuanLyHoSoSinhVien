@@ -322,3 +322,26 @@ export async function getClassSchedule(lopHocPhanId) {
   )
   return { header, lich }
 }
+
+// === LẤY DANH SÁCH SINH VIÊN ĐÃ ĐĂNG KÝ 1 LỚP HỌC PHẦN (cho giảng viên nhập điểm) ===
+export async function getStudentsByLopHocPhan(lopHocPhanId) {
+  const [rows] = await pool.execute(
+    `SELECT 
+      d.id as dang_ky_id,
+      d.sinh_vien_id,
+      sv.ma_sv,
+      sv.ho_ten,
+      sv.ngay_sinh,
+      sv.email,
+      d.loai_dang_ky,
+      d.thoi_diem_dk,
+      d.trang_thai_dk
+    FROM DangKyHocPhan d
+    JOIN SinhVien sv ON sv.id = d.sinh_vien_id
+    WHERE d.lop_hoc_phan_id = ?
+      AND d.trang_thai_dk <> 'HUY'
+    ORDER BY sv.ma_sv`,
+    [lopHocPhanId]
+  )
+  return rows
+}

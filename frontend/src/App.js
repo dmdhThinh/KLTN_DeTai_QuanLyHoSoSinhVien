@@ -57,6 +57,7 @@ import ThongBaoChiTiet from './pages/SinhVien/ThongBaoChiTiet'
 
 import ChuongTrinhKhung from './pages/SinhVien/ChuongTrinhKhung.js'
 import DKHP from './pages/SinhVien/dkhp.js'
+import QuanLyDotNhapDiem from './pages/Admin/QuanLyDotNhapDiem.js'
 
 
 
@@ -179,6 +180,9 @@ function App() {
         <Route path="/admin/thongbao" element={<PrivateRoute allowRoles={['Quản trị']}><ThongBaoList /></PrivateRoute>} />
         <Route path="/admin/thongbao/new" element={<PrivateRoute allowRoles={['Quản trị']}><AddThongBao /></PrivateRoute>} />
         <Route path="/admin/thongbao/edit/:id" element={<PrivateRoute allowRoles={['Quản trị']}><EditThongBao /></PrivateRoute>}/>
+        
+        <Route path="/admin/dot-nhap-diem" element={<PrivateRoute allowRoles={['Quản trị']}><QuanLyDotNhapDiem /></PrivateRoute>} />
+        
         <Route path="/student/thongbao" element={<PrivateRoute allowRoles={['Sinh viên']}><ThongBaoSinhVien /></PrivateRoute>}/>
         <Route path="/student/thongbao/:id" element={<PrivateRoute allowRoles={['Sinh viên']}><ThongBaoChiTiet /></PrivateRoute>}/>
         {/* Trang không tồn tại → về login */}

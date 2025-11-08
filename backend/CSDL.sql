@@ -88,7 +88,7 @@ CREATE TABLE `DangKyHocPhan` (
   CONSTRAINT `DangKyHocPhan_ibfk_2` FOREIGN KEY (`hoc_phan_id`) REFERENCES `HocPhan` (`id`),
   CONSTRAINT `fk_dkhp_dot` FOREIGN KEY (`dot_dang_ky_id`) REFERENCES `DotDangKy` (`id`),
   CONSTRAINT `fk_dkhp_lhp` FOREIGN KEY (`lop_hoc_phan_id`) REFERENCES `LopHocPhan` (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=7 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=8 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -127,7 +127,7 @@ CREATE TABLE `DiemTrungBinh` (
   PRIMARY KEY (`id`),
   UNIQUE KEY `unique_sv_hk` (`sinh_vien_id`,`hoc_ky`,`nam_hoc`),
   CONSTRAINT `DiemTrungBinh_ibfk_1` FOREIGN KEY (`sinh_vien_id`) REFERENCES `SinhVien` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=13 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=55 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -136,7 +136,7 @@ CREATE TABLE `DiemTrungBinh` (
 
 LOCK TABLES `DiemTrungBinh` WRITE;
 /*!40000 ALTER TABLE `DiemTrungBinh` DISABLE KEYS */;
-INSERT INTO `DiemTrungBinh` VALUES (1,1,'HK2','2024-2025',7.80,3.00,7.80,3.00,4,4,4,0,'Khá','Khá','2025-11-07 15:50:58'),(2,1,'HK1','2025-2026',7.30,3.00,7.48,3.00,11,11,7,0,'Khá','Khá','2025-11-07 15:50:59'),(11,41,'HK2','2024-2025',7.00,3.00,7.00,3.00,4,4,4,0,'Khá','Khá','2025-11-07 16:49:37'),(12,41,'HK1','2025-2026',7.00,3.00,7.00,3.00,11,11,7,0,'Khá','Khá','2025-11-07 16:49:38');
+INSERT INTO `DiemTrungBinh` VALUES (1,1,'HK2','2024-2025',7.80,3.00,7.80,3.00,4,4,4,0,'Khá','Khá','2025-11-07 15:50:58'),(2,1,'HK1','2025-2026',7.78,3.00,7.79,3.00,8,8,4,0,'Khá','Khá','2025-11-08 04:55:37'),(11,41,'HK2','2024-2025',7.00,3.00,7.00,3.00,4,4,4,0,'Khá','Khá','2025-11-07 16:49:37'),(12,41,'HK1','2025-2026',7.00,3.00,7.00,3.00,11,11,7,0,'Khá','Khá','2025-11-07 16:49:38');
 /*!40000 ALTER TABLE `DiemTrungBinh` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -196,6 +196,40 @@ LOCK TABLES `DotDangKy` WRITE;
 /*!40000 ALTER TABLE `DotDangKy` DISABLE KEYS */;
 INSERT INTO `DotDangKy` VALUES (1,'HK1','2025-2026','2025-11-01 00:00:00','2025-11-30 00:00:00','DANG_MO',NULL);
 /*!40000 ALTER TABLE `DotDangKy` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
+-- Table structure for table `DotNhapDiem`
+--
+
+DROP TABLE IF EXISTS `DotNhapDiem`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `DotNhapDiem` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `hoc_ky` varchar(10) COLLATE utf8mb4_unicode_ci NOT NULL COMMENT 'HK1, HK2, HK3',
+  `nam_hoc` varchar(20) COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '2024-2025',
+  `trang_thai` enum('CHUA_MO','DOT_1_DANG_MO','DOT_1_DA_DONG','DOT_2_DANG_MO','DA_KHOA') COLLATE utf8mb4_unicode_ci DEFAULT 'CHUA_MO' COMMENT 'Trạng thái đợt nhập điểm',
+  `ngay_mo_dot_1` datetime DEFAULT NULL COMMENT 'Ngày mở đợt 1 (TX, TH, GK)',
+  `ngay_dong_dot_1` datetime DEFAULT NULL COMMENT 'Ngày đóng đợt 1',
+  `ngay_mo_dot_2` datetime DEFAULT NULL COMMENT 'Ngày mở đợt 2 (Cuối kỳ)',
+  `ngay_dong_dot_2` datetime DEFAULT NULL COMMENT 'Ngày đóng đợt 2',
+  `ghi_chu` text COLLATE utf8mb4_unicode_ci,
+  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uq_hocky_namhoc` (`hoc_ky`,`nam_hoc`)
+) ENGINE=InnoDB AUTO_INCREMENT=5 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Quản lý đợt nhập điểm toàn trường';
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `DotNhapDiem`
+--
+
+LOCK TABLES `DotNhapDiem` WRITE;
+/*!40000 ALTER TABLE `DotNhapDiem` DISABLE KEYS */;
+INSERT INTO `DotNhapDiem` VALUES (3,'HK1','2025-2026','DOT_2_DANG_MO',NULL,NULL,NULL,NULL,'Học kỳ 1 năm học 2025-2026','2025-11-08 02:53:33','2025-11-08 04:55:30'),(4,'HK2','2025-2026','CHUA_MO',NULL,NULL,NULL,NULL,'Học kỳ HK2 năm học 2025-2026','2025-11-08 03:12:05','2025-11-08 03:12:05');
+/*!40000 ALTER TABLE `DotNhapDiem` ENABLE KEYS */;
 UNLOCK TABLES;
 
 --
@@ -437,7 +471,7 @@ CREATE TABLE `KetQuaHocTap` (
   KEY `KetQuaHocTap_ibfk_2` (`hoc_phan_id`),
   CONSTRAINT `KetQuaHocTap_ibfk_1` FOREIGN KEY (`sinh_vien_id`) REFERENCES `SinhVien` (`id`),
   CONSTRAINT `KetQuaHocTap_ibfk_2` FOREIGN KEY (`hoc_phan_id`) REFERENCES `HocPhan` (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=82 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=125 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -446,7 +480,7 @@ CREATE TABLE `KetQuaHocTap` (
 
 LOCK TABLES `KetQuaHocTap` WRITE;
 /*!40000 ALTER TABLE `KetQuaHocTap` DISABLE KEYS */;
-INSERT INTO `KetQuaHocTap` VALUES (44,1,1,'HK2','2024-2025',7.00,8.00,9.00,NULL,NULL,7.00,8.00,NULL,8.00,7.80,3.00,'B','Khá','Khá','Đạt'),(45,41,1,'HK2','2024-2025',6.00,7.00,8.00,7.00,NULL,8.00,8.00,NULL,7.00,7.00,3.00,'B','Khá','Khá','Đạt'),(64,1,6,'HK1','2025-2026',7.00,8.00,9.00,NULL,NULL,7.00,8.00,NULL,7.00,7.30,3.00,'B','Khá','Khá','Đạt'),(65,41,6,'HK1','2025-2026',6.00,7.00,8.00,7.00,NULL,8.00,8.00,NULL,7.00,7.00,3.00,'B','Khá','Khá','Đạt'),(74,1,2,'HK1','2025-2026',7.00,8.00,9.00,4.00,5.00,7.00,8.00,6.00,7.00,7.30,3.00,'B','Khá','Khá','Đạt'),(75,41,2,'HK1','2025-2026',6.00,7.00,8.00,7.00,7.00,8.00,8.00,7.00,7.00,7.00,3.00,'B','Khá','Khá','Đạt');
+INSERT INTO `KetQuaHocTap` VALUES (44,1,1,'HK2','2024-2025',7.00,8.00,9.00,NULL,NULL,7.00,8.00,NULL,8.00,7.80,3.00,'B','Khá','Khá','Đạt'),(45,41,1,'HK2','2024-2025',6.00,7.00,8.00,7.00,NULL,8.00,8.00,NULL,7.00,7.00,3.00,'B','Khá','Khá','Đạt'),(65,41,6,'HK1','2025-2026',6.00,7.00,8.00,7.00,NULL,8.00,8.00,NULL,7.00,7.00,3.00,'B','Khá','Khá','Đạt'),(123,1,6,'HK1','2025-2026',8.00,7.00,7.00,7.00,5.00,8.00,8.00,8.00,8.00,7.78,3.00,'B','Khá','Khá','Đạt');
 /*!40000 ALTER TABLE `KetQuaHocTap` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -525,7 +559,7 @@ CREATE TABLE `LichSuDangKyHP` (
   PRIMARY KEY (`id`),
   KEY `LichSuDangKyHP_ibfk_1` (`dang_ky_id`),
   CONSTRAINT `LichSuDangKyHP_ibfk_1` FOREIGN KEY (`dang_ky_id`) REFERENCES `DangKyHocPhan` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=11 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=13 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -919,7 +953,7 @@ CREATE TABLE `ThongBao_DaDoc` (
   KEY `thong_bao_id` (`thong_bao_id`),
   CONSTRAINT `ThongBao_DaDoc_ibfk_1` FOREIGN KEY (`sinh_vien_id`) REFERENCES `SinhVien` (`id`),
   CONSTRAINT `ThongBao_DaDoc_ibfk_2` FOREIGN KEY (`thong_bao_id`) REFERENCES `ThongBao` (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=47 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=48 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -928,7 +962,7 @@ CREATE TABLE `ThongBao_DaDoc` (
 
 LOCK TABLES `ThongBao_DaDoc` WRITE;
 /*!40000 ALTER TABLE `ThongBao_DaDoc` DISABLE KEYS */;
-INSERT INTO `ThongBao_DaDoc` VALUES (1,1,1,'Đã đọc','2025-10-28 06:44:48'),(2,1,2,'Đã đọc','2025-10-29 03:55:39'),(3,1,3,'Đã đọc','2025-10-28 06:44:44'),(4,41,3,'Đã đọc','2025-10-28 06:45:57'),(5,41,1,'Đã đọc','2025-10-28 06:46:02'),(6,41,2,'Đã đọc','2025-10-28 06:46:05'),(7,38,3,'Đã đọc','2025-10-28 07:04:03'),(8,24,1,'Đã đọc','2025-10-28 07:16:55'),(9,24,3,'Đã đọc','2025-10-28 07:18:45'),(10,24,2,'Đã đọc','2025-10-28 07:18:52'),(18,1,4,'Đã đọc','2025-10-29 09:12:22'),(20,1,15,'Đã đọc','2025-10-29 09:12:12'),(21,44,15,'Đã đọc','2025-10-29 09:31:39'),(38,1,18,'Đã đọc','2025-11-07 06:19:21'),(44,1,25,'Đã đọc','2025-11-07 07:07:41'),(45,146,25,'Đã đọc','2025-11-07 07:17:46'),(46,146,18,'Đã đọc','2025-11-07 07:21:37');
+INSERT INTO `ThongBao_DaDoc` VALUES (1,1,1,'Đã đọc','2025-10-28 06:44:48'),(2,1,2,'Đã đọc','2025-10-29 03:55:39'),(3,1,3,'Đã đọc','2025-10-28 06:44:44'),(4,41,3,'Đã đọc','2025-10-28 06:45:57'),(5,41,1,'Đã đọc','2025-10-28 06:46:02'),(6,41,2,'Đã đọc','2025-10-28 06:46:05'),(7,38,3,'Đã đọc','2025-10-28 07:04:03'),(8,24,1,'Đã đọc','2025-10-28 07:16:55'),(9,24,3,'Đã đọc','2025-10-28 07:18:45'),(10,24,2,'Đã đọc','2025-10-28 07:18:52'),(18,1,4,'Đã đọc','2025-10-29 09:12:22'),(20,1,15,'Đã đọc','2025-10-29 09:12:12'),(21,44,15,'Đã đọc','2025-10-29 09:31:39'),(38,1,18,'Đã đọc','2025-11-07 06:19:21'),(44,1,25,'Đã đọc','2025-11-07 07:07:41'),(45,146,25,'Đã đọc','2025-11-07 07:17:46'),(46,146,18,'Đã đọc','2025-11-07 07:21:37'),(47,41,4,'Đã đọc','2025-11-08 03:41:05');
 /*!40000 ALTER TABLE `ThongBao_DaDoc` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -979,4 +1013,4 @@ SET @@SESSION.SQL_LOG_BIN = @MYSQLDUMP_TEMP_LOG_BIN;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2025-11-07 23:54:03
+-- Dump completed on 2025-11-08 11:59:46

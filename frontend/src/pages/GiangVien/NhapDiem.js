@@ -8,60 +8,72 @@ function NhapDiem() {
   const navigate = useNavigate();
   const [lopHocPhan, setLopHocPhan] = useState(null);
   const [sinhVienList, setSinhVienList] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [message, setMessage] = useState("");
+  const [message, setMessage] = useState('');
+  const [trangThaiDot, setTrangThaiDot] = useState(null); // Trạng thái đợt nhập điểm từ DB
+  const [viewMode, setViewMode] = useState('input'); // 'input' hoặc 'view'
 
   // Load thông tin lớp học phần và danh sách sinh viên
-  useEffect(() => {
+  const loadData = async () => {
     if (!lopHocPhanId) return;
-
-    const loadData = async () => {
       setLoading(true);
       setMessage("");
 
       try {
         // Lấy thông tin lớp học phần
         const lhpData = await apiFetch(`/api/lophocphan/${lopHocPhanId}`);
-        console.log('Lớp học phần:', lhpData);
         setLopHocPhan(lhpData);
 
-        // Lấy danh sách sinh viên đăng ký
-        const dkData = await apiFetch(`/api/dkhp/lop-hoc-phan/${lopHocPhanId}`);
-        console.log('Danh sách đăng ký:', dkData);
+        // Lấy trạng thái đợt nhập điểm
+        const dotData = await apiFetch(`/api/dot-nhap-diem/trang-thai?hocKy=${lhpData.hocKy}&namHoc=${lhpData.namHoc}`);
+        setTrangThaiDot(dotData?.trang_thai || 'CHUA_MO');
+
+        // Lấy danh sách sinh viên đã đăng ký từ API mới
+        const svData = await apiFetch(`/api/dkhp/lop-hoc-phan/${lopHocPhanId}`);
         
-        if (Array.isArray(dkData)) {
-          // Lấy điểm hiện tại của từng sinh viên
+        if (Array.isArray(svData)) {
+          // Lấy điểm hiện tại của từng sinh viên (API đã trả về camelCase)
+          const hocPhanId = lhpData.hocPhanId;
+          const hocKy = lhpData.hocKy;
+          const namHoc = lhpData.namHoc;
+          
           const sinhVienWithScores = await Promise.all(
-            dkData.map(async (dk) => {
+            svData.map(async (sv) => {
               try {
-                // Lấy tất cả điểm của sinh viên
-                const ketQuaData = await apiFetch(`/api/ket-qua-hoc-tap/by-sinhvien?sinhVienId=${dk.sinh_vien_id}`);
+                // Lấy điểm của sinh viên cho học phần này
+                const ketQuaData = await apiFetch(`/api/ket-qua-hoc-tap/by-sinhvien?sinhVienId=${sv.sinh_vien_id}`);
                 
-                // Tìm điểm của học phần này
-                const hocPhanId = lhpData.hocPhanId || lhpData.hoc_phan_id;
+                // Tìm điểm của học phần + học kỳ này (xử lý cả snake_case và camelCase)
                 const existingScore = ketQuaData?.find(
-                  kq => (kq.hoc_phan_id === hocPhanId || kq.hocPhanId === hocPhanId)
+                  kq => {
+                    const matchHP = (kq.hoc_phan_id === hocPhanId || kq.hocPhanId === hocPhanId);
+                    const matchHK = (kq.hoc_ky === hocKy || kq.hocKy === hocKy);
+                    const matchNH = (kq.nam_hoc === namHoc || kq.namHoc === namHoc);
+                    
+                    return matchHP && matchHK && matchNH;
+                  }
                 );
 
                 return {
-                  ...dk,
+                  ...sv,
                   ketQuaId: existingScore?.id || null,
-                  diem_ly_thuyet_1: existingScore?.diem_ly_thuyet_1 || '',
-                  diem_ly_thuyet_2: existingScore?.diem_ly_thuyet_2 || '',
-                  diem_ly_thuyet_3: existingScore?.diem_ly_thuyet_3 || '',
-                  diem_ly_thuyet_4: existingScore?.diem_ly_thuyet_4 || '',
-                  diem_thuc_hanh_1: existingScore?.diem_thuc_hanh_1 || '',
-                  diem_thuc_hanh_2: existingScore?.diem_thuc_hanh_2 || '',
-                  diem_thuc_hanh_3: existingScore?.diem_thuc_hanh_3 || '',
-                  diem_giua_ky: existingScore?.diem_giua_ky || '',
-                  diem_cuoi_ky: existingScore?.diem_cuoi_ky || '',
-                  diem_tong_ket: existingScore?.diem_tong_ket || '',
-                  diem_chu: existingScore?.diem_chu || '',
+                  // Backend trả về camelCase, cần map sang snake_case
+                  diem_ly_thuyet_1: existingScore?.diemThuongXuyen1 || existingScore?.diem_ly_thuyet_1 || '',
+                  diem_ly_thuyet_2: existingScore?.diemThuongXuyen2 || existingScore?.diem_ly_thuyet_2 || '',
+                  diem_ly_thuyet_3: existingScore?.diemThuongXuyen3 || existingScore?.diem_ly_thuyet_3 || '',
+                  diem_ly_thuyet_4: existingScore?.diemThuongXuyen4 || existingScore?.diem_ly_thuyet_4 || '',
+                  diem_thuc_hanh_1: existingScore?.diemThucHanh1 || existingScore?.diem_thuc_hanh_1 || '',
+                  diem_thuc_hanh_2: existingScore?.diemThucHanh2 || existingScore?.diem_thuc_hanh_2 || '',
+                  diem_thuc_hanh_3: existingScore?.diemThucHanh3 || existingScore?.diem_thuc_hanh_3 || '',
+                  diem_giua_ky: existingScore?.diemGiuaKy || existingScore?.diem_giua_ky || '',
+                  diem_cuoi_ky: existingScore?.diemCuoiKy || existingScore?.diem_cuoi_ky || '',
+                  diem_tong_ket: existingScore?.diemTongKet || existingScore?.diem_tong_ket || '',
+                  diem_chu: existingScore?.diemChu || existingScore?.diem_chu || '',
                 };
-              } catch {
+              } catch (err) {
                 return {
-                  ...dk,
+                  ...sv,
                   ketQuaId: null,
                   diem_ly_thuyet_1: '',
                   diem_ly_thuyet_2: '',
@@ -87,9 +99,12 @@ function NhapDiem() {
       } finally {
         setLoading(false);
       }
-    };
+  };
 
+  // useEffect để gọi loadData khi component mount
+  useEffect(() => {
     loadData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [lopHocPhanId]);
 
   // Cập nhật điểm cho một sinh viên
@@ -97,6 +112,65 @@ function NhapDiem() {
     const newList = [...sinhVienList];
     newList[svIndex][field] = value;
     setSinhVienList(newList);
+  };
+
+  // Kiểm tra xem cột nào được phép nhập (dựa vào trạng thái đợt từ DB)
+  const isInputDisabled = (sv, field) => {
+    // Nếu chưa có trạng thái đợt hoặc chưa mở → Khóa tất cả
+    if (!trangThaiDot || trangThaiDot === 'CHUA_MO' || trangThaiDot === 'DA_KHOA') {
+      return true;
+    }
+
+    // Đợt 1 đang mở → Cho nhập TX, TH, GK | KHÔNG cho nhập CK
+    if (trangThaiDot === 'DOT_1_DANG_MO') {
+      if (field === 'diem_cuoi_ky') return true; // KHÔNG cho nhập CK
+      
+      // Nếu đã lưu Đợt 1 (có ketQuaId) → Khóa tất cả TX, TH, GK
+      if (sv.ketQuaId) {
+        return true;
+      }
+      
+      return false; // Cho nhập TX, TH, GK (chưa lưu lần đầu)
+    }
+
+    // Đợt 1 đã đóng → Khóa tất cả (chờ đợt 2)
+    if (trangThaiDot === 'DOT_1_DA_DONG') {
+      return true;
+    }
+
+    // Đợt 2 đang mở → Chỉ cho nhập CK | Khóa TX, TH, GK
+    if (trangThaiDot === 'DOT_2_DANG_MO') {
+      if (field === 'diem_cuoi_ky') {
+        // Nếu đã có điểm CK trong DB → Khóa (không cho sửa)
+        const hasCK = sv.diem_cuoi_ky !== '' && sv.diem_cuoi_ky !== null;
+        if (hasCK) return true;
+        // Nếu chưa → Cho nhập
+        return false;
+      }
+      
+      // TX, TH, GK: Nếu đã có bản ghi → Khóa
+      if (sv.ketQuaId) return true;
+      
+      // Nếu chưa có bản ghi → Cho nhập (sinh viên đăng ký muộn)
+      return false;
+    }
+
+    return true;
+  };
+
+  // Helper: Kiểm tra sinh viên đã hoàn tất chưa
+  const getDotNhap = (sv) => {
+    const hasCK = sv.diem_cuoi_ky !== '' && sv.diem_cuoi_ky !== null && sv.diem_cuoi_ky !== undefined;
+    const hasSavedRecord = sv.ketQuaId !== null && sv.ketQuaId !== undefined;
+
+    if (hasCK && hasSavedRecord) return 'HOAN_TAT';
+    if (hasSavedRecord && !hasCK) return 'DOT_2';
+    return 'DOT_1';
+  };
+
+  // Kiểm tra đã hoàn tất chưa
+  const isFullyLocked = (sv) => {
+    return getDotNhap(sv) === 'HOAN_TAT';
   };
 
   // Lưu điểm tất cả sinh viên
@@ -107,50 +181,69 @@ function NhapDiem() {
     setMessage("");
     let successCount = 0;
     let errorCount = 0;
+    let skippedCount = 0;
 
     try {
       for (const sv of sinhVienList) {
-        const scoreData = {
+        
+        // Skip nếu sinh viên không có dữ liệu gì để lưu
+        const hasAnyData = sv.diem_ly_thuyet_1 || sv.diem_ly_thuyet_2 || sv.diem_ly_thuyet_3 || 
+                          sv.diem_ly_thuyet_4 || sv.diem_thuc_hanh_1 || sv.diem_thuc_hanh_2 || 
+                          sv.diem_thuc_hanh_3 || sv.diem_giua_ky || sv.diem_cuoi_ky;
+        if (!hasAnyData) {
+          skippedCount++;
+          continue;
+        }
+        
+        // Logic: Nếu đang đợt 2 VÀ đã có điểm từ đợt 1 → CHỈ cập nhật CK
+        const isDot2AndHasRecord = trangThaiDot === 'DOT_2_DANG_MO' && sv.ketQuaId;
+        
+        let scoreData = {
           sinh_vien_id: sv.sinh_vien_id,
-          hoc_phan_id: lopHocPhan.hocPhanId || lopHocPhan.hoc_phan_id,
-          diem_ly_thuyet_1: sv.diem_ly_thuyet_1 || null,
-          diem_ly_thuyet_2: sv.diem_ly_thuyet_2 || null,
-          diem_ly_thuyet_3: sv.diem_ly_thuyet_3 || null,
-          diem_ly_thuyet_4: sv.diem_ly_thuyet_4 || null,
-          diem_thuc_hanh_1: sv.diem_thuc_hanh_1 || null,
-          diem_thuc_hanh_2: sv.diem_thuc_hanh_2 || null,
-          diem_thuc_hanh_3: sv.diem_thuc_hanh_3 || null,
-          diem_giua_ky: sv.diem_giua_ky || null,
-          diem_cuoi_ky: sv.diem_cuoi_ky || null,
+          hoc_phan_id: lopHocPhan.hocPhanId,
+          hoc_ky: lopHocPhan.hocKy,
+          nam_hoc: lopHocPhan.namHoc,
         };
+        
+        if (isDot2AndHasRecord) {
+          // Đợt 2: CHỈ gửi điểm cuối kỳ (nếu có)
+          if (sv.diem_cuoi_ky) {
+            scoreData.diem_cuoi_ky = sv.diem_cuoi_ky;
+          }
+        } else {
+          // Đợt 1 hoặc tạo mới: gửi đầy đủ (chỉ field có giá trị)
+          if (sv.diem_ly_thuyet_1) scoreData.diem_ly_thuyet_1 = sv.diem_ly_thuyet_1;
+          if (sv.diem_ly_thuyet_2) scoreData.diem_ly_thuyet_2 = sv.diem_ly_thuyet_2;
+          if (sv.diem_ly_thuyet_3) scoreData.diem_ly_thuyet_3 = sv.diem_ly_thuyet_3;
+          if (sv.diem_ly_thuyet_4) scoreData.diem_ly_thuyet_4 = sv.diem_ly_thuyet_4;
+          if (sv.diem_thuc_hanh_1) scoreData.diem_thuc_hanh_1 = sv.diem_thuc_hanh_1;
+          if (sv.diem_thuc_hanh_2) scoreData.diem_thuc_hanh_2 = sv.diem_thuc_hanh_2;
+          if (sv.diem_thuc_hanh_3) scoreData.diem_thuc_hanh_3 = sv.diem_thuc_hanh_3;
+          if (sv.diem_giua_ky) scoreData.diem_giua_ky = sv.diem_giua_ky;
+          if (sv.diem_cuoi_ky) scoreData.diem_cuoi_ky = sv.diem_cuoi_ky;
+        }
 
         try {
-          if (sv.ketQuaId) {
-            // Update nếu đã có điểm
-            await apiFetch(`/api/ket-qua-hoc-tap/${sv.ketQuaId}`, {
-              method: 'PUT',
-              body: JSON.stringify(scoreData),
-            });
-          } else {
-            // Tạo mới nếu chưa có điểm
-            await apiFetch('/api/ket-qua-hoc-tap', {
-              method: 'POST',
-              body: JSON.stringify(scoreData),
-            });
-          }
+          // Luôn dùng UPSERT (POST) - backend tự xử lý
+          await apiFetch('/api/ket-qua-hoc-tap', {
+            method: 'POST',
+            body: JSON.stringify(scoreData),
+          });
           successCount++;
         } catch (err) {
-          console.error(`Error saving score for SV ${sv.ma_sv}:`, err);
+          console.error(`❌ Lỗi lưu điểm cho SV ${sv.ma_sv}:`, err);
           errorCount++;
         }
       }
 
       setMessage(`✅ Đã lưu thành công ${successCount} sinh viên${errorCount > 0 ? `, ${errorCount} lỗi` : ''}!`);
       
-      // Reload lại danh sách sau khi lưu
-      window.location.reload();
+      // Reload để cập nhật ketQuaId và điểm tính toán
+      await loadData();
+      
     } catch (err) {
       setMessage('❌ Có lỗi xảy ra khi lưu điểm!');
+      console.error('Error in handleSaveAll:', err);
     } finally {
       setSaving(false);
     }
@@ -160,19 +253,70 @@ function NhapDiem() {
     <TeacherLayout>
       <div className="container-fluid mt-4">
         <div className="d-flex justify-content-between align-items-center mb-3">
-          <h3 className="mb-0">📝 Nhập điểm thủ công</h3>
+          <div className="d-flex align-items-center gap-3">
+            <h3 className="mb-0">📝 Quản lý điểm</h3>
+            
+            {/* Tab chuyển đổi */}
+            <div className="btn-group" role="group">
+              <button
+                className={`btn ${viewMode === 'input' ? 'btn-primary' : 'btn-outline-primary'}`}
+                onClick={() => setViewMode('input')}
+              >
+                ✏️ Nhập điểm
+              </button>
+              <button
+                className={`btn ${viewMode === 'view' ? 'btn-primary' : 'btn-outline-primary'}`}
+                onClick={() => setViewMode('view')}
+              >
+                👁️ Xem điểm
+              </button>
+            </div>
+          </div>
+          
           <button className="btn btn-outline-secondary" onClick={() => navigate('/teacher/lophocphan')}>
             ← Quay lại danh sách lớp
           </button>
         </div>
 
         {lopHocPhan && (
-          <div className="alert alert-info">
-            <strong>Lớp học phần:</strong> {lopHocPhan.tenHocPhan || lopHocPhan.ten_hoc_phan} - {lopHocPhan.maLopHocPhan || lopHocPhan.ma_lop_hoc_phan} 
-            <span className="ms-3">
-              <strong>Học kỳ:</strong> {lopHocPhan.hocKy || lopHocPhan.hoc_ky} {lopHocPhan.namHoc || lopHocPhan.nam_hoc}
-            </span>
-          </div>
+          <>
+            <div className="alert alert-info mb-2">
+              <strong>Lớp học phần:</strong> {lopHocPhan.tenHocPhan} - {lopHocPhan.maLopHocPhan} 
+              <span className="ms-3">
+                <strong>Học kỳ:</strong> {lopHocPhan.hocKy} {lopHocPhan.namHoc}
+              </span>
+              <span className="ms-3">
+                <strong>Giảng viên:</strong> {lopHocPhan.tenGiangVien}
+              </span>
+            </div>
+            
+            {/* Thông báo trạng thái đợt */}
+            {trangThaiDot === 'CHUA_MO' && (
+              <div className="alert alert-warning">
+                ⏸️ <strong>Đợt nhập điểm chưa mở.</strong> Vui lòng chờ phòng Đào tạo mở đợt nhập điểm.
+              </div>
+            )}
+            {trangThaiDot === 'DOT_1_DANG_MO' && (
+              <div className="alert alert-success">
+                ✅ <strong>Đợt 1 đang mở:</strong> Nhập điểm TX1-4, TH1-3, GK (KHÔNG nhập CK)
+              </div>
+            )}
+            {trangThaiDot === 'DOT_1_DA_DONG' && (
+              <div className="alert alert-secondary">
+                🔒 <strong>Đợt 1 đã đóng.</strong> Chờ mở đợt 2 để nhập điểm cuối kỳ.
+              </div>
+            )}
+            {trangThaiDot === 'DOT_2_DANG_MO' && (
+              <div className="alert alert-success">
+                ⚡ <strong>Đợt 2 đang mở:</strong> Chỉ nhập điểm Cuối kỳ (TX, TH, GK đã khóa)
+              </div>
+            )}
+            {trangThaiDot === 'DA_KHOA' && (
+              <div className="alert alert-danger">
+                🔒 <strong>Đã khóa điểm.</strong> Không thể nhập/sửa điểm nữa.
+              </div>
+            )}
+          </>
         )}
 
         <div className="card shadow-sm p-3">
@@ -186,7 +330,7 @@ function NhapDiem() {
             <p className="text-center text-muted py-5">⏳ Đang tải danh sách sinh viên...</p>
           )}
 
-          {!loading && sinhVienList.length > 0 && (
+          {!loading && sinhVienList.length > 0 && viewMode === 'input' && (
             <>
               <div className="table-responsive" style={{ maxHeight: '500px', overflowY: 'auto' }}>
                 <table className="table table-bordered table-hover table-sm">
@@ -210,7 +354,7 @@ function NhapDiem() {
                   </thead>
                   <tbody>
                     {sinhVienList.map((sv, index) => (
-                      <tr key={sv.sinh_vien_id}>
+                      <tr key={sv.sinh_vien_id} style={{ backgroundColor: isFullyLocked(sv) ? '#f0f0f0' : 'transparent' }}>
                         <td className="text-center">{index + 1}</td>
                         <td>{sv.ma_sv}</td>
                         <td>{sv.ho_ten}</td>
@@ -223,6 +367,9 @@ function NhapDiem() {
                             className="form-control form-control-sm"
                             value={sv.diem_ly_thuyet_1}
                             onChange={(e) => handleScoreChange(index, 'diem_ly_thuyet_1', e.target.value)}
+                            disabled={isInputDisabled(sv, 'diem_ly_thuyet_1')}
+                            style={{ backgroundColor: isInputDisabled(sv, 'diem_ly_thuyet_1') ? '#e9ecef' : 'white' }}
+                            title={isInputDisabled(sv, 'diem_ly_thuyet_1') ? '🔒 Đã khóa' : ''}
                           />
                         </td>
                         <td>
@@ -234,6 +381,9 @@ function NhapDiem() {
                             className="form-control form-control-sm"
                             value={sv.diem_ly_thuyet_2}
                             onChange={(e) => handleScoreChange(index, 'diem_ly_thuyet_2', e.target.value)}
+                            disabled={isInputDisabled(sv, 'diem_ly_thuyet_2')}
+                            style={{ backgroundColor: isInputDisabled(sv, 'diem_ly_thuyet_2') ? '#e9ecef' : 'white' }}
+                            title={isInputDisabled(sv, 'diem_ly_thuyet_2') ? '🔒 Đã khóa' : ''}
                           />
                         </td>
                         <td>
@@ -245,6 +395,9 @@ function NhapDiem() {
                             className="form-control form-control-sm"
                             value={sv.diem_ly_thuyet_3}
                             onChange={(e) => handleScoreChange(index, 'diem_ly_thuyet_3', e.target.value)}
+                            disabled={isInputDisabled(sv, 'diem_ly_thuyet_3')}
+                            style={{ backgroundColor: isInputDisabled(sv, 'diem_ly_thuyet_3') ? '#e9ecef' : 'white' }}
+                            title={isInputDisabled(sv, 'diem_ly_thuyet_3') ? '🔒 Đã khóa' : ''}
                           />
                         </td>
                         <td>
@@ -256,6 +409,9 @@ function NhapDiem() {
                             className="form-control form-control-sm"
                             value={sv.diem_ly_thuyet_4}
                             onChange={(e) => handleScoreChange(index, 'diem_ly_thuyet_4', e.target.value)}
+                            disabled={isInputDisabled(sv, 'diem_ly_thuyet_4')}
+                            style={{ backgroundColor: isInputDisabled(sv, 'diem_ly_thuyet_4') ? '#e9ecef' : 'white' }}
+                            title={isInputDisabled(sv, 'diem_ly_thuyet_4') ? '🔒 Đã khóa' : ''}
                           />
                         </td>
                         <td>
@@ -267,6 +423,9 @@ function NhapDiem() {
                             className="form-control form-control-sm"
                             value={sv.diem_thuc_hanh_1}
                             onChange={(e) => handleScoreChange(index, 'diem_thuc_hanh_1', e.target.value)}
+                            disabled={isInputDisabled(sv, 'diem_thuc_hanh_1')}
+                            style={{ backgroundColor: isInputDisabled(sv, 'diem_thuc_hanh_1') ? '#e9ecef' : 'white' }}
+                            title={isInputDisabled(sv, 'diem_thuc_hanh_1') ? '🔒 Đã khóa' : ''}
                           />
                         </td>
                         <td>
@@ -278,6 +437,9 @@ function NhapDiem() {
                             className="form-control form-control-sm"
                             value={sv.diem_thuc_hanh_2}
                             onChange={(e) => handleScoreChange(index, 'diem_thuc_hanh_2', e.target.value)}
+                            disabled={isInputDisabled(sv, 'diem_thuc_hanh_2')}
+                            style={{ backgroundColor: isInputDisabled(sv, 'diem_thuc_hanh_2') ? '#e9ecef' : 'white' }}
+                            title={isInputDisabled(sv, 'diem_thuc_hanh_2') ? '🔒 Đã khóa' : ''}
                           />
                         </td>
                         <td>
@@ -289,6 +451,9 @@ function NhapDiem() {
                             className="form-control form-control-sm"
                             value={sv.diem_thuc_hanh_3}
                             onChange={(e) => handleScoreChange(index, 'diem_thuc_hanh_3', e.target.value)}
+                            disabled={isInputDisabled(sv, 'diem_thuc_hanh_3')}
+                            style={{ backgroundColor: isInputDisabled(sv, 'diem_thuc_hanh_3') ? '#e9ecef' : 'white' }}
+                            title={isInputDisabled(sv, 'diem_thuc_hanh_3') ? '🔒 Đã khóa' : ''}
                           />
                         </td>
                         <td>
@@ -300,6 +465,9 @@ function NhapDiem() {
                             className="form-control form-control-sm"
                             value={sv.diem_giua_ky}
                             onChange={(e) => handleScoreChange(index, 'diem_giua_ky', e.target.value)}
+                            disabled={isInputDisabled(sv, 'diem_giua_ky')}
+                            style={{ backgroundColor: isInputDisabled(sv, 'diem_giua_ky') ? '#e9ecef' : 'white' }}
+                            title={isInputDisabled(sv, 'diem_giua_ky') ? '🔒 Đã khóa' : ''}
                           />
                         </td>
                         <td>
@@ -311,6 +479,9 @@ function NhapDiem() {
                             className="form-control form-control-sm"
                             value={sv.diem_cuoi_ky}
                             onChange={(e) => handleScoreChange(index, 'diem_cuoi_ky', e.target.value)}
+                            disabled={isInputDisabled(sv, 'diem_cuoi_ky')}
+                            style={{ backgroundColor: isInputDisabled(sv, 'diem_cuoi_ky') ? '#e9ecef' : getDotNhap(sv) === 'DOT_1' ? '#fff3cd' : 'white', borderColor: isInputDisabled(sv, 'diem_cuoi_ky') ? '#28a745' : getDotNhap(sv) === 'DOT_2' ? '#ffc107' : '#ced4da' }}
+                            title={isInputDisabled(sv, 'diem_cuoi_ky') ? '🔒 Đã lưu điểm' : getDotNhap(sv) === 'DOT_2' ? '⚡ Đợt 2: Chỉ nhập CK' : '⏳ Đợt 1: Chưa được nhập CK'}
                           />
                         </td>
                         <td className="text-center fw-bold">{sv.diem_tong_ket || '-'}</td>
@@ -322,10 +493,24 @@ function NhapDiem() {
               </div>
 
               <div className="mt-3 d-flex justify-content-between align-items-center">
-                <p className="small text-muted mb-0">
-                  🔹 Nhập điểm vào các ô (0-10). <br />
-                  🔹 Hệ thống sẽ <strong>tự động tính điểm tổng kết</strong> khi bạn lưu.
-                </p>
+                <div className="small mb-0">
+                  <p className="mb-2"><strong>📋 Hướng dẫn nhập điểm:</strong></p>
+                  <div className="d-flex gap-4">
+                    <div>
+                      <span className="badge bg-primary">Đợt 1</span>
+                      <p className="mb-0 mt-1 text-muted">Nhập TX1-4, TH1-3, GK<br/>❌ KHÔNG nhập CK (ô màu vàng)</p>
+                    </div>
+                    <div>
+                      <span className="badge bg-warning text-dark">Đợt 2</span>
+                      <p className="mb-0 mt-1 text-muted">Chỉ nhập CK (ô viền vàng)<br/>🔒 TX, TH, GK đã khóa</p>
+                    </div>
+                    <div>
+                      <span className="badge bg-success">Hoàn tất</span>
+                      <p className="mb-0 mt-1 text-muted">Đã nhập đủ 2 đợt<br/>🔒 Tất cả đã khóa</p>
+                    </div>
+                  </div>
+                  <p className="mb-0 mt-2 text-danger"><strong>⚠️ Không thể sửa điểm sau khi lưu!</strong></p>
+                </div>
                 <button 
                   className="btn btn-success btn-lg" 
                   onClick={handleSaveAll}
@@ -333,6 +518,95 @@ function NhapDiem() {
                 >
                   {saving ? '⏳ Đang lưu...' : '💾 Lưu tất cả điểm'}
                 </button>
+              </div>
+            </>
+          )}
+
+          {/* Chế độ xem điểm (read-only) */}
+          {!loading && sinhVienList.length > 0 && viewMode === 'view' && (
+            <>
+              <div className="mb-3">
+                <h5>📊 Bảng điểm tổng hợp</h5>
+                <p className="text-muted small mb-0">
+                  Hiển thị tất cả điểm đã nhập. Chỉ để xem, không chỉnh sửa.
+                </p>
+              </div>
+
+              <div className="table-responsive" style={{ maxHeight: '500px', overflowY: 'auto' }}>
+                <table className="table table-bordered table-striped table-sm">
+                  <thead className="table-dark" style={{ position: 'sticky', top: 0, zIndex: 1 }}>
+                    <tr>
+                      <th>STT</th>
+                      <th>Mã SV</th>
+                      <th>Họ và tên</th>
+                      <th>TX1</th>
+                      <th>TX2</th>
+                      <th>TX3</th>
+                      <th>TX4</th>
+                      <th>TH1</th>
+                      <th>TH2</th>
+                      <th>TH3</th>
+                      <th>GK</th>
+                      <th>CK</th>
+                      <th>TK</th>
+                      <th>Chữ</th>
+                      <th>Xếp loại</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {sinhVienList.map((sv, index) => (
+                      <tr key={sv.sinh_vien_id}>
+                        <td className="text-center">{index + 1}</td>
+                        <td><strong>{sv.ma_sv}</strong></td>
+                        <td>{sv.ho_ten}</td>
+                        <td className="text-center">{sv.diem_ly_thuyet_1 || '-'}</td>
+                        <td className="text-center">{sv.diem_ly_thuyet_2 || '-'}</td>
+                        <td className="text-center">{sv.diem_ly_thuyet_3 || '-'}</td>
+                        <td className="text-center">{sv.diem_ly_thuyet_4 || '-'}</td>
+                        <td className="text-center">{sv.diem_thuc_hanh_1 || '-'}</td>
+                        <td className="text-center">{sv.diem_thuc_hanh_2 || '-'}</td>
+                        <td className="text-center">{sv.diem_thuc_hanh_3 || '-'}</td>
+                        <td className="text-center">{sv.diem_giua_ky || '-'}</td>
+                        <td className="text-center">{sv.diem_cuoi_ky || '-'}</td>
+                        <td className="text-center">
+                          <strong className={sv.diem_tong_ket ? 'text-primary' : 'text-muted'}>
+                            {sv.diem_tong_ket || '-'}
+                          </strong>
+                        </td>
+                        <td className="text-center">
+                          <span className={`badge ${
+                            sv.diem_chu === 'A' ? 'bg-success' :
+                            sv.diem_chu === 'B+' || sv.diem_chu === 'B' ? 'bg-primary' :
+                            sv.diem_chu === 'C+' || sv.diem_chu === 'C' ? 'bg-info' :
+                            sv.diem_chu === 'D+' || sv.diem_chu === 'D' ? 'bg-warning text-dark' :
+                            sv.diem_chu === 'F' ? 'bg-danger' : 'bg-secondary'
+                          }`}>
+                            {sv.diem_chu || '-'}
+                          </span>
+                        </td>
+                        <td className="text-center small">{sv.xep_loai || '-'}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+
+              {/* Thống kê */}
+              <div className="mt-4 p-3 bg-light rounded">
+                <div className="row">
+                  <div className="col-md-3">
+                    <strong>Tổng sinh viên:</strong> {sinhVienList.length}
+                  </div>
+                  <div className="col-md-3">
+                    <strong>Đã nhập CK:</strong> {sinhVienList.filter(sv => sv.diem_cuoi_ky).length}
+                  </div>
+                  <div className="col-md-3">
+                    <strong>Đạt:</strong> {sinhVienList.filter(sv => sv.dat === 'Đạt').length}
+                  </div>
+                  <div className="col-md-3">
+                    <strong>Không đạt:</strong> {sinhVienList.filter(sv => sv.dat === 'Không đạt').length}
+                  </div>
+                </div>
               </div>
             </>
           )}
