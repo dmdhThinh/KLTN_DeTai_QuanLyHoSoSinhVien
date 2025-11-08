@@ -50,17 +50,54 @@ export default function StudentDashboard() {
     const weekStart = getMonday(new Date())
     const from = dayjs(weekStart).format('YYYY-MM-DD')
 
-    // 🧩 Lấy số lượng lịch học trong tuần
+    // 🧩 Lấy số lượng lịch học trong tuần (không tính lịch nghỉ)
     apiFetch(`/api/lich/hoc?sinhVienId=${id}&from=${from}`)
       .then((data) => {
-        setLichHocCount(Array.isArray(data) ? data.length : 0)
+        if (!Array.isArray(data)) {
+          setLichHocCount(0)
+          return
+        }
+        
+        // Lọc ra các lịch không nghỉ
+        const lichKhongNghi = data.filter(item => {
+          // Nếu có ngày học cụ thể (lịch thi hoặc lịch đặc biệt)
+          if (item.ngayHoc) {
+            const ngayHocFormatted = dayjs(item.ngayHoc).format('YYYY-MM-DD')
+            return !item.danhSachNgayNghi || !item.danhSachNgayNghi.includes(ngayHocFormatted)
+          }
+          
+          // Lịch định kỳ: kiểm tra từng ngày trong tuần
+          const weekDays = []
+          for (let i = 0; i < 7; i++) {
+            const d = new Date(weekStart)
+            d.setDate(d.getDate() + i)
+            weekDays.push(dayjs(d).format('YYYY-MM-DD'))
+          }
+          
+          // Nếu không có ngày nào trong tuần bị nghỉ thì tính
+          return !item.danhSachNgayNghi || !weekDays.some(day => item.danhSachNgayNghi.includes(day))
+        })
+        
+        setLichHocCount(lichKhongNghi.length)
       })
       .catch(() => setLichHocCount(0))
 
-    // 🧩 Lấy số lượng lịch thi trong tuần
+    // 🧩 Lấy số lượng lịch thi trong tuần (không tính lịch nghỉ)
     apiFetch(`/api/lich/thi?sinhVienId=${id}&from=${from}`)
       .then((data) => {
-        setLichThiCount(Array.isArray(data) ? data.length : 0)
+        if (!Array.isArray(data)) {
+          setLichThiCount(0)
+          return
+        }
+        
+        // Lịch thi luôn có ngayHoc cố định
+        const lichThiKhongNghi = data.filter(item => {
+          if (!item.ngayHoc) return true
+          const ngayThiFormatted = dayjs(item.ngayHoc).format('YYYY-MM-DD')
+          return !item.danhSachNgayNghi || !item.danhSachNgayNghi.includes(ngayThiFormatted)
+        })
+        
+        setLichThiCount(lichThiKhongNghi.length)
       })
       .catch(() => setLichThiCount(0))
   }, [])

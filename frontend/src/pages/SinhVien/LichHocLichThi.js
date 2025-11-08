@@ -49,8 +49,8 @@ export default function LichHocLichThi() {
 
   const from = dayjs(weekStart).format('YYYY-MM-DD')
 
-  if (mode === 'hoc' || mode === 'tatca') {
-    // Lấy cả lịch học + lịch thi (mặc định hiển thị cả 2)
+  if (mode === 'tatca') {
+    // Lấy cả lịch học + lịch thi
     Promise.all([
       apiFetch(`/api/lich/hoc?sinhVienId=${id}&from=${from}`),
       apiFetch(`/api/lich/thi?sinhVienId=${id}&from=${from}`)
@@ -67,10 +67,21 @@ export default function LichHocLichThi() {
         setLich([])
       })
       .finally(() => setLoading(false))
-
-    } else {
+  } else if (mode === 'thi') {
     // Chỉ lịch thi
     apiFetch(`/api/lich/thi?sinhVienId=${id}&from=${from}`)
+      .then((data) => {
+        setLich(Array.isArray(data) ? data : [])
+      })
+      .catch((err) => {
+        console.error('❌ Lỗi khi tải lịch:', err)
+        setError('Không thể tải dữ liệu lịch.')
+        setLich([])
+      })
+      .finally(() => setLoading(false))
+  } else {
+    // Chỉ lịch học (mode === 'hoc')
+    apiFetch(`/api/lich/hoc?sinhVienId=${id}&from=${from}`)
       .then((data) => {
         setLich(Array.isArray(data) ? data : [])
       })
@@ -251,7 +262,8 @@ export default function LichHocLichThi() {
                             <div className="small text-muted">
                               {cell.maLopHocPhan || cell.lopHocPhan}
                             </div>
-                       {cell.loai === 'thi' ? (
+
+                            {cell.loai === 'thi' ? (
                               <>
                                 <div className="small">
                                   Tiết: {cell.tietBatDau || cell.tiet?.split('-')[0]} -{' '}

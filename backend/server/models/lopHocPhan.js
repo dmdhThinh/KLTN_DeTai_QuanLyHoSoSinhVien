@@ -171,11 +171,12 @@ export async function getLopHocPhanByGiangVien(giangVienId) {
         hp.ten_hoc_phan AS tenHocPhan,
         hp.so_tin_chi AS soTinChi,
         l.ten_lop AS tenLop,
-        COUNT(DISTINCT sv.id) AS siSo
+        COUNT(DISTINCT dk.sinh_vien_id) AS siSo
       FROM LopHocPhan lhp
       JOIN HocPhan hp ON lhp.hoc_phan_id = hp.id
       JOIN Lop l ON lhp.lop_id = l.id
-      LEFT JOIN SinhVien sv ON sv.lop_id = l.id
+      LEFT JOIN DangKyHocPhan dk ON dk.lop_hoc_phan_id = lhp.id 
+        AND dk.trang_thai_dk = 'THANH_CONG'
       WHERE lhp.giang_vien_id = ?
       GROUP BY lhp.id
     `, [giangVienId]);
