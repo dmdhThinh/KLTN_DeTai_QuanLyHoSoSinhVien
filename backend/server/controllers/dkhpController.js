@@ -30,14 +30,16 @@ export async function listAvailableLHP(req, res) {
   }
 }
 
-// GET /api/dkhp/my?sinh_vien_id=&dot_dang_ky_id=
+// GET /api/dkhp/my?sinh_vien_id=&dot_dang_ky_id=&hoc_ky=&nam_hoc=
 export async function listMyRegistrations(req, res) {
   try {
-    const { sinh_vien_id, dot_dang_ky_id } = req.query
+    const { sinh_vien_id, dot_dang_ky_id, hoc_ky, nam_hoc } = req.query
     if (!sinh_vien_id) return res.status(400).json({ message: 'Thiếu sinh_vien_id' })
     const rows = await DkModel.listMyRegistrations({
       sinh_vien_id: +sinh_vien_id,
-      dot_dang_ky_id: dot_dang_ky_id ? +dot_dang_ky_id : null
+      dot_dang_ky_id: dot_dang_ky_id ? +dot_dang_ky_id : null,
+      hoc_ky: hoc_ky || null,
+      nam_hoc: nam_hoc || null
     })
     res.json(rows)
   } catch (err) {

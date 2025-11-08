@@ -72,8 +72,6 @@ CREATE TABLE `DangKyHocPhan` (
   `lop_hoc_phan_id` int DEFAULT NULL,
   `hoc_phan_id` int DEFAULT NULL,
   `loai_dang_ky` enum('HOC_MOI','HOC_LAI','CAI_THIEN') DEFAULT 'HOC_MOI',
-  `hoc_ky` varchar(20) DEFAULT NULL,
-  `nam_hoc` varchar(10) DEFAULT NULL,
   `trang_thai` enum('Thành công','Thất bại') DEFAULT 'Thành công',
   `thoi_diem_dk` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `trang_thai_dk` enum('CHO','THANH_CONG','HUY') DEFAULT 'THANH_CONG',
@@ -87,7 +85,7 @@ CREATE TABLE `DangKyHocPhan` (
   CONSTRAINT `DangKyHocPhan_ibfk_2` FOREIGN KEY (`hoc_phan_id`) REFERENCES `HocPhan` (`id`),
   CONSTRAINT `fk_dkhp_dot` FOREIGN KEY (`dot_dang_ky_id`) REFERENCES `DotDangKy` (`id`),
   CONSTRAINT `fk_dkhp_lhp` FOREIGN KEY (`lop_hoc_phan_id`) REFERENCES `LopHocPhan` (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=8 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=12 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -96,7 +94,7 @@ CREATE TABLE `DangKyHocPhan` (
 
 LOCK TABLES `DangKyHocPhan` WRITE;
 /*!40000 ALTER TABLE `DangKyHocPhan` DISABLE KEYS */;
-INSERT INTO `DangKyHocPhan` VALUES (1,1,NULL,1,'HOC_MOI','HK1','2025-2026','Thành công',NULL,'2025-11-04 14:42:34','THANH_CONG',NULL),(2,1,NULL,2,'HOC_MOI','HK1','2025-2026','Thành công',NULL,'2025-11-04 14:42:34','THANH_CONG',NULL),(4,1,7,4,'HOC_MOI',NULL,NULL,'Thành công',NULL,'2025-11-05 09:14:46','THANH_CONG',1),(5,1,8,6,'HOC_MOI',NULL,NULL,'Thành công',NULL,'2025-11-05 09:19:29','THANH_CONG',1),(6,41,2,1,'HOC_MOI',NULL,NULL,'Thành công',NULL,'2025-11-07 16:43:23','THANH_CONG',1);
+INSERT INTO `DangKyHocPhan` VALUES (1,1,NULL,1,'HOC_MOI','Thành công','2025-11-04 14:42:34','THANH_CONG',NULL),(2,1,NULL,2,'HOC_MOI','Thành công','2025-11-04 14:42:34','THANH_CONG',NULL),(4,1,7,4,'HOC_MOI','Thành công','2025-11-05 09:14:46','THANH_CONG',1),(5,1,8,6,'HOC_MOI','Thành công','2025-11-05 09:19:29','THANH_CONG',1),(8,41,8,6,'HOC_MOI','Thành công','2025-11-08 08:32:32','THANH_CONG',1),(10,1,2,1,'HOC_MOI','Thành công','2025-11-08 11:28:35','THANH_CONG',1),(11,1,6,2,'HOC_MOI','Thành công','2025-11-08 11:57:48','THANH_CONG',1);
 /*!40000 ALTER TABLE `DangKyHocPhan` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -184,7 +182,7 @@ CREATE TABLE `DotDangKy` (
   `trang_thai` enum('SAP_MO','DANG_MO','DA_DONG') DEFAULT 'SAP_MO',
   `ghi_chu` varchar(255) DEFAULT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -227,7 +225,7 @@ CREATE TABLE `DotNhapDiem` (
 
 LOCK TABLES `DotNhapDiem` WRITE;
 /*!40000 ALTER TABLE `DotNhapDiem` DISABLE KEYS */;
-INSERT INTO `DotNhapDiem` VALUES (3,'HK1','2025-2026','DOT_2_DANG_MO',NULL,NULL,NULL,NULL,'Học kỳ 1 năm học 2025-2026','2025-11-08 02:53:33','2025-11-08 04:55:30'),(4,'HK2','2025-2026','CHUA_MO',NULL,NULL,NULL,NULL,'Học kỳ HK2 năm học 2025-2026','2025-11-08 03:12:05','2025-11-08 03:12:05');
+INSERT INTO `DotNhapDiem` VALUES (3,'HK1','2025-2026','DA_KHOA',NULL,NULL,NULL,NULL,'Học kỳ 1 năm học 2025-2026','2025-11-08 02:53:33','2025-11-08 11:16:54'),(4,'HK2','2025-2026','CHUA_MO',NULL,NULL,NULL,NULL,'Học kỳ HK2 năm học 2025-2026','2025-11-08 03:12:05','2025-11-08 03:12:05');
 /*!40000 ALTER TABLE `DotNhapDiem` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -389,9 +387,7 @@ CREATE TABLE `HocPhi` (
   PRIMARY KEY (`id`),
   KEY `sinh_vien_id` (`sinh_vien_id`),
   KEY `hoc_phan_id` (`hoc_phan_id`),
-  KEY `fk_hocphi_dk` (`dang_ky_id`),
   KEY `fk_hocphi_lhp` (`lop_hoc_phan_id`),
-  CONSTRAINT `fk_hocphi_dk` FOREIGN KEY (`dang_ky_id`) REFERENCES `DangKyHocPhan` (`id`),
   CONSTRAINT `fk_hocphi_lhp` FOREIGN KEY (`lop_hoc_phan_id`) REFERENCES `LopHocPhan` (`id`),
   CONSTRAINT `HocPhi_ibfk_1` FOREIGN KEY (`sinh_vien_id`) REFERENCES `SinhVien` (`id`),
   CONSTRAINT `HocPhi_ibfk_2` FOREIGN KEY (`hoc_phan_id`) REFERENCES `HocPhan` (`id`)
@@ -404,7 +400,7 @@ CREATE TABLE `HocPhi` (
 
 LOCK TABLES `HocPhi` WRITE;
 /*!40000 ALTER TABLE `HocPhi` DISABLE KEYS */;
-INSERT INTO `HocPhi` VALUES (1,1,1,'HK1','2025-2026',1200000.00,'Chưa nộp',NULL,NULL,NULL,1),(2,1,2,'HK1','2025-2026',1200000.00,'Đã nộp',NULL,NULL,NULL,1);
+INSERT INTO `HocPhi` VALUES (1,1,1,'HK1','2025-2026',3000000.00,'Chưa nộp',NULL,NULL,NULL,1),(2,1,2,'HK1','2025-2026',4000000.00,'Đã nộp',NULL,NULL,NULL,1);
 /*!40000 ALTER TABLE `HocPhi` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -529,7 +525,7 @@ CREATE TABLE `LichHoc` (
   PRIMARY KEY (`id`),
   KEY `lop_hoc_phan_id` (`lop_hoc_phan_id`),
   CONSTRAINT `LichHoc_ibfk_1` FOREIGN KEY (`lop_hoc_phan_id`) REFERENCES `LopHocPhan` (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=11 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=19 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -538,8 +534,36 @@ CREATE TABLE `LichHoc` (
 
 LOCK TABLES `LichHoc` WRITE;
 /*!40000 ALTER TABLE `LichHoc` DISABLE KEYS */;
-INSERT INTO `LichHoc` VALUES (3,2,2,'sáng',1,3,'V7.02','Cơ sở 1',NULL,'lythuyet',NULL),(4,2,4,'chiều',7,9,'H8.03','Cơ sở 1',NULL,'thuchanh',NULL),(5,2,6,'sáng',1,3,'H8.01','Cơ sở 1',NULL,'lythuyet',NULL),(6,2,6,'chiều',7,9,'H8.01','Cơ sở 1','2025-10-31','thi',NULL),(7,9,4,'tối',7,8,'H8.03','1','2003-04-30','lythuyet',NULL),(8,8,7,'sáng',1,3,'H4.01','Cơ sở 1','2025-01-11','lythuyet',NULL),(9,8,8,'sáng',1,3,'H8.03','Cơ sở 1','2025-01-12','lythuyet',NULL),(10,7,6,'sáng',1,3,'V7.02','Cơ sở 1','2025-11-01','lythuyet',NULL);
+INSERT INTO `LichHoc` VALUES (3,2,2,'sáng',1,3,'V7.02','Cơ sở 1',NULL,'lythuyet',NULL),(4,2,4,'chiều',7,9,'H8.03','Cơ sở 1',NULL,'thuchanh',NULL),(12,6,3,'chiều',10,12,'V5.02','Cơ sở 1',NULL,'lythuyet',NULL),(13,8,3,'chiều',7,9,'H8.01','Cơ sở 1',NULL,'lythuyet',NULL),(15,7,7,'sáng',1,3,'H8.01','Cơ sở 1',NULL,'thuchanh',NULL),(17,2,6,'sáng',4,6,'H8.03','Cơ sở 1','2025-11-14','thi',NULL),(18,6,6,'sáng',1,3,'H4.01','Cơ sở 1','2025-11-14','lythuyet',NULL);
 /*!40000 ALTER TABLE `LichHoc` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
+-- Table structure for table `LichNghi`
+--
+
+DROP TABLE IF EXISTS `LichNghi`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `LichNghi` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `lich_hoc_id` int NOT NULL,
+  `ngay_nghi` date NOT NULL,
+  `ly_do` varchar(255) DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `lich_hoc_id` (`lich_hoc_id`,`ngay_nghi`),
+  CONSTRAINT `LichNghi_ibfk_1` FOREIGN KEY (`lich_hoc_id`) REFERENCES `LichHoc` (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `LichNghi`
+--
+
+LOCK TABLES `LichNghi` WRITE;
+/*!40000 ALTER TABLE `LichNghi` DISABLE KEYS */;
+INSERT INTO `LichNghi` VALUES (1,3,'2025-11-03','giảng viên nghỉ phép');
+/*!40000 ALTER TABLE `LichNghi` ENABLE KEYS */;
 UNLOCK TABLES;
 
 --
@@ -558,7 +582,7 @@ CREATE TABLE `LichSuDangKyHP` (
   PRIMARY KEY (`id`),
   KEY `LichSuDangKyHP_ibfk_1` (`dang_ky_id`),
   CONSTRAINT `LichSuDangKyHP_ibfk_1` FOREIGN KEY (`dang_ky_id`) REFERENCES `DangKyHocPhan` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=13 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=19 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -567,7 +591,7 @@ CREATE TABLE `LichSuDangKyHP` (
 
 LOCK TABLES `LichSuDangKyHP` WRITE;
 /*!40000 ALTER TABLE `LichSuDangKyHP` DISABLE KEYS */;
-INSERT INTO `LichSuDangKyHP` VALUES (4,4,'THEM','2025-11-05 09:14:46','Đăng ký qua API'),(5,5,'THEM','2025-11-05 09:19:30','Đăng ký qua API'),(10,6,'THEM','2025-11-07 16:43:23','Đăng ký qua API');
+INSERT INTO `LichSuDangKyHP` VALUES (4,4,'THEM','2025-11-05 09:14:46','Đăng ký qua API'),(5,5,'THEM','2025-11-05 09:19:30','Đăng ký qua API'),(13,8,'THEM','2025-11-08 08:32:32','Đăng ký qua API'),(16,10,'THEM','2025-11-08 11:28:35','Đăng ký qua API'),(18,11,'THEM','2025-11-08 11:57:48','Đăng ký qua API');
 /*!40000 ALTER TABLE `LichSuDangKyHP` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -630,7 +654,7 @@ CREATE TABLE `LopHocPhan` (
   CONSTRAINT `LopHocPhan_ibfk_1` FOREIGN KEY (`hoc_phan_id`) REFERENCES `HocPhan` (`id`),
   CONSTRAINT `LopHocPhan_ibfk_2` FOREIGN KEY (`giang_vien_id`) REFERENCES `GiangVien` (`id`),
   CONSTRAINT `LopHocPhan_ibfk_3` FOREIGN KEY (`lop_id`) REFERENCES `Lop` (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=10 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=11 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -639,7 +663,7 @@ CREATE TABLE `LopHocPhan` (
 
 LOCK TABLES `LopHocPhan` WRITE;
 /*!40000 ALTER TABLE `LopHocPhan` DISABLE KEYS */;
-INSERT INTO `LopHocPhan` VALUES (2,'DHKTPM17BTT-HP001',1,1,1,'HK1','2025-2026','Đang học','2025-08-11','2025-11-17',15,50,1,'MO_DK',NULL),(6,'DHKTPM17BTT-HP003',2,1,1,'HK1','2025-2026','Đang học','2025-08-13','2025-11-19',17,50,0,'MO_DK',NULL),(7,'DHHTTT17DTT-HP011',4,36,2,'HK1','2025-2026','Đang học','2025-08-22','2025-11-21',15,50,1,'MO_DK',NULL),(8,'DHKTPM17BTT-HP021',6,51,1,'HK1','2025-2026','Đang học','2025-12-08','2025-11-29',15,50,1,'MO_DK',NULL),(9,'DTT01',50,74,5,'HK1','2025-2026','Đang học','2025-04-20','2025-07-13',13,50,0,'MO_DK',NULL);
+INSERT INTO `LopHocPhan` VALUES (2,'DHKTPM17BTT-HP001',1,1,1,'HK1','2025-2026','Đang học','2025-08-11','2025-11-17',15,50,1,'MO_DK'),(6,'DHKTPM17BTT-HP003',2,1,1,'HK1','2025-2026','Đang học','2025-08-13','2025-11-19',17,50,1,'MO_DK'),(7,'DHHTTT17DTT-HP011',4,36,2,'HK1','2025-2026','Đang học','2025-08-22','2025-11-21',15,50,1,'MO_DK'),(8,'DHKTPM17BTT-HP021',6,51,1,'HK1','2025-2026','Đang học','2025-08-08','2025-11-29',15,50,2,'MO_DK'),(9,'DTT01',50,74,5,'HK1','2025-2026','Đang học','2025-04-20','2025-07-13',13,50,0,'MO_DK');
 /*!40000 ALTER TABLE `LopHocPhan` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -841,7 +865,7 @@ CREATE TABLE `TaiKhoan` (
 
 LOCK TABLES `TaiKhoan` WRITE;
 /*!40000 ALTER TABLE `TaiKhoan` DISABLE KEYS */;
-INSERT INTO `TaiKhoan` VALUES (1,'admin01','123456','Quản trị','Hoạt động','Nguyễn Văn A',1),(2,'gv001','123456','Giảng viên','Hoạt động','Nguyễn Test B',1),(3,'sv001','123456','Sinh viên','Hoạt động','Trần Thị B',1),(5,'30042003','$2b$10$73z4Ab2PNa0CVZ42H7nKY.KXYfxJv4qOoAhBIPTitxvyaMt.SnRZ.','Sinh viên','Hoạt động',NULL,1),(6,'SV555','$2b$10$ZyBZ6Msi5kFmng7iMPJ/UeoxZWQhdPDdOp0vM9TU7nSdjCPs2fjuC','Sinh viên','Hoạt động',NULL,1),(7,'SV556','$2b$10$OqA3nOKa/hObmy88WzUKheXT0ZtK2yLBwPW3d9XUcAIeX/.gTNQ/q','Sinh viên','Hoạt động',NULL,1),(8,'SV557','$2b$10$2FZMYOhyBAvPqGVSUWdhNOQfPNhqrA16cttnNxN7qH.NwptCNEiNC','Sinh viên','Hoạt động',NULL,0),(9,'SV558','$2b$10$TTFc9sD1G9b9Pz4ltYFUbObGiadIfHypUYzzZkdqdqe2BZcuD8Eva','Sinh viên','Hoạt động',NULL,0),(10,'SV559','$2b$10$1/GUMf2w48cGAFGbMXaHaeotmedXqUSLkeD51nL.NH6GA8SRSzV3G','Sinh viên','Hoạt động',NULL,0),(11,'SV560','$2b$10$VYDLZ28xAYBgNiPQIQ0JyekTxb7ltJphptUYXOX80b439nEnJY5LW','Sinh viên','Hoạt động',NULL,0),(12,'SV561','$2b$10$r/ul5Iq8yQkYlpsR.YDKwug7Eg/8E0BzDCPXbKD2YZG6IUigwt7Sm','Sinh viên','Hoạt động',NULL,0),(13,'SV562','$2b$10$SV7HAQJDNbtCEJJhEeZ5Lely1FYmYb6tn9YfAWCVlqVhGe1ei/Zde','Sinh viên','Hoạt động',NULL,0),(14,'SV563','$2b$10$uWe08sTIKTCXo4xJ/nooQ.kUXxGZuwo854454WRF3rC9h9i8Dybfe','Sinh viên','Hoạt động',NULL,0),(15,'GV300','$2b$10$ncswsDi10c2Ks19oDdySPe9dazVirq/MyJSrY11L1vA5W4v3l4/g.','Giảng viên','Hoạt động',NULL,0),(16,'GV301','$2b$10$dz0o.6D8PPPyd.dbob9TGOI1vT8ywryrT.8Sjr8bX402jpWpJaC/K','Giảng viên','Hoạt động',NULL,0),(17,'GV302','$2b$10$EvCAZiYo87rZMAgvtdq4de50q5SMXOR8MUJORWfExmwOuGYaR3Mte','Giảng viên','Hoạt động',NULL,0),(18,'GV303','$2b$10$BN4/LXSH9sDbyymdAM2Qn.eS/PBtNLjteNaV9jEbkZCD78Qf4HS5m','Giảng viên','Hoạt động',NULL,0),(21,'SV552','$2b$10$m9uuoXpKCgKLzoZQewkReOmEKw9dOvjEoFItIGlWxKiYbo30Xpyym','Sinh viên','Hoạt động',NULL,0),(22,'9999999999','$2b$10$705kPOXkotw.9l8YK4DCIeBtK5aSn3Q5.EqOYjGJl/t4lqZSgvujS','Sinh viên','Hoạt động',NULL,0),(23,'2131','$2b$10$e8sjhEOq17VM8lKo7dMbnOWy2Uh.cC4.Cah2rXVXkkMF0sN0XJUJO','Giảng viên','Hoạt động',NULL,1),(24,'2221','$2b$10$/AxvMNugYuQY73HS3IF1c.1i63xHmRTZRhDfxi8mDhEj.jGmyLctu','Giảng viên','Hoạt động',NULL,0),(25,'12312312','$2b$10$iXTp9OfG1PvYKqpBNy607OnTjd.QdJlA3.68w5i0dJVHIZ788O6cy','Giảng viên','Hoạt động',NULL,0),(27,'123123123','$2b$10$bQCp.xIBKz32K9k6jYttUu.jjZPdDoGhYtJhTNVaqqSJYM0eQRaJK','Giảng viên','Hoạt động','SDVSDV',0),(28,'989898989','$2b$10$xeF4UodgeDshTbBrGIx9j.jYoKKIZyiiiAXWXy/g0fzVVQKgU12w2','Sinh viên','Hoạt động','a',0),(29,'44444444444444','$2b$10$K4bKhE7V9hpcyKCHf0hKuuASbEydgFyCi2eZreQX/C6sk.OtC8LEi','Sinh viên','Hoạt động','test lần 4',1),(30,'12342132131','$2b$10$bgwOtUwo6feUr90NGhK.S.UUecgMY8lIKwlu0bzb0pAtC8sndEKwm','Giảng viên','Hoạt động','test lần 5',0),(31,'12','$2b$10$9LyHAxZ4s5bVfYFeXcXrk.zEOi5t.AYP3/n/psTIvefoqGDgMS7g.','Sinh viên','Hoạt động','thinh',1),(33,'sv002','$2b$10$P6DHhea9WSxQ.sw3LAiaJOhn/5yVDY0ov0W1RBveYLs7lhtcIyy4G','Sinh viên','Hoạt động','Phạm Văn C',1),(34,'2510','$2b$10$Y0NWAq8kuHoS6AhDgdtmteeVB5P2F5BeKUM02OHDtYZ.kZhFDGA.i','Sinh viên','Hoạt động','thinh',1),(35,'sv004','$2b$10$BfGOUpoYmeT7L4yMXPZgxeK8t9XxfrfBahdARMkGUjYgztFa.UW0W','Sinh viên','Hoạt động','test',1),(36,'456456','$2b$10$s2JX/wqrBrobcZeiSlcYduJdI08MtGpTDwSnxKVaNmsVur3IDfr/y','Sinh viên','Hoạt động','Thinh',1),(59,'112123','$2b$10$dSeLKl.h7IE6rXxgWXHgL.1Y52j.Bou1XzHhkh2x6EqyfJ.hOyq/G','Giảng viên','Hoạt động','dgfgdf',0),(63,'gv002','$2b$10$jgyqGGAtN.wuxIghD57WVegLHqIs2UxsHL0AB.wGaAnjscLFZVXCS','Giảng viên','Hoạt động','Nguyễn Test A',1),(70,'900','$2b$10$hSOIoYkOTrtGtZ67/q86zOqMrZ4t5aKd9cbSZO6qrZIIabSbxYxpW','Giảng viên','Hoạt động','thinh',0),(89,'GV450','$2b$10$kLYB6YJ.xabp5zWb7pRFxuVAOhHq9dkny2/TEifDMpP/oI2ohza6K','Giảng viên','Hoạt động','Nguyễn Văn A',0),(90,'GV451','$2b$10$80HFtye.gLigMCVPQeE4O.g1WiypwSzxBrSwRdbARWSLWTUTQ6woG','Giảng viên','Hoạt động','Nguyễn Văn A',0),(190,'SV0611','$2b$10$FE6chkEob5.uM4N1xJ4Sl.mgjYvnLX/ydoM.P8aRtwqublE9rM1UC','Sinh viên','Hoạt động','Nguyễn Tiến A',1),(191,'SV0612','123456','Sinh viên','Hoạt động','Nguyễn Tiến A',0),(192,'SV0613','123456','Sinh viên','Hoạt động','Nguyễn Tiến A',0),(193,'SV0614','123456','Sinh viên','Hoạt động','Nguyễn Tiến A',0),(200,'SV0711','$2b$10$8oyoqU/KiT3u09WhjpXFWOPGt/dWtoS3m6piOoEhjXzpe0JbHB3Gi','Sinh viên','Hoạt động','Như',1);
+INSERT INTO `TaiKhoan` VALUES (1,'admin01','123456','Quản trị','Hoạt động','Nguyễn Văn A',1),(2,'gv001','123456','Giảng viên','Hoạt động','Nguyễn Test B',1),(3,'sv001','$2b$10$Zf7NDI5n4051Qd4mQbBCpuZL43IuCUE2jdTm6cyzfsGOWibLfegt2','Sinh viên','Hoạt động','Trần Thị B',1),(5,'30042003','$2b$10$73z4Ab2PNa0CVZ42H7nKY.KXYfxJv4qOoAhBIPTitxvyaMt.SnRZ.','Sinh viên','Hoạt động',NULL,1),(6,'SV555','$2b$10$ZyBZ6Msi5kFmng7iMPJ/UeoxZWQhdPDdOp0vM9TU7nSdjCPs2fjuC','Sinh viên','Hoạt động',NULL,1),(7,'SV556','$2b$10$OqA3nOKa/hObmy88WzUKheXT0ZtK2yLBwPW3d9XUcAIeX/.gTNQ/q','Sinh viên','Hoạt động',NULL,1),(8,'SV557','$2b$10$2FZMYOhyBAvPqGVSUWdhNOQfPNhqrA16cttnNxN7qH.NwptCNEiNC','Sinh viên','Hoạt động',NULL,0),(9,'SV558','$2b$10$TTFc9sD1G9b9Pz4ltYFUbObGiadIfHypUYzzZkdqdqe2BZcuD8Eva','Sinh viên','Hoạt động',NULL,0),(10,'SV559','$2b$10$1/GUMf2w48cGAFGbMXaHaeotmedXqUSLkeD51nL.NH6GA8SRSzV3G','Sinh viên','Hoạt động',NULL,0),(11,'SV560','$2b$10$VYDLZ28xAYBgNiPQIQ0JyekTxb7ltJphptUYXOX80b439nEnJY5LW','Sinh viên','Hoạt động',NULL,0),(12,'SV561','$2b$10$r/ul5Iq8yQkYlpsR.YDKwug7Eg/8E0BzDCPXbKD2YZG6IUigwt7Sm','Sinh viên','Hoạt động',NULL,0),(13,'SV562','$2b$10$SV7HAQJDNbtCEJJhEeZ5Lely1FYmYb6tn9YfAWCVlqVhGe1ei/Zde','Sinh viên','Hoạt động',NULL,0),(14,'SV563','$2b$10$uWe08sTIKTCXo4xJ/nooQ.kUXxGZuwo854454WRF3rC9h9i8Dybfe','Sinh viên','Hoạt động',NULL,0),(15,'GV300','$2b$10$ncswsDi10c2Ks19oDdySPe9dazVirq/MyJSrY11L1vA5W4v3l4/g.','Giảng viên','Hoạt động',NULL,0),(16,'GV301','$2b$10$dz0o.6D8PPPyd.dbob9TGOI1vT8ywryrT.8Sjr8bX402jpWpJaC/K','Giảng viên','Hoạt động',NULL,0),(17,'GV302','$2b$10$EvCAZiYo87rZMAgvtdq4de50q5SMXOR8MUJORWfExmwOuGYaR3Mte','Giảng viên','Hoạt động',NULL,0),(18,'GV303','$2b$10$BN4/LXSH9sDbyymdAM2Qn.eS/PBtNLjteNaV9jEbkZCD78Qf4HS5m','Giảng viên','Hoạt động',NULL,0),(21,'SV552','$2b$10$m9uuoXpKCgKLzoZQewkReOmEKw9dOvjEoFItIGlWxKiYbo30Xpyym','Sinh viên','Hoạt động',NULL,0),(22,'9999999999','$2b$10$705kPOXkotw.9l8YK4DCIeBtK5aSn3Q5.EqOYjGJl/t4lqZSgvujS','Sinh viên','Hoạt động',NULL,0),(23,'2131','$2b$10$e8sjhEOq17VM8lKo7dMbnOWy2Uh.cC4.Cah2rXVXkkMF0sN0XJUJO','Giảng viên','Hoạt động',NULL,1),(24,'2221','$2b$10$/AxvMNugYuQY73HS3IF1c.1i63xHmRTZRhDfxi8mDhEj.jGmyLctu','Giảng viên','Hoạt động',NULL,0),(25,'12312312','$2b$10$iXTp9OfG1PvYKqpBNy607OnTjd.QdJlA3.68w5i0dJVHIZ788O6cy','Giảng viên','Hoạt động',NULL,0),(27,'123123123','$2b$10$bQCp.xIBKz32K9k6jYttUu.jjZPdDoGhYtJhTNVaqqSJYM0eQRaJK','Giảng viên','Hoạt động','SDVSDV',0),(28,'989898989','$2b$10$xeF4UodgeDshTbBrGIx9j.jYoKKIZyiiiAXWXy/g0fzVVQKgU12w2','Sinh viên','Hoạt động','a',0),(29,'44444444444444','$2b$10$K4bKhE7V9hpcyKCHf0hKuuASbEydgFyCi2eZreQX/C6sk.OtC8LEi','Sinh viên','Hoạt động','test lần 4',1),(30,'12342132131','$2b$10$bgwOtUwo6feUr90NGhK.S.UUecgMY8lIKwlu0bzb0pAtC8sndEKwm','Giảng viên','Hoạt động','test lần 5',0),(31,'12','$2b$10$9LyHAxZ4s5bVfYFeXcXrk.zEOi5t.AYP3/n/psTIvefoqGDgMS7g.','Sinh viên','Hoạt động','thinh',1),(33,'sv002','$2b$10$P6DHhea9WSxQ.sw3LAiaJOhn/5yVDY0ov0W1RBveYLs7lhtcIyy4G','Sinh viên','Hoạt động','Phạm Văn C',1),(34,'2510','$2b$10$Y0NWAq8kuHoS6AhDgdtmteeVB5P2F5BeKUM02OHDtYZ.kZhFDGA.i','Sinh viên','Hoạt động','thinh',1),(35,'sv004','$2b$10$BfGOUpoYmeT7L4yMXPZgxeK8t9XxfrfBahdARMkGUjYgztFa.UW0W','Sinh viên','Hoạt động','test',1),(36,'456456','$2b$10$s2JX/wqrBrobcZeiSlcYduJdI08MtGpTDwSnxKVaNmsVur3IDfr/y','Sinh viên','Hoạt động','Thinh',1),(59,'112123','$2b$10$dSeLKl.h7IE6rXxgWXHgL.1Y52j.Bou1XzHhkh2x6EqyfJ.hOyq/G','Giảng viên','Hoạt động','dgfgdf',0),(63,'gv002','$2b$10$jgyqGGAtN.wuxIghD57WVegLHqIs2UxsHL0AB.wGaAnjscLFZVXCS','Giảng viên','Hoạt động','Nguyễn Test A',1),(70,'900','$2b$10$hSOIoYkOTrtGtZ67/q86zOqMrZ4t5aKd9cbSZO6qrZIIabSbxYxpW','Giảng viên','Hoạt động','thinh',0),(89,'GV450','$2b$10$kLYB6YJ.xabp5zWb7pRFxuVAOhHq9dkny2/TEifDMpP/oI2ohza6K','Giảng viên','Hoạt động','Nguyễn Văn A',0),(90,'GV451','$2b$10$80HFtye.gLigMCVPQeE4O.g1WiypwSzxBrSwRdbARWSLWTUTQ6woG','Giảng viên','Hoạt động','Nguyễn Văn A',0),(190,'SV0611','$2b$10$FE6chkEob5.uM4N1xJ4Sl.mgjYvnLX/ydoM.P8aRtwqublE9rM1UC','Sinh viên','Hoạt động','Nguyễn Tiến A',1),(191,'SV0612','123456','Sinh viên','Hoạt động','Nguyễn Tiến A',0),(192,'SV0613','123456','Sinh viên','Hoạt động','Nguyễn Tiến A',0),(193,'SV0614','123456','Sinh viên','Hoạt động','Nguyễn Tiến A',0),(200,'SV0711','$2b$10$DAsdJWkyHJKd.Jt8/jvgROy3NPYIfVGLQjA.EvGmj1CPUPFd9GBYq','Sinh viên','Hoạt động','Như',1);
 /*!40000 ALTER TABLE `TaiKhoan` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -951,7 +975,7 @@ CREATE TABLE `ThongBao_DaDoc` (
   KEY `thong_bao_id` (`thong_bao_id`),
   CONSTRAINT `ThongBao_DaDoc_ibfk_1` FOREIGN KEY (`sinh_vien_id`) REFERENCES `SinhVien` (`id`),
   CONSTRAINT `ThongBao_DaDoc_ibfk_2` FOREIGN KEY (`thong_bao_id`) REFERENCES `ThongBao` (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=48 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=53 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -960,7 +984,7 @@ CREATE TABLE `ThongBao_DaDoc` (
 
 LOCK TABLES `ThongBao_DaDoc` WRITE;
 /*!40000 ALTER TABLE `ThongBao_DaDoc` DISABLE KEYS */;
-INSERT INTO `ThongBao_DaDoc` VALUES (1,1,1,'Đã đọc','2025-10-28 06:44:48'),(2,1,2,'Đã đọc','2025-10-29 03:55:39'),(3,1,3,'Đã đọc','2025-10-28 06:44:44'),(4,41,3,'Đã đọc','2025-10-28 06:45:57'),(5,41,1,'Đã đọc','2025-10-28 06:46:02'),(6,41,2,'Đã đọc','2025-10-28 06:46:05'),(7,38,3,'Đã đọc','2025-10-28 07:04:03'),(8,24,1,'Đã đọc','2025-10-28 07:16:55'),(9,24,3,'Đã đọc','2025-10-28 07:18:45'),(10,24,2,'Đã đọc','2025-10-28 07:18:52'),(18,1,4,'Đã đọc','2025-10-29 09:12:22'),(20,1,15,'Đã đọc','2025-10-29 09:12:12'),(21,44,15,'Đã đọc','2025-10-29 09:31:39'),(38,1,18,'Đã đọc','2025-11-07 06:19:21'),(44,1,25,'Đã đọc','2025-11-07 07:07:41'),(45,146,25,'Đã đọc','2025-11-07 07:17:46'),(46,146,18,'Đã đọc','2025-11-07 07:21:37'),(47,41,4,'Đã đọc','2025-11-08 03:41:05');
+INSERT INTO `ThongBao_DaDoc` VALUES (1,1,1,'Đã đọc','2025-10-28 06:44:48'),(2,1,2,'Đã đọc','2025-10-29 03:55:39'),(3,1,3,'Đã đọc','2025-10-28 06:44:44'),(4,41,3,'Đã đọc','2025-10-28 06:45:57'),(5,41,1,'Đã đọc','2025-10-28 06:46:02'),(6,41,2,'Đã đọc','2025-10-28 06:46:05'),(7,38,3,'Đã đọc','2025-10-28 07:04:03'),(8,24,1,'Đã đọc','2025-10-28 07:16:55'),(9,24,3,'Đã đọc','2025-10-28 07:18:45'),(10,24,2,'Đã đọc','2025-10-28 07:18:52'),(18,1,4,'Đã đọc','2025-10-29 09:12:22'),(20,1,15,'Đã đọc','2025-10-29 09:12:12'),(21,44,15,'Đã đọc','2025-10-29 09:31:39'),(38,1,18,'Đã đọc','2025-11-07 06:19:21'),(44,1,25,'Đã đọc','2025-11-07 07:07:41'),(45,146,25,'Đã đọc','2025-11-07 07:17:46'),(46,146,18,'Đã đọc','2025-11-07 07:21:37'),(47,41,4,'Đã đọc','2025-11-08 03:41:05'),(48,41,25,'Đã đọc','2025-11-08 06:42:56'),(49,41,15,'Đã đọc','2025-11-08 06:43:09'),(50,41,18,'Đã đọc','2025-11-08 06:43:12'),(51,146,15,'Đã đọc','2025-11-08 08:58:58'),(52,146,4,'Đã đọc','2025-11-08 08:59:01');
 /*!40000 ALTER TABLE `ThongBao_DaDoc` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -1011,4 +1035,4 @@ SET @@SESSION.SQL_LOG_BIN = @MYSQLDUMP_TEMP_LOG_BIN;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2025-11-08 11:59:46
+-- Dump completed on 2025-11-08 19:56:53

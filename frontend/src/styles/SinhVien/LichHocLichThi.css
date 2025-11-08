@@ -82,11 +82,11 @@
 /* Các ô dữ liệu */
 .lichhoc-table tbody td {
     min-width: 120px;
-    height: 120px;
-    /* ✅ Cố định chiều cao cho tất cả ô */
+    min-height: 90px;
+    /* ✅ Chiều cao tự động giãn ra theo nội dung */
     vertical-align: top;
     border: 1px solid #e5e7eb;
-    padding: 0;
+    padding: 8px;
     position: relative;
     background: transparent;
 }
@@ -107,7 +107,8 @@
     font-size: 15px;
     text-align: center;
     vertical-align: middle;
-    height: 120px;
+    min-height: 90px;
+    padding: 8px;
 }
 
 /* --- Các ô môn học --- */
@@ -121,8 +122,8 @@
     justify-content: center;
     align-items: flex-start;
     padding: 8px;
-    height: 100%;
-    /* ✅ chiếm toàn ô, không kéo dài hàng */
+    min-height: 80px;
+    /* ✅ Chiều cao tối thiểu, có thể giãn ra */
     box-sizing: border-box;
     overflow: hidden;
 }
@@ -181,4 +182,17 @@
 
 .monhoc-box.tamngung .fw-semibold {
     color: #fff;
+}
+
+/* ❌ Buổi nghỉ - Giống Tạm ngưng */
+.monhoc-box.nghi {
+    background-color: #ef5350 !important;
+    border: 2px solid #b71c1c !important;
+    color: white !important;
+    opacity: 0.9;
+}
+
+.monhoc-box.nghi .fw-semibold,
+.monhoc-box.nghi .small {
+    color: #fff !important;
 }

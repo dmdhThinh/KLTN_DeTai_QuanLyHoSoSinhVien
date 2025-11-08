@@ -23,12 +23,20 @@ export default function LichList() {
   const [error, setError] = useState(null)
   const [weekStart, setWeekStart] = useState(getMonday(new Date()))
   const [lopId, setLopId] = useState('')
+  const [lopHocPhanId, setLopHocPhanId] = useState('')
 
   const [lops, setLops] = useState([]);
+  const [lopHocPhans, setLopHocPhans] = useState([]);
   const [khoaId, setKhoaId] = useState('');
   const [nganhId, setNganhId] = useState('');
   const [nganhs, setNganhs] = useState([]);
   const [khoas, setKhoas] = useState([]);
+  
+  // State cho modal đánh dấu nghỉ
+  const [showNghiModal, setShowNghiModal] = useState(false)
+  const [selectedLich, setSelectedLich] = useState(null)
+  const [selectedNgay, setSelectedNgay] = useState(null)
+  const [lyDoNghi, setLyDoNghi] = useState('')
   
 
   const navigate = useNavigate()
@@ -48,6 +56,7 @@ export default function LichList() {
         .catch(() => setNganhs([]));
     } else {
       setNganhs([]);
+      setNganhId('');
     }
   }, [khoaId]);
 
@@ -59,8 +68,28 @@ export default function LichList() {
         .catch(() => setLops([]));
     } else {
       setLops([]);
+      setLopId('');
     }
   }, [nganhId]);
+
+  // 🚀 Load Lớp Học Phần based on selected Lớp
+  useEffect(() => {
+    if (lopId) {
+      console.log('🔍 Fetching LopHocPhan for lopId:', lopId);
+      apiFetch(`/api/lich-admin/combo/lophocphan?lopId=${lopId}`)
+        .then((data) => {
+          console.log('✅ LopHocPhan data received:', data);
+          setLopHocPhans(data || []);
+        })
+        .catch((err) => {
+          console.error('❌ Error fetching LopHocPhan:', err);
+          setLopHocPhans([]);
+        });
+    } else {
+      setLopHocPhans([]);
+      setLopHocPhanId('');
+    }
+  }, [lopId]);
 
 
 
@@ -76,9 +105,9 @@ export default function LichList() {
 
   const caHoc = ['Sáng', 'Chiều', 'Tối']
 
-  // 🧠 Gọi API lịch học (theo lớp, tuần)
+  // 🧠 Gọi API lịch học (theo lớp học phần, tuần)
 useEffect(() => {
-  if (!lopId) {
+  if (!lopHocPhanId) {
     setLich([])
     setLoading(false)
     return
@@ -90,10 +119,12 @@ useEffect(() => {
   const from = dayjs(weekStart).format('YYYY-MM-DD')
 
   Promise.all([
-    apiFetch(`/api/lich-admin/hoc?lopId=${lopId}&from=${from}`),
-    apiFetch(`/api/lich-admin/thi?lopId=${lopId}&from=${from}`)
+    apiFetch(`/api/lich-admin/hoc?lopHocPhanId=${lopHocPhanId}&from=${from}`),
+    apiFetch(`/api/lich-admin/thi?lopHocPhanId=${lopHocPhanId}&from=${from}`)
   ])
     .then(([hoc, thi]) => {
+      console.log('📚 Lịch học:', hoc)
+      console.log('📝 Lịch thi:', thi)
       // gộp lịch học + lịch thi vào cùng 1 mảng
       setLich([...(Array.isArray(hoc) ? hoc : []), ...(Array.isArray(thi) ? thi : [])])
     })
@@ -103,8 +134,40 @@ useEffect(() => {
       setLich([])
     })
     .finally(() => setLoading(false))
-}, [lopId, weekStart])
+}, [lopHocPhanId, weekStart])
 
+// Hàm đánh dấu nghỉ
+const handleDanhDauNghi = async () => {
+  if (!selectedLich || !selectedNgay) return
+  
+  try {
+    await apiFetch('/api/lich-nghi', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        lichHocId: selectedLich.id,
+        ngayNghi: selectedNgay,
+        lyDo: lyDoNghi
+      })
+    })
+    alert('Đã đánh dấu nghỉ thành công!')
+    setShowNghiModal(false)
+    setLyDoNghi('')
+    // Reload lịch
+    setLoading(true)
+    const from = dayjs(weekStart).format('YYYY-MM-DD')
+    Promise.all([
+      apiFetch(`/api/lich-admin/hoc?lopHocPhanId=${lopHocPhanId}&from=${from}`),
+      apiFetch(`/api/lich-admin/thi?lopHocPhanId=${lopHocPhanId}&from=${from}`)
+    ])
+      .then(([hoc, thi]) => {
+        setLich([...(Array.isArray(hoc) ? hoc : []), ...(Array.isArray(thi) ? thi : [])])
+      })
+      .finally(() => setLoading(false))
+  } catch (err) {
+    alert('Lỗi: ' + (err.message || 'Không thể đánh dấu nghỉ'))
+  }
+}
 
   return (
     <AdminLayout title="Lịch học của sinh viên" activeMenu="lich">
@@ -148,6 +211,7 @@ useEffect(() => {
           style={{ width: 200 }}
           value={nganhId}
           onChange={(e) => setNganhId(e.target.value)}
+          disabled={!khoaId}
         >
           <option value="">-- Chọn Ngành --</option>
           {nganhs.map((n) => (
@@ -162,11 +226,27 @@ useEffect(() => {
           style={{ width: 200 }}
           value={lopId}
           onChange={(e) => setLopId(e.target.value)}
+          disabled={!nganhId}
         >
           <option value="">-- Chọn Lớp --</option>
           {lops.map((l) => (
             <option key={l.id} value={l.id}>
               {l.tenLop}
+            </option>
+          ))}
+        </select>
+
+        <select
+          className="form-select"
+          style={{ width: 300 }}
+          value={lopHocPhanId}
+          onChange={(e) => setLopHocPhanId(e.target.value)}
+          disabled={!lopId}
+        >
+          <option value="">-- Chọn Lớp Học Phần --</option>
+          {lopHocPhans.map((lhp) => (
+            <option key={lhp.id} value={lhp.id}>
+              {lhp.ma_lop_hoc_phan} - {lhp.ten_hoc_phan} ({lhp.hoc_ky} {lhp.nam_hoc})
             </option>
           ))}
         </select>
@@ -241,7 +321,7 @@ useEffect(() => {
                   <tr key={ca}>
                     <td className="ca-cell">{ca}</td>
                     {days.map((d, i) => {
-                      const cell = lich.find((x) => {
+                      const cells = lich.filter((x) => {
   // Nếu là lịch học (có trường thu)
   if (x.thu) {
     return (
@@ -264,41 +344,67 @@ useEffect(() => {
                     
 
                       return (
-                        <td key={i}>
-
-                          {cell ? (
-                            <div
-  className={`monhoc-box ${cell.loai}`}
-  style={{ cursor: 'pointer' }}
-  onClick={() => navigate(`/admin/lich/edit/${cell.id}`)} 
-  title={
-    cell.loai === 'thi'
-      ? `Môn: ${cell.tenHocPhan}\nNgày thi: ${dayjs(cell.ngayHoc).format('DD/MM/YYYY')}\nCa: ${cell.ca}\nPhòng: ${cell.phong}\nGV: ${cell.tenGiangVien}`
-      : `Môn: ${cell.tenHocPhan}\nGV: ${cell.tenGiangVien}\nPhòng: ${cell.phong}`
-  }
->
-  <div className="fw-semibold">{cell.tenHocPhan}</div>
-  <div className="small text-muted">{cell.maLopHocPhan}</div>
-  {cell.loai === 'thi' ? (
-    <>
-      <div className="small">Phòng: {cell.phong}</div>
-      <div className="small">GV: {cell.tenGiangVien}</div>
-      <div className="small text-danger fw-semibold">(Thi)</div>
-    </>
-  ) : (
-    <>
-      <div className="small">
-        Tiết: {cell.tietBatDau} - {cell.tietKetThuc}
-      </div>
-      <div className="small">Phòng: {cell.phong}</div>
-      <div className="small">GV: {cell.tenGiangVien}</div>
-    </>
-  )}
-</div>
-
-                          ) : (
-                            <div style={{ height: 60 }}></div>
-                          )}
+                        <td key={i} style={{ padding: '8px', verticalAlign: 'top' }}>
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                            {cells.map((cell) => {
+                              // Kiểm tra xem ngày hiện tại có trong danh sách ngày nghỉ không
+                              const isNghi = cell.danhSachNgayNghi && cell.danhSachNgayNghi.includes(d.date.split('/').reverse().join('-'))
+                              
+                              return (
+                              <div
+                                key={cell.id}
+                                className={`monhoc-box ${cell.loai} ${isNghi ? 'nghi' : ''}`}
+                                style={{ cursor: 'pointer', minHeight: '80px', position: 'relative' }}
+                                onClick={() => navigate(`/admin/lich/edit/${cell.id}`)}
+                                title={
+                                  cell.loai === 'thi'
+                                    ? `Môn: ${cell.tenHocPhan}\nNgày thi: ${dayjs(cell.ngayHoc).format('DD/MM/YYYY')}\nCa: ${cell.ca}\nPhòng: ${cell.phong}\nGV: ${cell.tenGiangVien}`
+                                    : `Môn: ${cell.tenHocPhan}\nGV: ${cell.tenGiangVien}\nPhòng: ${cell.phong}\n${isNghi ? '⚠️ Buổi này đã nghỉ' : 'Click nút ❌ để đánh dấu nghỉ'}`
+                                }
+                              >
+                                <div className="fw-semibold">{cell.tenHocPhan}</div>
+                                <div className="small text-muted">{cell.maLopHocPhan}</div>
+                                {cell.loai === 'thi' ? (
+                                  <>
+                                    <div className="small">
+                                      Tiết: {cell.tietBatDau} - {cell.tietKetThuc}
+                                    </div>
+                                    <div className="small">Phòng: {cell.phong}</div>
+                                    <div className="small">GV: {cell.tenGiangVien}</div>
+                                    <div className="small text-danger fw-semibold">(Thi)</div>
+                                  </>
+                                ) : (
+                                  <>
+                                    <div className="small">
+                                      Tiết: {cell.tietBatDau} - {cell.tietKetThuc}
+                                    </div>
+                                    <div className="small">Phòng: {cell.phong}</div>
+                                    <div className="small">GV: {cell.tenGiangVien}</div>
+                                  </>
+                                )}
+                                {isNghi ? (
+                                  <div className="small text-danger fw-bold">❌ Nghỉ</div>
+                                ) : (
+                                  // Chỉ hiển thị nút nghỉ cho lịch học thường (không phải thi, không có ngày cụ thể)
+                                  cell.loai !== 'thi' && !cell.ngayHoc && (
+                                    <button
+                                      className="btn btn-sm btn-outline-danger mt-2"
+                                      style={{ fontSize: '11px', padding: '2px 6px' }}
+                                      onClick={(e) => {
+                                        e.stopPropagation()
+                                        setSelectedLich(cell)
+                                        setSelectedNgay(d.dateObj.toISOString().split('T')[0])
+                                        setShowNghiModal(true)
+                                      }}
+                                    >
+                                      ❌ Nghỉ buổi này
+                                    </button>
+                                  )
+                                )}
+                              </div>
+                            )}
+                            )}
+                          </div>
                         </td>
                       )
                     })}
@@ -334,6 +440,42 @@ useEffect(() => {
             <span style={{ background: '#ef5350', border: '1px solid #b71c1c' }}></span> Tạm ngưng
           </div>
         </div>
+
+        {/* Modal đánh dấu nghỉ */}
+        {showNghiModal && (
+          <div className="modal fade show d-block" style={{ background: 'rgba(0,0,0,0.5)' }}>
+            <div className="modal-dialog">
+              <div className="modal-content">
+                <div className="modal-header bg-warning">
+                  <h5 className="modal-title">Đánh dấu buổi nghỉ</h5>
+                  <button className="btn-close" onClick={() => setShowNghiModal(false)}></button>
+                </div>
+                <div className="modal-body">
+                  <p><strong>Môn học:</strong> {selectedLich?.tenHocPhan}</p>
+                  <p><strong>Ngày:</strong> {dayjs(selectedNgay).format('DD/MM/YYYY')}</p>
+                  <div className="mb-3">
+                    <label className="form-label">Lý do nghỉ:</label>
+                    <textarea 
+                      className="form-control" 
+                      rows="3"
+                      value={lyDoNghi}
+                      onChange={(e) => setLyDoNghi(e.target.value)}
+                      placeholder="Ví dụ: Giảng viên nghỉ phép, Lễ Quốc khánh..."
+                    ></textarea>
+                  </div>
+                </div>
+                <div className="modal-footer">
+                  <button className="btn btn-secondary" onClick={() => setShowNghiModal(false)}>
+                    Hủy
+                  </button>
+                  <button className="btn btn-warning" onClick={handleDanhDauNghi}>
+                    Đánh dấu nghỉ
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </AdminLayout>
   )

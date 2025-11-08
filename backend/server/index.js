@@ -16,6 +16,7 @@ import nganhRoutes from './routes/nganh.js'
 import lopRoutes from './routes/lop.js'
 
 import lichAdminRoutes from './routes/lichAdmin.js'
+import lichNghiRoutes from './routes/lichNghi.js'
 import lophocphanRoutes from './routes/lopHocPhan.js'
 
 import hocphanRoutes from './routes/hocphan.js'
@@ -52,6 +53,7 @@ app.use('/api/giangviens', giangvienRoutes)
 app.use('/api/import', importGiangVienRoutes)
 app.use('/api/taikhoan', taiKhoanRoutes)
 app.use('/api/lich', lichRoutes) 
+app.use('/api/lich-nghi', lichNghiRoutes)
 
 app.use('/api/khoa', khoaRoutes)
 app.use('/api/nganh', nganhRoutes)
