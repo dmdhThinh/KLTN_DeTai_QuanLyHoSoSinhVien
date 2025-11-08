@@ -237,6 +237,13 @@ export async function cancelRegistration({ dangKyId }) {
     const d = rows[0]
     if (!d) throw bizError('Không tìm thấy đăng ký')
 
+    // Kiểm tra trạng thái lớp học phần
+    const [lhpRows] = await conn.execute(`SELECT trang_thai FROM LopHocPhan WHERE id = ?`, [d.lop_hoc_phan_id])
+    const lhp = lhpRows[0]
+    if (lhp && lhp.trang_thai === 'Chấp nhận mở lớp') {
+      throw bizError('Không thể hủy đăng ký. Lớp đã được chấp nhận mở lớp.')
+    }
+
     // (Tùy chọn) kiểm tra đợt vẫn đang mở nếu bạn muốn
     const [dots] = await conn.execute(`SELECT * FROM DotDangKy WHERE id = ?`, [d.dot_dang_ky_id])
     const dot = dots[0]

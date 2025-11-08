@@ -29,7 +29,7 @@ export default function EditLopHocPhan() {
     lopId: '',
     hocKy: 'HK1',
     namHoc: '2025-2026',
-    trangThai: 'Đang học',
+    trangThai: 'Chấp nhận mở lớp',
     ngayBatDau: '',
     ngayKetThuc: '',
     soTuanHoc: ''
@@ -76,7 +76,7 @@ export default function EditLopHocPhan() {
         lopId: lhpData.lop_id || lhpData.lopId || '',
         hocKy: lhpData.hoc_ky || lhpData.hocKy || 'HK1',
         namHoc: lhpData.nam_hoc || lhpData.namHoc || '',
-        trangThai: lhpData.trang_thai || lhpData.trangThai || 'Đang học',
+        trangThai: lhpData.trang_thai || lhpData.trangThai || 'Chấp nhận mở lớp',
         ngayBatDau: lhpData.ngay_bat_dau ? lhpData.ngay_bat_dau.substring(0, 10) : '',
         ngayKetThuc: lhpData.ngay_ket_thuc ? lhpData.ngay_ket_thuc.substring(0, 10) : '',
         soTuanHoc: lhpData.so_tuan_hoc || ''
@@ -276,9 +276,9 @@ export default function EditLopHocPhan() {
                 <label className="form-label">Trạng thái</label>
                 <select className="form-select" value={form.trangThai}
                   onChange={(e) => handleChange('trangThai', e.target.value)}>
-                  <option value="Đang học">Đang học</option>
-                  <option value="Đã kết thúc">Đã kết thúc</option>
-                  <option value="Chưa mở">Chưa mở</option>
+                  <option value="Chờ sinh viên đăng ký">Chờ sinh viên đăng ký</option>
+                  <option value="Chấp nhận mở lớp">Chấp nhận mở lớp</option>
+                  <option value="Hủy mở lớp">Hủy mở lớp</option>
                 </select>
               </div>
 

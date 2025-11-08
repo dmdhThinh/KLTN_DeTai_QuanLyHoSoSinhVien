@@ -67,7 +67,7 @@ function ChiTietLopHocPhan({ lhp, onClose, onRegister }) {
           </div>
           <div className="modal-footer">
             <button className="btn btn-secondary" onClick={onClose}>Đóng</button>
-            <button className="btn btn-success" onClick={() => onRegister(lhp)}>Đăng ký</button>
+            
           </div>
         </div>
       </div>
@@ -83,6 +83,8 @@ export default function DkhpPage() {
   const [selectedHP, setSelectedHP] = useState(null);
   const [selectedLhp, setSelectedLhp] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [message, setMessage] = useState(''); // Thông báo thành công/lỗi
+  const [messageType, setMessageType] = useState(''); // 'success' hoặc 'error'
   const sinhVienId = getSinhVienId();
   
   // Dropdown chọn học kỳ, năm học
@@ -96,6 +98,8 @@ export default function DkhpPage() {
 const [selectedClass, setSelectedClass] = useState(null);     // lớp học phần đã chọn ở bảng giữa
 const [classDetail, setClassDetail] = useState({ header: null, lich: [] }); // lịch chi tiết lớp
 const [openMenuId, setOpenMenuId] = useState(null);
+const [confirmCancel, setConfirmCancel] = useState(null); // { dangKyId, lopHocPhanId } cần hủy
+const [errorModal, setErrorModal] = useState(null); // Hiển thị lỗi không thể hủy
 useEffect(() => {
   const close = () => setOpenMenuId(null);
   document.addEventListener('click', close);
@@ -140,7 +144,8 @@ const loadClassDetail = async (lop) => {
         setPendingHP(pend);
       } catch (err) {
         console.error(err);
-        alert('Lỗi tải dữ liệu: ' + (err.message || 'Unknown error'));
+        setMessage('Lỗi tải dữ liệu: ' + (err.message || 'Unknown error'));
+        setMessageType('error');
       } finally {
         setLoading(false);
       }
@@ -153,11 +158,11 @@ const loadClassDetail = async (lop) => {
   const handleRegister = async (lhp) => {
   // Kiểm tra trùng lịch
   if (lhp.xung_dot_lich) {
-    alert('⚠️ CẢNH BÁO: Lớp học phần này trùng lịch với các môn bạn đã đăng ký!\n\nVui lòng chọn lớp học phần khác.');
+    setMessage('⚠️ CẢNH BÁO: Lớp học phần này trùng lịch với các môn bạn đã đăng ký! Vui lòng chọn lớp học phần khác.');
+    setMessageType('error');
+    setTimeout(() => setMessage(''), 5000);
     return;
   }
-  
-  if (!window.confirm('Xác nhận đăng ký lớp này?')) return;
 
   try {
     // Gọi API đăng ký
@@ -173,7 +178,9 @@ const loadClassDetail = async (lop) => {
     });
 
     // Thông báo nhẹ
-    alert('Đăng ký thành công!');
+    setMessage('✅ Đăng ký thành công!');
+    setMessageType('success');
+    setTimeout(() => setMessage(''), 3000);
 
     // ---- REFRESH dữ liệu để cập nhật "Đã đăng ký" + disable nút nếu hết chỗ ----
     // available: lớp đang mở trong kỳ
@@ -204,16 +211,20 @@ const loadClassDetail = async (lop) => {
     } catch (_) {
       if (err.message) msg = err.message;
     }
-    alert(msg);
+    setMessage(msg);
+    setMessageType('error');
+    setTimeout(() => setMessage(''), 5000);
   }
 };
 
 
   // Hủy đăng ký
  // HỦY ĐĂNG KÝ: xoá ngay trên UI + refetch lại dữ liệu
-const handleCancel = async (dangKyId, lopHocPhanId) => {
-  if (!window.confirm('Hủy đăng ký lớp này?')) return;
-
+const handleCancel = async () => {
+  if (!confirmCancel) return;
+  const { dangKyId, lopHocPhanId } = confirmCancel;
+  setConfirmCancel(null);
+  
   try {
     await apiFetch(`/api/dkhp/register/${dangKyId}`, { method: 'DELETE' });
 
@@ -234,9 +245,24 @@ const handleCancel = async (dangKyId, lopHocPhanId) => {
       setClassDetail(detail);
     }
 
-    alert('Đã hủy!');
+    setMessage('✅ Đã hủy đăng ký thành công!');
+    setMessageType('success');
+    setTimeout(() => setMessage(''), 3000);
   } catch (err) {
-    alert(err?.message || 'Lỗi hủy');
+    // Parse message nếu backend trả về JSON string
+    let errorMessage = err.message || 'Lỗi khi hủy đăng ký';
+    try {
+      const parsed = JSON.parse(errorMessage);
+      if (parsed.message) errorMessage = parsed.message;
+    } catch (_) {
+      // Nếu không parse được JSON, dùng message gốc
+    }
+    
+    // Hiển thị modal lỗi
+    setErrorModal({
+      title: '⚠️ Không thể hủy đăng ký',
+      message: errorMessage
+    });
   }
 };
 
@@ -258,6 +284,14 @@ const getDaDangKy = (l) => {
     <StudentLayout title="Đăng ký học phần">
       <div className="container-fluid py-4">
         <h3 className="text-center text-primary mb-4">ĐĂNG KÝ HỌC PHẦN</h3>
+        
+        {/* Thông báo thành công/lỗi */}
+        {message && (
+          <div className={`alert alert-${messageType === 'success' ? 'success' : 'danger'} alert-dismissible fade show`} role="alert">
+            {message}
+            <button type="button" className="btn-close" onClick={() => setMessage('')}></button>
+          </div>
+        )}
         
         {/* Header: Dropdown chọn học kỳ, năm học */}
         <div className="row mb-4 align-items-center">
@@ -579,7 +613,7 @@ const getDaDangKy = (l) => {
         className="dropdown-item text-danger"
         onClick={() => {
           setOpenMenuId(null);
-          handleCancel(r.id, r.lop_hoc_phan_id);
+          setConfirmCancel({ dangKyId: r.id, lopHocPhanId: r.lop_hoc_phan_id });
         }}
       >
         Hủy đăng ký
@@ -614,6 +648,62 @@ const getDaDangKy = (l) => {
                 onClose={() => setSelectedLhp(null)}
                 onRegister={handleRegister}
               />
+            )}
+
+            {/* Modal xác nhận hủy đăng ký */}
+            {confirmCancel && (
+              <div className="modal show d-block" style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}>
+                <div className="modal-dialog modal-dialog-centered">
+                  <div className="modal-content">
+                    <div className="modal-header bg-danger text-white">
+                      <h5 className="modal-title">⚠️ Xác nhận hủy đăng ký</h5>
+                      <button type="button" className="btn-close btn-close-white" onClick={() => setConfirmCancel(null)}></button>
+                    </div>
+                    <div className="modal-body">
+                      <p className="mb-2"><strong>Bạn có chắc chắn muốn hủy đăng ký lớp học phần này?</strong></p>
+                      <p className="text-muted mb-0">
+                        <small>⚠️ Hành động này không thể hoàn tác. Bạn sẽ phải đăng ký lại nếu muốn học lớp này.</small>
+                      </p>
+                    </div>
+                    <div className="modal-footer">
+                      <button className="btn btn-secondary" onClick={() => setConfirmCancel(null)}>
+                        Không, giữ lại
+                      </button>
+                      <button className="btn btn-danger" onClick={handleCancel}>
+                        <i className="bi bi-trash me-1"></i> Xác nhận hủy
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Modal hiển thị lỗi không thể hủy */}
+            {errorModal && (
+              <div className="modal show d-block" style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}>
+                <div className="modal-dialog modal-dialog-centered">
+                  <div className="modal-content">
+                    <div className="modal-header bg-danger text-white">
+                      <h5 className="modal-title">{errorModal.title}</h5>
+                      <button type="button" className="btn-close btn-close-white" onClick={() => setErrorModal(null)}></button>
+                    </div>
+                    <div className="modal-body">
+                      <p className="mb-3">
+                        <i className="bi bi-exclamation-circle-fill text-danger me-2"></i>
+                        <strong>{errorModal.message}</strong>
+                      </p>
+                      <p className="text-muted mb-0">
+                        <small>💡 <strong>Lưu ý:</strong> Lớp học phần đã được chấp nhận mở không thể hủy đăng ký. Vui lòng liên hệ phòng đào tạo nếu cần hỗ trợ.</small>
+                      </p>
+                    </div>
+                    <div className="modal-footer">
+                      <button className="btn btn-secondary" onClick={() => setErrorModal(null)}>
+                        Đóng
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
             )}
           </>
         )}
