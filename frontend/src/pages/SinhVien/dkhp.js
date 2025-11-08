@@ -75,6 +75,11 @@ export default function DkhpPage() {
   const [selectedLhp, setSelectedLhp] = useState(null);
   const [loading, setLoading] = useState(true);
   const sinhVienId = getSinhVienId();
+  
+  // Dropdown chọn học kỳ, năm học
+  const [selectedHocKy, setSelectedHocKy] = useState('HK1');
+  const [selectedNamHoc, setSelectedNamHoc] = useState('2025-2026');
+  
   // state mới
 const [selectedClass, setSelectedClass] = useState(null);     // lớp học phần đã chọn ở bảng giữa
 const [classDetail, setClassDetail] = useState({ header: null, lich: [] }); // lịch chi tiết lớp
@@ -100,7 +105,7 @@ const loadClassDetail = async (lop) => {
 };
 
 
-  // Load dữ liệu
+  // Load dữ liệu khi thay đổi học kỳ/năm học
   useEffect(() => {
     if (!sinhVienId) {
       setLoading(false);
@@ -112,16 +117,15 @@ const loadClassDetail = async (lop) => {
         const d = await apiFetch('/api/dkhp/dot/current');
         setDot(d);
 
-        if (d) {
-          const [avail, regs, pend] = await Promise.all([
-            apiFetch(`/api/dkhp/available?sinh_vien_id=${sinhVienId}&hoc_ky=${d.hoc_ky}&nam_hoc=${d.nam_hoc}&dot_dang_ky_id=${d.id}`),
-            apiFetch(`/api/dkhp/my?sinh_vien_id=${sinhVienId}&dot_dang_ky_id=${d.id}`),
-            apiFetch(`/api/dkhp/hp/pending?sinh_vien_id=${sinhVienId}&hoc_ky=${d.hoc_ky}&nam_hoc=${d.nam_hoc}&dot_dang_ky_id=${d.id}`)
-          ]);
-          setAvailable(avail);
-          setRegistered(regs);
-          setPendingHP(pend);
-        }
+        // Sử dụng học kỳ/năm học từ dropdown
+        const [avail, regs, pend] = await Promise.all([
+          apiFetch(`/api/dkhp/available?sinh_vien_id=${sinhVienId}&hoc_ky=${selectedHocKy}&nam_hoc=${selectedNamHoc}&dot_dang_ky_id=${d?.id || ''}`),
+          apiFetch(`/api/dkhp/my?sinh_vien_id=${sinhVienId}&dot_dang_ky_id=${d?.id || ''}`),
+          apiFetch(`/api/dkhp/hp/pending?sinh_vien_id=${sinhVienId}&hoc_ky=${selectedHocKy}&nam_hoc=${selectedNamHoc}&dot_dang_ky_id=${d?.id || ''}`)
+        ]);
+        setAvailable(avail);
+        setRegistered(regs);
+        setPendingHP(pend);
       } catch (err) {
         console.error(err);
         alert('Lỗi tải dữ liệu: ' + (err.message || 'Unknown error'));
@@ -131,7 +135,7 @@ const loadClassDetail = async (lop) => {
     };
 
     load();
-  }, [sinhVienId]);
+  }, [sinhVienId, selectedHocKy, selectedNamHoc]);
 
   // Đăng ký
   const handleRegister = async (lhp) => {
@@ -156,13 +160,13 @@ const loadClassDetail = async (lop) => {
     // ---- REFRESH dữ liệu để cập nhật "Đã đăng ký" + disable nút nếu hết chỗ ----
     // available: lớp đang mở trong kỳ
     const avail = await apiFetch(
-      `/api/dkhp/available?sinh_vien_id=${sinhVienId}&hoc_ky=${dot.hoc_ky}&nam_hoc=${dot.nam_hoc}&dot_dang_ky_id=${dot.id}`
+      `/api/dkhp/available?sinh_vien_id=${sinhVienId}&hoc_ky=${selectedHocKy}&nam_hoc=${selectedNamHoc}&dot_dang_ky_id=${dot?.id || ''}`
     );
     setAvailable(avail);
 
     // registered: các lớp SV đã đăng ký trong kỳ này
     const regs = await apiFetch(
-      `/api/dkhp/my?sinh_vien_id=${sinhVienId}&dot_dang_ky_id=${dot.id}`
+      `/api/dkhp/my?sinh_vien_id=${sinhVienId}&dot_dang_ky_id=${dot?.id || ''}`
     );
     setRegistered(regs);
 
@@ -200,8 +204,8 @@ const handleCancel = async (dangKyId, lopHocPhanId) => {
 
     // 2) Refetch lại 2 danh sách để đồng bộ số "Đã đăng ký"/slot
     const [avail, regs] = await Promise.all([
-      apiFetch(`/api/dkhp/available?sinh_vien_id=${sinhVienId}&hoc_ky=${dot.hoc_ky}&nam_hoc=${dot.nam_hoc}&dot_dang_ky_id=${dot.id}`),
-      apiFetch(`/api/dkhp/my?sinh_vien_id=${sinhVienId}&dot_dang_ky_id=${dot.id}`)
+      apiFetch(`/api/dkhp/available?sinh_vien_id=${sinhVienId}&hoc_ky=${selectedHocKy}&nam_hoc=${selectedNamHoc}&dot_dang_ky_id=${dot?.id || ''}`),
+      apiFetch(`/api/dkhp/my?sinh_vien_id=${sinhVienId}&dot_dang_ky_id=${dot?.id || ''}`)
     ]);
     setAvailable(avail);
     setRegistered(regs);
@@ -235,14 +239,61 @@ const getDaDangKy = (l) => {
     
     <StudentLayout title="Đăng ký học phần">
       <div className="container-fluid py-4">
-        {/* Header */}
-        <div className="d-flex justify-content-between align-items-center mb-4">
+        <h3 className="text-center text-primary mb-4">ĐĂNG KÝ HỌC PHẦN</h3>
+        
+        {/* Header: Dropdown chọn học kỳ, năm học */}
+        <div className="row mb-4 align-items-center">
+          <div className="col-md-6">
+            <div className="d-flex gap-3 align-items-center">
+              <label className="fw-bold" style={{ minWidth: '120px' }}>Đợt đăng ký</label>
+              
+              {/* Dropdown Học kỳ */}
+              <select 
+                className="form-select" 
+                style={{ width: '150px' }}
+                value={selectedHocKy}
+                onChange={(e) => setSelectedHocKy(e.target.value)}
+              >
+                <option value="HK1">HK1</option>
+                <option value="HK2">HK2</option>
+                <option value="HK3">HK3</option>
+              </select>
+              
+              {/* Dropdown Năm học */}
+              <select 
+                className="form-select" 
+                style={{ width: '180px' }}
+                value={selectedNamHoc}
+                onChange={(e) => setSelectedNamHoc(e.target.value)}
+              >
+                <option value="2024-2025">2024 - 2025</option>
+                <option value="2025-2026">2025 - 2026</option>
+                <option value="2026-2027">2026 - 2027</option>
+              </select>
+            </div>
+          </div>
           
-          <div className="form-check">
-            <input className="form-check-input" type="checkbox" id="hienThiKoTrung" />
-            <label className="form-check-label" htmlFor="hienThiKoTrung">
-              Hiện thị lớp học phần không trùng lịch
-            </label>
+          <div className="col-md-6">
+            <div className="d-flex gap-3">
+              <div className="form-check">
+                <input className="form-check-input" type="radio" name="loaiDK" id="hocMoi" defaultChecked />
+                <label className="form-check-label" htmlFor="hocMoi">
+                  HỌC MỚI
+                </label>
+              </div>
+              <div className="form-check">
+                <input className="form-check-input" type="radio" name="loaiDK" id="hocLai" />
+                <label className="form-check-label" htmlFor="hocLai">
+                  HỌC LẠI
+                </label>
+              </div>
+              <div className="form-check">
+                <input className="form-check-input" type="radio" name="loaiDK" id="hocCaiThien" />
+                <label className="form-check-label" htmlFor="hocCaiThien">
+                  HỌC CẢI THIỆN
+                </label>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -361,16 +412,6 @@ const getDaDangKy = (l) => {
     <div className="p-3 text-muted">Hãy chọn 1 lớp học phần ở bảng trên.</div>
   ) : (
     <>
-      <div className="p-3">
-      
-        <div className="d-flex gap-2 mb-2">
-          <select className="form-select" style={{maxWidth:240}}>
-            <option>Nhóm thực hành</option>
-          </select>
-          <button className="btn btn-outline-warning">Xem lịch trùng</button>
-        </div>
-      </div>
-
       <div className="table-responsive">
         <table className="table table-bordered table-sm mb-0">
           <thead className="table-primary">
@@ -435,7 +476,6 @@ const getDaDangKy = (l) => {
                       <th>Tên môn học</th>
                      
                       <th>Số TC</th>
-                      <th>Nhóm TH</th>
                       <th>Học phí</th>
                       <th>Hạn nộp</th>
                       <th>Thu</th>
@@ -446,7 +486,7 @@ const getDaDangKy = (l) => {
                   </thead>
                   <tbody>
                     {registered.length === 0 ? (
-                      <tr><td colSpan="13" className="text-center text-muted">Chưa đăng ký lớp nào</td></tr>
+                      <tr><td colSpan="11" className="text-center text-muted">Chưa đăng ký lớp nào</td></tr>
                     ) : (
                       registered.map((r, i) => (
                         <tr key={r.id}>
@@ -494,7 +534,6 @@ const getDaDangKy = (l) => {
                           <td>{r.ten_hoc_phan}</td>
                           
                           <td>{r.so_tc || ''}</td>
-                          <td>{r.nhom_th || ''}</td>
                           <td>{r.hoc_phi ? `${r.hoc_phi.toLocaleString()}đ` : ''}</td>
                           <td>{r.han_nop ? dayjs(r.han_nop).format('DD/MM/YYYY') : ''}</td>
                           <td>{r.lan_thu || ''}</td>

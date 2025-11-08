@@ -16,7 +16,17 @@ export async function getCurrentDot() {
 
 // ------ Danh sách LHP khả dụng trong kỳ ------
 export async function listAvailableLHP({ sinh_vien_id, hoc_ky, nam_hoc, dot_dang_ky_id }) {
-  // Lấy lớp đang mở đăng ký trong kỳ
+  // Lấy danh sách học phần mà sinh viên ĐÃ đăng ký trong đợt này
+  const [registeredHP] = await pool.execute(
+    `SELECT DISTINCT lhp.hoc_phan_id
+     FROM DangKyHocPhan d
+     JOIN LopHocPhan lhp ON lhp.id = d.lop_hoc_phan_id
+     WHERE d.sinh_vien_id = ? AND d.dot_dang_ky_id = ? AND d.trang_thai_dk <> 'HUY'`,
+    [sinh_vien_id, dot_dang_ky_id || null]
+  )
+  const registeredHPIds = registeredHP.map(r => r.hoc_phan_id)
+  
+  // Lấy TẤT CẢ lớp học phần đang mở đăng ký trong kỳ
   const [lhps] = await pool.execute(
     `SELECT lhp.*, hp.ten_hoc_phan AS ten_hoc_phan,
             (SELECT COUNT(*) FROM DangKyHocPhan d
@@ -30,6 +40,9 @@ export async function listAvailableLHP({ sinh_vien_id, hoc_ky, nam_hoc, dot_dang
   const out = []
   for (const l of lhps) {
     const remain = (l.si_so_toi_da ?? 50) - (l.so_dk ?? 0)
+
+    // Check đã đăng ký học phần này chưa
+    const daCoHocPhan = registeredHPIds.includes(l.hoc_phan_id)
 
     // check xung đột lịch với các lớp đã DK trong cùng đợt (nếu truyền vào), nếu không thì check với tất cả đang active của SV
     const params = [l.id, sinh_vien_id]
@@ -57,7 +70,8 @@ export async function listAvailableLHP({ sinh_vien_id, hoc_ky, nam_hoc, dot_dang
       ...l,
       slot_con: remain,
       xung_dot_lich: conflictRows.length > 0,
-      du_dieu_kien: prereqOk
+      du_dieu_kien: prereqOk,
+      da_dang_ky_hoc_phan: daCoHocPhan // Thêm flag này
     })
   }
   return out
@@ -119,6 +133,16 @@ export async function registerLHP({
     const lhp = lhpRows[0]
     if (!lhp) throw bizError('Không tìm thấy lớp học phần')
     if (lhp.trang_thai_dk !== 'MO_DK') throw bizError('Lớp chưa mở đăng ký hoặc đã khóa', { trang_thai_dk: lhp.trang_thai_dk })
+    
+    // 3) Kiểm tra đã đăng ký học phần này (bất kỳ lớp nào) trong đợt này chưa
+    const [existingHP] = await conn.execute(
+      `SELECT 1 FROM DangKyHocPhan d
+       JOIN LopHocPhan lhp2 ON lhp2.id = d.lop_hoc_phan_id
+       WHERE d.sinh_vien_id = ? AND lhp2.hoc_phan_id = ? AND d.dot_dang_ky_id = ?
+       LIMIT 1`,
+      [sinh_vien_id, lhp.hoc_phan_id, dot.id]
+    )
+    if (existingHP.length) throw bizError('Bạn đã đăng ký học phần này rồi')
 
     // 3) Sĩ số (đếm bản ghi đăng ký thực sự tồn tại, vì hủy = xóa dòng)
     const [[{ so_dk }]] = await conn.execute(
@@ -297,7 +321,7 @@ export async function listPendingCourses({ sinh_vien_id, hoc_ky, nam_hoc, dot_da
 export async function getClassSchedule(lopHocPhanId) {
   // Header lớp + giảng viên + thời gian
   const [h] = await pool.execute(
-    `SELECT lhp.id, lhp.ma_lop_hoc_phan, lhp.hoc_ky, lhp.nam_hoc, lhp.nhom_th,
+    `SELECT lhp.id, lhp.ma_lop_hoc_phan, lhp.hoc_ky, lhp.nam_hoc,
             lhp.ngay_bat_dau, lhp.ngay_ket_thuc, hp.ten_hoc_phan,
             gv.ho_ten AS giang_vien, lhp.si_so_toi_da,
             (SELECT COUNT(*) FROM DangKyHocPhan d 
@@ -322,6 +346,7 @@ export async function getClassSchedule(lopHocPhanId) {
   )
   return { header, lich }
 }
+
 // === LẤY DANH SÁCH SINH VIÊN ĐÃ ĐĂNG KÝ 1 LỚP HỌC PHẦN (cho giảng viên nhập điểm) ===
 export async function getStudentsByLopHocPhan(lopHocPhanId) {
   const [rows] = await pool.execute(

@@ -6,18 +6,37 @@ export async function getUnreadCount(req, res) {
     const { sinhVienId } = req.params
     if (!sinhVienId) return res.status(400).json({ message: 'Thiếu sinhVienId' })
 
-    const [rows] = await pool.query(
-      `SELECT COUNT(*) AS count
-       FROM ThongBao tb
-       LEFT JOIN ThongBao_DaDoc td
-         ON tb.id = td.thong_bao_id AND td.sinh_vien_id = ?
-       WHERE td.da_doc IS NULL OR td.da_doc = 'Chưa đọc'`,
-      [sinhVienId]
-    )
-    res.json({ count: rows[0].count || 0 })
+    // Retry logic cho ECONNRESET
+    let retries = 2
+    let lastError
+    
+    while (retries > 0) {
+      try {
+        const [rows] = await pool.query(
+          `SELECT COUNT(*) AS count
+           FROM ThongBao tb
+           LEFT JOIN ThongBao_DaDoc td
+             ON tb.id = td.thong_bao_id AND td.sinh_vien_id = ?
+           WHERE td.da_doc IS NULL OR td.da_doc = 'Chưa đọc'`,
+          [sinhVienId]
+        )
+        return res.json({ count: rows[0].count || 0 })
+      } catch (err) {
+        lastError = err
+        if (err.code === 'ECONNRESET' && retries > 1) {
+          retries--
+          await new Promise(resolve => setTimeout(resolve, 100)) // Wait 100ms before retry
+          continue
+        }
+        throw err
+      }
+    }
+    
+    throw lastError
   } catch (err) {
     console.error('❌ getUnreadCount error:', err)
-    res.status(500).json({ message: 'Lỗi lấy số lượng tin chưa đọc' })
+    // Return 0 instead of error để không ảnh hưởng UX
+    res.json({ count: 0 })
   }
 }
 

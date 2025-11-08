@@ -1,7 +1,7 @@
 // src/pages/SinhVien/ChangePassword.js
 import React, { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { apiFetch, clearAuth } from '../../api'
+import { apiFetch, clearAuth, getToken, getRole } from '../../api'
 import StudentLayout from '../../components/StudentLayout'
 import '../../styles/SinhVien/ChangePassword.css'
 
@@ -41,7 +41,13 @@ export default function ChangePassword() {
 
     setLoading(true)
     try {
-      const token = sessionStorage.getItem('token')
+      const token = getToken()
+      if (!token) {
+        setError('Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.')
+        setTimeout(() => navigate('/login'), 1500)
+        return
+      }
+
       await apiFetch('/api/auth/update-password', {
         method: 'POST',
         headers: { 
@@ -60,8 +66,9 @@ export default function ChangePassword() {
       setConfirmPassword('')
       
       // Đăng xuất sau 2 giây
+      const currentRole = getRole()
       setTimeout(() => {
-        clearAuth()
+        clearAuth(currentRole)
         navigate('/login')
       }, 2000)
     } catch (err) {
