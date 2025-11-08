@@ -89,3 +89,70 @@ export async function changePassword(req, res) {
     res.status(500).json({ message: 'Không thể đổi mật khẩu' })
   }
 }
+
+// ✅ API đổi mật khẩu khi đã đăng nhập (yêu cầu mật khẩu cũ)
+export async function updatePassword(req, res) {
+  try {
+    const { oldPassword, newPassword } = req.body
+    const auth = req.headers.authorization
+    
+    if (!auth) {
+      return res.status(401).json({ message: 'Thiếu token xác thực' })
+    }
+
+    const token = auth.split(' ')[1]
+    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'dev')
+
+    if (!decoded.sub) {
+      return res.status(401).json({ message: 'Token không hợp lệ' })
+    }
+
+    // Validate input
+    if (!oldPassword || !newPassword) {
+      return res.status(400).json({ message: 'Vui lòng nhập đầy đủ mật khẩu cũ và mới' })
+    }
+
+    if (newPassword.length < 6) {
+      return res.status(400).json({ message: 'Mật khẩu mới phải có ít nhất 6 ký tự' })
+    }
+
+    // Lấy thông tin tài khoản hiện tại
+    const [rows] = await pool.query(
+      'SELECT id, password_hash FROM TaiKhoan WHERE id = ?',
+      [decoded.sub]
+    )
+
+    if (!rows || rows.length === 0) {
+      return res.status(404).json({ message: 'Không tìm thấy tài khoản' })
+    }
+
+    const account = rows[0]
+
+    // Kiểm tra mật khẩu cũ
+    const isValidOldPassword = await comparePassword(oldPassword, account.password_hash)
+    if (!isValidOldPassword) {
+      return res.status(401).json({ message: 'Mật khẩu hiện tại không đúng' })
+    }
+
+    // Kiểm tra mật khẩu mới không trùng mật khẩu cũ
+    const isSamePassword = await comparePassword(newPassword, account.password_hash)
+    if (isSamePassword) {
+      return res.status(400).json({ message: 'Mật khẩu mới không được trùng với mật khẩu cũ' })
+    }
+
+    // Hash mật khẩu mới và cập nhật
+    const newHash = await bcrypt.hash(newPassword, 10)
+    await pool.query(
+      'UPDATE TaiKhoan SET password_hash = ? WHERE id = ?',
+      [newHash, decoded.sub]
+    )
+
+    res.json({ message: 'Đổi mật khẩu thành công. Vui lòng đăng nhập lại.' })
+  } catch (err) {
+    console.error('❌ updatePassword error:', err)
+    if (err.name === 'JsonWebTokenError' || err.name === 'TokenExpiredError') {
+      return res.status(401).json({ message: 'Token không hợp lệ hoặc đã hết hạn' })
+    }
+    res.status(500).json({ message: 'Không thể đổi mật khẩu' })
+  }
+}

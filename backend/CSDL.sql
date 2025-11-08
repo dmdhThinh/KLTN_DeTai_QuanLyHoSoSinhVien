@@ -199,40 +199,6 @@ INSERT INTO `DotDangKy` VALUES (1,'HK1','2025-2026','2025-11-01 00:00:00','2025-
 UNLOCK TABLES;
 
 --
--- Table structure for table `DotNhapDiem`
---
-
-DROP TABLE IF EXISTS `DotNhapDiem`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!50503 SET character_set_client = utf8mb4 */;
-CREATE TABLE `DotNhapDiem` (
-  `id` int NOT NULL AUTO_INCREMENT,
-  `hoc_ky` varchar(10) COLLATE utf8mb4_unicode_ci NOT NULL COMMENT 'HK1, HK2, HK3',
-  `nam_hoc` varchar(20) COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '2024-2025',
-  `trang_thai` enum('CHUA_MO','DOT_1_DANG_MO','DOT_1_DA_DONG','DOT_2_DANG_MO','DA_KHOA') COLLATE utf8mb4_unicode_ci DEFAULT 'CHUA_MO' COMMENT 'Trạng thái đợt nhập điểm',
-  `ngay_mo_dot_1` datetime DEFAULT NULL COMMENT 'Ngày mở đợt 1 (TX, TH, GK)',
-  `ngay_dong_dot_1` datetime DEFAULT NULL COMMENT 'Ngày đóng đợt 1',
-  `ngay_mo_dot_2` datetime DEFAULT NULL COMMENT 'Ngày mở đợt 2 (Cuối kỳ)',
-  `ngay_dong_dot_2` datetime DEFAULT NULL COMMENT 'Ngày đóng đợt 2',
-  `ghi_chu` text COLLATE utf8mb4_unicode_ci,
-  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
-  `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  PRIMARY KEY (`id`),
-  UNIQUE KEY `uq_hocky_namhoc` (`hoc_ky`,`nam_hoc`)
-) ENGINE=InnoDB AUTO_INCREMENT=5 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Quản lý đợt nhập điểm toàn trường';
-/*!40101 SET character_set_client = @saved_cs_client */;
-
---
--- Dumping data for table `DotNhapDiem`
---
-
-LOCK TABLES `DotNhapDiem` WRITE;
-/*!40000 ALTER TABLE `DotNhapDiem` DISABLE KEYS */;
-INSERT INTO `DotNhapDiem` VALUES (3,'HK1','2025-2026','DOT_2_DANG_MO',NULL,NULL,NULL,NULL,'Học kỳ 1 năm học 2025-2026','2025-11-08 02:53:33','2025-11-08 04:55:30'),(4,'HK2','2025-2026','CHUA_MO',NULL,NULL,NULL,NULL,'Học kỳ HK2 năm học 2025-2026','2025-11-08 03:12:05','2025-11-08 03:12:05');
-/*!40000 ALTER TABLE `DotNhapDiem` ENABLE KEYS */;
-UNLOCK TABLES;
-
---
 -- Table structure for table `GiangVien`
 --
 
@@ -966,42 +932,37 @@ INSERT INTO `ThongBao_DaDoc` VALUES (1,1,1,'Đã đọc','2025-10-28 06:44:48'),
 /*!40000 ALTER TABLE `ThongBao_DaDoc` ENABLE KEYS */;
 UNLOCK TABLES;
 
---
--- Table structure for table `YeuCauTuVan`
---
-
-DROP TABLE IF EXISTS `YeuCauTuVan`;
+DROP TABLE IF EXISTS `DotNhapDiem`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
-CREATE TABLE `YeuCauTuVan` (
+CREATE TABLE `DotNhapDiem` (
   `id` int NOT NULL AUTO_INCREMENT,
-  `sinh_vien_id` int NOT NULL,
-  `loai_yeu_cau` enum('hoc_tap','chung') COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'chung',
-  `tieu_de` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `noi_dung` text COLLATE utf8mb4_unicode_ci NOT NULL,
-  `giang_vien_id` int DEFAULT NULL,
-  `trang_thai` enum('cho_xu_ly','dang_xu_ly','da_tra_loi','da_dong') COLLATE utf8mb4_unicode_ci DEFAULT 'cho_xu_ly',
-  `ngay_tao` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
-  `ngay_cap_nhat` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  `hoc_ky` varchar(10) COLLATE utf8mb4_unicode_ci NOT NULL COMMENT 'HK1, HK2, HK3',
+  `nam_hoc` varchar(20) COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '2024-2025',
+  `trang_thai` enum('CHUA_MO','DOT_1_DANG_MO','DOT_1_DA_DONG','DOT_2_DANG_MO','DA_KHOA') COLLATE utf8mb4_unicode_ci DEFAULT 'CHUA_MO' COMMENT 'Trạng thái đợt nhập điểm',
+  `ngay_mo_dot_1` datetime DEFAULT NULL COMMENT 'Ngày mở đợt 1 (TX, TH, GK)',
+  `ngay_dong_dot_1` datetime DEFAULT NULL COMMENT 'Ngày đóng đợt 1',
+  `ngay_mo_dot_2` datetime DEFAULT NULL COMMENT 'Ngày mở đợt 2 (Cuối kỳ)',
+  `ngay_dong_dot_2` datetime DEFAULT NULL COMMENT 'Ngày đóng đợt 2',
+  `ghi_chu` text COLLATE utf8mb4_unicode_ci,
+  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
-  KEY `idx_sinh_vien` (`sinh_vien_id`),
-  KEY `idx_giang_vien` (`giang_vien_id`),
-  KEY `idx_trang_thai` (`trang_thai`),
-  KEY `idx_loai` (`loai_yeu_cau`),
-  CONSTRAINT `YeuCauTuVan_ibfk_1` FOREIGN KEY (`sinh_vien_id`) REFERENCES `SinhVien` (`id`) ON DELETE CASCADE,
-  CONSTRAINT `YeuCauTuVan_ibfk_2` FOREIGN KEY (`giang_vien_id`) REFERENCES `GiangVien` (`id`) ON DELETE SET NULL
-) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+  UNIQUE KEY `uq_hocky_namhoc` (`hoc_ky`,`nam_hoc`)
+) ENGINE=InnoDB AUTO_INCREMENT=5 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Quản lý đợt nhập điểm toàn trường';
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
--- Dumping data for table `YeuCauTuVan`
+-- Dumping data for table `DotNhapDiem`
 --
 
-LOCK TABLES `YeuCauTuVan` WRITE;
-/*!40000 ALTER TABLE `YeuCauTuVan` DISABLE KEYS */;
-INSERT INTO `YeuCauTuVan` VALUES (1,1,'chung','Sửa số điện thoại','em cần sửa số điện thoại thành: 0895123456',NULL,'cho_xu_ly','2025-11-07 11:49:56','2025-11-07 11:49:56');
-/*!40000 ALTER TABLE `YeuCauTuVan` ENABLE KEYS */;
+LOCK TABLES `DotNhapDiem` WRITE;
+/*!40000 ALTER TABLE `DotNhapDiem` DISABLE KEYS */;
+INSERT INTO `DotNhapDiem` VALUES (3,'HK1','2025-2026','DOT_2_DANG_MO',NULL,NULL,NULL,NULL,'Học kỳ 1 năm học 2025-2026','2025-11-08 02:53:33','2025-11-08 04:55:30'),(4,'HK2','2025-2026','CHUA_MO',NULL,NULL,NULL,NULL,'Học kỳ HK2 năm học 2025-2026','2025-11-08 03:12:05','2025-11-08 03:12:05');
+/*!40000 ALTER TABLE `DotNhapDiem` ENABLE KEYS */;
 UNLOCK TABLES;
+
+
 SET @@SESSION.SQL_LOG_BIN = @MYSQLDUMP_TEMP_LOG_BIN;
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
 
@@ -1013,4 +974,4 @@ SET @@SESSION.SQL_LOG_BIN = @MYSQLDUMP_TEMP_LOG_BIN;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2025-11-08 11:59:46
+-- Dump completed on 2025-11-07 23:54:03

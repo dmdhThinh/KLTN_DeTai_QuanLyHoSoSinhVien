@@ -56,8 +56,73 @@ html, body, #root { height: 100%; margin: 0; }
 input { border: 1px solid #e5e7eb; border-radius: .75rem; }
 input:focus { border-color: #818cf8; box-shadow: 0 0 0 4px rgba(99,102,241,.15); background: white; }
 
+/* Student Dropdown Menu Styles */
+@keyframes fadeInDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
 
+.student-dropdown-menu {
+  padding: 0.5rem;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
+  border: 1px solid #e8eaf0 !important;
+}
 
+.student-dropdown-item {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  padding: 0.75rem 1rem;
+  background: transparent;
+  border: none;
+  border-radius: 8px;
+  text-align: left;
+  font-size: 14px;
+  font-weight: 500;
+  color: #374151;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  position: relative;
+}
 
+.student-dropdown-item:hover {
+  background: linear-gradient(135deg, #f0f4ff 0%, #e8f0fe 100%);
+  color: #667eea;
+  transform: translateX(4px);
+}
+
+.student-dropdown-item:active {
+  transform: scale(0.98);
+}
+
+.student-dropdown-item i {
+  transition: transform 0.2s ease;
+}
+
+.student-dropdown-item:hover i {
+  transform: scale(1.1);
+}
+
+.student-dropdown-item-danger {
+  color: #dc2626;
+}
+
+.student-dropdown-item-danger:hover {
+  background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
+  color: #b91c1c;
+}
+
+.dropdown-divider {
+  height: 1px;
+  background: linear-gradient(90deg, transparent, #e8eaf0, transparent);
+  margin: 0.25rem 0;
+  border: none;
+}
 
 

@@ -322,7 +322,6 @@ export async function getClassSchedule(lopHocPhanId) {
   )
   return { header, lich }
 }
-
 // === LẤY DANH SÁCH SINH VIÊN ĐÃ ĐĂNG KÝ 1 LỚP HỌC PHẦN (cho giảng viên nhập điểm) ===
 export async function getStudentsByLopHocPhan(lopHocPhanId) {
   const [rows] = await pool.execute(

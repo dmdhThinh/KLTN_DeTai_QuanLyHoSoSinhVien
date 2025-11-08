@@ -2,10 +2,10 @@
 import React, { useEffect, useState } from 'react'
 import { getSinhVienById, getSinhVienId, apiFetch } from '../../api'
 import StudentLayout from '../../components/StudentLayout'
+import { useNavigate } from 'react-router-dom'
 import dayjs from 'dayjs'
-import '../../styles/SinhVien/StudentDashboard.css' // giữ nguyên đường dẫn cũ của bạn
-import StudentDetailModal from './StudentDetailModal' // ⬅️ thêm import modal
-import GradeChart from '../../components/GradeChart' // ⬅️ import biểu đồ
+import '../../styles/SinhVien/StudentDashboard.css'
+import GradeChart from '../../components/GradeChart'
 
 function StatCard({ title, value, variant, link }) {
   return (
@@ -28,18 +28,16 @@ function getMonday(date) {
 }
 
 export default function StudentDashboard() {
+  const navigate = useNavigate()
   const [sv, setSv] = useState(null)
   const [lichHocCount, setLichHocCount] = useState(0)
   const [lichThiCount, setLichThiCount] = useState(0)
-
-  // ⬇️ state cho modal xem chi tiết
-  const [openDetail, setOpenDetail] = useState(false)
   const [studentId, setStudentId] = useState(null)
 
   useEffect(() => {
     const id = getSinhVienId()
     if (!id) return
-    setStudentId(id) // ⬅️ lưu lại để truyền vào modal
+    setStudentId(id)
 
     // Lấy thông tin sinh viên
     getSinhVienById(id)
@@ -97,10 +95,9 @@ export default function StudentDashboard() {
                       </div>
                       <div>
                         <div className="fs-5 fw-semibold">{sv?.hoTen || '—'}</div>
-                        {/* ⬇️ mở modal xem chi tiết (SV + người thân) */}
                         <button
                           className="btn btn-link p-0 small"
-                          onClick={() => setOpenDetail(true)}
+                          onClick={() => navigate('/student/detail')}
                         >
                           Xem chi tiết
                         </button>
@@ -200,13 +197,6 @@ export default function StudentDashboard() {
           </div>
         </div>
       </div>
-
-      {/* ⬇️ Modal chi tiết SV + người thân */}
-      <StudentDetailModal
-        open={openDetail}
-        studentId={studentId}
-        onClose={() => setOpenDetail(false)}
-      />
     </StudentLayout>
   )
 }

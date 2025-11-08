@@ -17,6 +17,8 @@ function NhapDiem() {
   // Load thông tin lớp học phần và danh sách sinh viên
   const loadData = async () => {
     if (!lopHocPhanId) return;
+
+    
       setLoading(true);
       setMessage("");
 
@@ -31,6 +33,7 @@ function NhapDiem() {
 
         // Lấy danh sách sinh viên đã đăng ký từ API mới
         const svData = await apiFetch(`/api/dkhp/lop-hoc-phan/${lopHocPhanId}`);
+ 
         
         if (Array.isArray(svData)) {
           // Lấy điểm hiện tại của từng sinh viên (API đã trả về camelCase)
@@ -41,7 +44,7 @@ function NhapDiem() {
           const sinhVienWithScores = await Promise.all(
             svData.map(async (sv) => {
               try {
-                // Lấy điểm của sinh viên cho học phần này
+               // Lấy điểm của sinh viên cho học phần này
                 const ketQuaData = await apiFetch(`/api/ket-qua-hoc-tap/by-sinhvien?sinhVienId=${sv.sinh_vien_id}`);
                 
                 // Tìm điểm của học phần + học kỳ này (xử lý cả snake_case và camelCase)
@@ -100,11 +103,9 @@ function NhapDiem() {
         setLoading(false);
       }
   };
-
   // useEffect để gọi loadData khi component mount
   useEffect(() => {
     loadData();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [lopHocPhanId]);
 
   // Cập nhật điểm cho một sinh viên
@@ -113,9 +114,7 @@ function NhapDiem() {
     newList[svIndex][field] = value;
     setSinhVienList(newList);
   };
-
-  // Kiểm tra xem cột nào được phép nhập (dựa vào trạng thái đợt từ DB)
-  const isInputDisabled = (sv, field) => {
+   const isInputDisabled = (sv, field) => {
     // Nếu chưa có trạng thái đợt hoặc chưa mở → Khóa tất cả
     if (!trangThaiDot || trangThaiDot === 'CHUA_MO' || trangThaiDot === 'DA_KHOA') {
       return true;
@@ -172,7 +171,7 @@ function NhapDiem() {
   const isFullyLocked = (sv) => {
     return getDotNhap(sv) === 'HOAN_TAT';
   };
-
+  
   // Lưu điểm tất cả sinh viên
   const handleSaveAll = async () => {
     if (!lopHocPhan) return;
@@ -185,7 +184,6 @@ function NhapDiem() {
 
     try {
       for (const sv of sinhVienList) {
-        
         // Skip nếu sinh viên không có dữ liệu gì để lưu
         const hasAnyData = sv.diem_ly_thuyet_1 || sv.diem_ly_thuyet_2 || sv.diem_ly_thuyet_3 || 
                           sv.diem_ly_thuyet_4 || sv.diem_thuc_hanh_1 || sv.diem_thuc_hanh_2 || 
@@ -204,7 +202,6 @@ function NhapDiem() {
           hoc_ky: lopHocPhan.hocKy,
           nam_hoc: lopHocPhan.namHoc,
         };
-        
         if (isDot2AndHasRecord) {
           // Đợt 2: CHỈ gửi điểm cuối kỳ (nếu có)
           if (sv.diem_cuoi_ky) {
@@ -222,7 +219,6 @@ function NhapDiem() {
           if (sv.diem_giua_ky) scoreData.diem_giua_ky = sv.diem_giua_ky;
           if (sv.diem_cuoi_ky) scoreData.diem_cuoi_ky = sv.diem_cuoi_ky;
         }
-
         try {
           // Luôn dùng UPSERT (POST) - backend tự xử lý
           await apiFetch('/api/ket-qua-hoc-tap', {
@@ -240,10 +236,8 @@ function NhapDiem() {
       
       // Reload để cập nhật ketQuaId và điểm tính toán
       await loadData();
-      
     } catch (err) {
       setMessage('❌ Có lỗi xảy ra khi lưu điểm!');
-      console.error('Error in handleSaveAll:', err);
     } finally {
       setSaving(false);
     }
@@ -272,7 +266,6 @@ function NhapDiem() {
               </button>
             </div>
           </div>
-          
           <button className="btn btn-outline-secondary" onClick={() => navigate('/teacher/lophocphan')}>
             ← Quay lại danh sách lớp
           </button>
@@ -354,7 +347,7 @@ function NhapDiem() {
                   </thead>
                   <tbody>
                     {sinhVienList.map((sv, index) => (
-                      <tr key={sv.sinh_vien_id} style={{ backgroundColor: isFullyLocked(sv) ? '#f0f0f0' : 'transparent' }}>
+                       <tr key={sv.sinh_vien_id} style={{ backgroundColor: isFullyLocked(sv) ? '#f0f0f0' : 'transparent' }}>
                         <td className="text-center">{index + 1}</td>
                         <td>{sv.ma_sv}</td>
                         <td>{sv.ho_ten}</td>
@@ -367,9 +360,9 @@ function NhapDiem() {
                             className="form-control form-control-sm"
                             value={sv.diem_ly_thuyet_1}
                             onChange={(e) => handleScoreChange(index, 'diem_ly_thuyet_1', e.target.value)}
-                            disabled={isInputDisabled(sv, 'diem_ly_thuyet_1')}
-                            style={{ backgroundColor: isInputDisabled(sv, 'diem_ly_thuyet_1') ? '#e9ecef' : 'white' }}
-                            title={isInputDisabled(sv, 'diem_ly_thuyet_1') ? '🔒 Đã khóa' : ''}
+                            disabled={isInputDisabled(sv, 'diem_ly_thuyet_2')}
+                            style={{ backgroundColor: isInputDisabled(sv, 'diem_ly_thuyet_2') ? '#e9ecef' : 'white' }}
+                            title={isInputDisabled(sv, 'diem_ly_thuyet_2') ? '🔒 Đã khóa' : ''}
                           />
                         </td>
                         <td>
@@ -381,9 +374,6 @@ function NhapDiem() {
                             className="form-control form-control-sm"
                             value={sv.diem_ly_thuyet_2}
                             onChange={(e) => handleScoreChange(index, 'diem_ly_thuyet_2', e.target.value)}
-                            disabled={isInputDisabled(sv, 'diem_ly_thuyet_2')}
-                            style={{ backgroundColor: isInputDisabled(sv, 'diem_ly_thuyet_2') ? '#e9ecef' : 'white' }}
-                            title={isInputDisabled(sv, 'diem_ly_thuyet_2') ? '🔒 Đã khóa' : ''}
                           />
                         </td>
                         <td>
@@ -437,9 +427,6 @@ function NhapDiem() {
                             className="form-control form-control-sm"
                             value={sv.diem_thuc_hanh_2}
                             onChange={(e) => handleScoreChange(index, 'diem_thuc_hanh_2', e.target.value)}
-                            disabled={isInputDisabled(sv, 'diem_thuc_hanh_2')}
-                            style={{ backgroundColor: isInputDisabled(sv, 'diem_thuc_hanh_2') ? '#e9ecef' : 'white' }}
-                            title={isInputDisabled(sv, 'diem_thuc_hanh_2') ? '🔒 Đã khóa' : ''}
                           />
                         </td>
                         <td>
@@ -451,7 +438,7 @@ function NhapDiem() {
                             className="form-control form-control-sm"
                             value={sv.diem_thuc_hanh_3}
                             onChange={(e) => handleScoreChange(index, 'diem_thuc_hanh_3', e.target.value)}
-                            disabled={isInputDisabled(sv, 'diem_thuc_hanh_3')}
+                             disabled={isInputDisabled(sv, 'diem_thuc_hanh_3')}
                             style={{ backgroundColor: isInputDisabled(sv, 'diem_thuc_hanh_3') ? '#e9ecef' : 'white' }}
                             title={isInputDisabled(sv, 'diem_thuc_hanh_3') ? '🔒 Đã khóa' : ''}
                           />
@@ -521,8 +508,7 @@ function NhapDiem() {
               </div>
             </>
           )}
-
-          {/* Chế độ xem điểm (read-only) */}
+           {/* Chế độ xem điểm (read-only) */}
           {!loading && sinhVienList.length > 0 && viewMode === 'view' && (
             <>
               <div className="mb-3">
@@ -610,7 +596,6 @@ function NhapDiem() {
               </div>
             </>
           )}
-
           {!loading && sinhVienList.length === 0 && lopHocPhan && (
             <p className="text-center text-muted py-5">Không có sinh viên nào đăng ký lớp học phần này.</p>
           )}

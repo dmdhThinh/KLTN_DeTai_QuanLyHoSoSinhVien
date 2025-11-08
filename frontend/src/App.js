@@ -3,6 +3,8 @@ import React from 'react'
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import Login from './pages/login'
 import StudentDashboard from './pages/SinhVien/StudentDashboard'
+import StudentDetail from './pages/SinhVien/StudentDetail'
+import StudentChangePassword from './pages/SinhVien/ChangePassword'
 import TeacherDashboard from './pages/GiangVien/TeacherDashboard'
 import AdminDashboard from './pages/Admin/AdminDashboard'
 
@@ -60,7 +62,6 @@ import DKHP from './pages/SinhVien/dkhp.js'
 import QuanLyDotNhapDiem from './pages/Admin/QuanLyDotNhapDiem.js'
 
 
-
 function App() {
   return (
     <BrowserRouter>
@@ -76,6 +77,22 @@ function App() {
           element={
             <PrivateRoute allowRoles={['Sinh viên']}>
               <StudentDashboard />
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/student/detail"
+          element={
+            <PrivateRoute allowRoles={['Sinh viên']}>
+              <StudentDetail />
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/student/change-password"
+          element={
+            <PrivateRoute allowRoles={['Sinh viên']}>
+              <StudentChangePassword />
             </PrivateRoute>
           }
         />
@@ -180,9 +197,7 @@ function App() {
         <Route path="/admin/thongbao" element={<PrivateRoute allowRoles={['Quản trị']}><ThongBaoList /></PrivateRoute>} />
         <Route path="/admin/thongbao/new" element={<PrivateRoute allowRoles={['Quản trị']}><AddThongBao /></PrivateRoute>} />
         <Route path="/admin/thongbao/edit/:id" element={<PrivateRoute allowRoles={['Quản trị']}><EditThongBao /></PrivateRoute>}/>
-        
         <Route path="/admin/dot-nhap-diem" element={<PrivateRoute allowRoles={['Quản trị']}><QuanLyDotNhapDiem /></PrivateRoute>} />
-        
         <Route path="/student/thongbao" element={<PrivateRoute allowRoles={['Sinh viên']}><ThongBaoSinhVien /></PrivateRoute>}/>
         <Route path="/student/thongbao/:id" element={<PrivateRoute allowRoles={['Sinh viên']}><ThongBaoChiTiet /></PrivateRoute>}/>
         {/* Trang không tồn tại → về login */}

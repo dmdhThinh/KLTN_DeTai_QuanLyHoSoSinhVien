@@ -1,6 +1,6 @@
 import { pool } from '../config/db.js';
 
-// ➕ Thêm điểm số (UPSERT - CHỈ update các field KHÔNG NULL được gửi lên)
+// ➕ Thêm điểm số
 export async function createKetQuaHocTap(data) {
   const {
     sinh_vien_id, hoc_phan_id, hoc_ky, nam_hoc,
@@ -34,7 +34,7 @@ export async function createKetQuaHocTap(data) {
         hoc_luc = VALUES(hoc_luc),
         xep_loai = VALUES(xep_loai),
         dat = VALUES(dat),
-        diem_thang_4 = VALUES(diem_thang_4)`,
+        diem_thang_4 = VALUES(diem_thang_4)`
       [
         sinh_vien_id, hoc_phan_id, hoc_ky, nam_hoc,
         diem_ly_thuyet_1, diem_ly_thuyet_2, diem_ly_thuyet_3, diem_ly_thuyet_4,
@@ -72,10 +72,9 @@ export async function getKetQuaHocTapById(id) {
   }
 }
 
-// ✏️ Cập nhật điểm số (CHỈ update các field được gửi lên)
+// ✏️ Cập nhật điểm số
 export async function updateKetQuaHocTap(id, data) {
   try {
-    // Tạo danh sách các cột cần update (chỉ những cột có giá trị)
     const updates = [];
     const values = [];
     

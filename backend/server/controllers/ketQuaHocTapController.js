@@ -5,7 +5,6 @@ import { pool } from "../config/db.js";
 function tinhDiemTongKetIUH(data) {
   const toNum = v => (v === undefined || v === null || v === '' ? null : Number(v));
   const pick = k => toNum(data[k]);
-  // ... (rest of the code remains the same)
 
   const ly = [pick('diem_ly_thuyet_1'), pick('diem_ly_thuyet_2'), pick('diem_ly_thuyet_3'), pick('diem_ly_thuyet_4')].filter(v => v !== null);
   const th = [pick('diem_thuc_hanh_1'), pick('diem_thuc_hanh_2'), pick('diem_thuc_hanh_3')].filter(v => v !== null);
@@ -22,16 +21,16 @@ function tinhDiemTongKetIUH(data) {
   else if (thx !== null) qt = thx;
 
   // ⚠️ CHỈ TÍNH ĐIỂM TỔNG KẾT KHI CÓ ĐIỂM CUỐI KỲ
-  if (ck === null) {
-    return {
-      diem_tong_ket: null,
-      diem_chu: null,
-      hoc_luc: null,
-      xep_loai: null,
-      dat: null,
-      diem_thang_4: null
-    };
-  }
+    if (ck === null) {
+      return {
+        diem_tong_ket: null,
+        diem_chu: null,
+        hoc_luc: null,
+        xep_loai: null,
+        dat: null,
+        diem_thang_4: null
+      };
+    }
 
   const tongKet = (qt ?? 0) * 0.3 + (gk ?? 0) * 0.2 + ck * 0.5;
 
@@ -61,7 +60,7 @@ function tinhDiemTongKetIUH(data) {
 // ➕ Thêm điểm số (UPSERT - tự động merge với data cũ nếu đã tồn tại)
 export async function create(req, res) {
   try {
-    const { sinh_vien_id, hoc_phan_id, hoc_ky, nam_hoc } = req.body;
+     const { sinh_vien_id, hoc_phan_id, hoc_ky, nam_hoc } = req.body;
     
     // Kiểm tra xem đã tồn tại record chưa
     const [existing] = await pool.execute(
@@ -91,7 +90,6 @@ export async function create(req, res) {
     
     const auto = tinhDiemTongKetIUH(data);
     data = { ...data, ...auto };
-    
     const result = await KetQuaHocTapModel.createKetQuaHocTap(data);
     
     // 🔄 Tự động cập nhật bảng DiemTrungBinh
@@ -103,7 +101,7 @@ export async function create(req, res) {
       }
     }
     
-    res.status(201).json({ 
+     res.status(201).json({ 
       message: 'Điểm số đã được tạo và tính tự động', 
       data: { insertId: result.insertId } 
     });
@@ -154,19 +152,17 @@ export async function update(req, res) {
     // 1️⃣ Lấy bản ghi hiện có
     const current = await KetQuaHocTapModel.getKetQuaHocTapById(id);
     if (!current) {
-      return res.status(404).json({ message: 'Không tìm thấy điểm số để sửa' });
-    }
-
+          return res.status(404).json({ message: 'Không tìm thấy điểm số để sửa' });
+        }
     // 2️⃣ Hợp nhất dữ liệu mới và cũ
     const merged = { ...current, ...req.body };
 
     // 3️⃣ Tính lại theo dữ liệu hợp nhất
     const auto = tinhDiemTongKetIUH(merged);
-    const payload = { ...req.body, ...auto }; // CHỈ gửi field frontend gửi + auto
+    const payload = { ...req.body, ...auto };
 
     // 4️⃣ Update vào DB
     const result = await KetQuaHocTapModel.updateKetQuaHocTap(id, payload);
-    
     if (result.affectedRows === 0)
       return res.status(404).json({ message: 'Không tìm thấy điểm số để sửa' });
 

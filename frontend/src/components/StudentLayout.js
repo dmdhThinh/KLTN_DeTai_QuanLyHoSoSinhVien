@@ -263,24 +263,64 @@ export default function StudentLayout({ children, title = '' }) {
                 {sv?.hoTen || 'Sinh viên'}
               </b>
               {showMenu && (
-                <div className="iuh-dropdown shadow-sm border rounded-2 bg-white position-absolute end-0 mt-2">
-                  <button className="dropdown-item">Thông tin cá nhân</button>
-                  <hr className="my-1" />
-                  <button className="dropdown-item">Đổi mật khẩu</button>
-                  <hr className="my-1" />
+                <div 
+                  className="student-dropdown-menu shadow-lg border-0 rounded-3 bg-white position-absolute end-0 mt-2"
+                  style={{ 
+                    zIndex: 9999,
+                    minWidth: '220px',
+                    animation: 'fadeInDown 0.2s ease-out'
+                  }}
+                >
+                  <button 
+                    className="student-dropdown-item"
+                    onClick={() => {
+                      setShowMenu(false)
+                      navigate('/student/detail')
+                    }}
+                  >
+                    <i className="bi bi-person-circle me-2" style={{ fontSize: '16px' }}></i>
+                    <span>Thông tin cá nhân</span>
+                  </button>
+                  <div className="dropdown-divider mx-2"></div>
+                  <button 
+                    className="student-dropdown-item"
+                    onClick={() => {
+                      setShowMenu(false)
+                      navigate('/student/change-password')
+                    }}
+                  >
+                    <i className="bi bi-shield-lock me-2" style={{ fontSize: '16px' }}></i>
+                    <span>Đổi mật khẩu</span>
+                  </button>
+                  <div className="dropdown-divider mx-2"></div>
                   <button
-                    className="dropdown-item text-danger"
+                    className="student-dropdown-item student-dropdown-item-danger"
                     onClick={handleLogout}
                   >
-                    Đăng xuất
+                    <i className="bi bi-box-arrow-right me-2" style={{ fontSize: '16px' }}></i>
+                    <span>Đăng xuất</span>
                   </button>
                 </div>
               )}
             </div>
             <div
-              className="rounded-circle bg-light border"
-              style={{ width: 32, height: 32 }}
-            ></div>
+              className="rounded-circle bg-light border overflow-hidden d-flex align-items-center justify-content-center"
+              style={{ width: 40, height: 40, cursor: 'pointer' }}
+              onClick={() => setShowMenu((prev) => !prev)}
+            >
+              {sv?.anhThe ? (
+                <img
+                  src={sv.anhThe}
+                  alt="Avatar"
+                  style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                  onError={(e) => {
+                    e.currentTarget.style.display = 'none'
+                  }}
+                />
+              ) : (
+                <i className="bi bi-person-circle text-secondary" style={{ fontSize: '24px' }}></i>
+              )}
+            </div>
           </div>
         </div>
 
