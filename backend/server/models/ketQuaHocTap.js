@@ -1,9 +1,9 @@
 import { pool } from '../config/db.js';
 
-// ➕ Thêm điểm số
+// ➕ Thêm điểm số (UPSERT - CHỈ update các field KHÔNG NULL được gửi lên)
 export async function createKetQuaHocTap(data) {
   const {
-    sinh_vien_id, hoc_phan_id,
+    sinh_vien_id, hoc_phan_id, hoc_ky, nam_hoc,
     diem_ly_thuyet_1, diem_ly_thuyet_2, diem_ly_thuyet_3, diem_ly_thuyet_4,
     diem_thuc_hanh_1, diem_thuc_hanh_2, diem_thuc_hanh_3,
     diem_giua_ky, diem_cuoi_ky,
@@ -13,14 +13,30 @@ export async function createKetQuaHocTap(data) {
   try {
     const [result] = await pool.execute(
       `INSERT INTO KetQuaHocTap (
-        sinh_vien_id, hoc_phan_id,
+        sinh_vien_id, hoc_phan_id, hoc_ky, nam_hoc,
         diem_ly_thuyet_1, diem_ly_thuyet_2, diem_ly_thuyet_3, diem_ly_thuyet_4,
         diem_thuc_hanh_1, diem_thuc_hanh_2, diem_thuc_hanh_3,
         diem_giua_ky, diem_cuoi_ky,
         diem_tong_ket, diem_chu, hoc_luc, xep_loai, dat, diem_thang_4
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      ON DUPLICATE KEY UPDATE
+        diem_ly_thuyet_1 = COALESCE(VALUES(diem_ly_thuyet_1), diem_ly_thuyet_1),
+        diem_ly_thuyet_2 = COALESCE(VALUES(diem_ly_thuyet_2), diem_ly_thuyet_2),
+        diem_ly_thuyet_3 = COALESCE(VALUES(diem_ly_thuyet_3), diem_ly_thuyet_3),
+        diem_ly_thuyet_4 = COALESCE(VALUES(diem_ly_thuyet_4), diem_ly_thuyet_4),
+        diem_thuc_hanh_1 = COALESCE(VALUES(diem_thuc_hanh_1), diem_thuc_hanh_1),
+        diem_thuc_hanh_2 = COALESCE(VALUES(diem_thuc_hanh_2), diem_thuc_hanh_2),
+        diem_thuc_hanh_3 = COALESCE(VALUES(diem_thuc_hanh_3), diem_thuc_hanh_3),
+        diem_giua_ky = COALESCE(VALUES(diem_giua_ky), diem_giua_ky),
+        diem_cuoi_ky = COALESCE(VALUES(diem_cuoi_ky), diem_cuoi_ky),
+        diem_tong_ket = VALUES(diem_tong_ket),
+        diem_chu = VALUES(diem_chu),
+        hoc_luc = VALUES(hoc_luc),
+        xep_loai = VALUES(xep_loai),
+        dat = VALUES(dat),
+        diem_thang_4 = VALUES(diem_thang_4)`,
       [
-        sinh_vien_id, hoc_phan_id,
+        sinh_vien_id, hoc_phan_id, hoc_ky, nam_hoc,
         diem_ly_thuyet_1, diem_ly_thuyet_2, diem_ly_thuyet_3, diem_ly_thuyet_4,
         diem_thuc_hanh_1, diem_thuc_hanh_2, diem_thuc_hanh_3,
         diem_giua_ky, diem_cuoi_ky,
@@ -56,31 +72,52 @@ export async function getKetQuaHocTapById(id) {
   }
 }
 
-// ✏️ Cập nhật điểm số
+// ✏️ Cập nhật điểm số (CHỈ update các field được gửi lên)
 export async function updateKetQuaHocTap(id, data) {
-  const safe = v => (v === undefined ? null : v);
-  const {
-    diem_giua_ky, diem_cuoi_ky,
-    diem_ly_thuyet_1, diem_ly_thuyet_2, diem_ly_thuyet_3, diem_ly_thuyet_4,
-    diem_thuc_hanh_1, diem_thuc_hanh_2, diem_thuc_hanh_3,
-    diem_tong_ket, diem_chu, hoc_luc, xep_loai, dat, diem_thang_4
-  } = data;
-
   try {
-    const [result] = await pool.execute(
-      `UPDATE KetQuaHocTap SET
-        diem_giua_ky=?, diem_cuoi_ky=?,
-        diem_ly_thuyet_1=?, diem_ly_thuyet_2=?, diem_ly_thuyet_3=?, diem_ly_thuyet_4=?,
-        diem_thuc_hanh_1=?, diem_thuc_hanh_2=?, diem_thuc_hanh_3=?,
-        diem_tong_ket=?, diem_chu=?, hoc_luc=?, xep_loai=?, dat=?, diem_thang_4=?
-       WHERE id=?`,
-      [
-        safe(diem_giua_ky), safe(diem_cuoi_ky),
-        safe(diem_ly_thuyet_1), safe(diem_ly_thuyet_2), safe(diem_ly_thuyet_3), safe(diem_ly_thuyet_4),
-        safe(diem_thuc_hanh_1), safe(diem_thuc_hanh_2), safe(diem_thuc_hanh_3),
-        safe(diem_tong_ket), safe(diem_chu), safe(hoc_luc), safe(xep_loai), safe(dat), safe(diem_thang_4), id
-      ]
-    );
+    // Tạo danh sách các cột cần update (chỉ những cột có giá trị)
+    const updates = [];
+    const values = [];
+    
+    // Các field điểm thành phần
+    const scoreFields = [
+      'diem_ly_thuyet_1', 'diem_ly_thuyet_2', 'diem_ly_thuyet_3', 'diem_ly_thuyet_4',
+      'diem_thuc_hanh_1', 'diem_thuc_hanh_2', 'diem_thuc_hanh_3',
+      'diem_giua_ky', 'diem_cuoi_ky'
+    ];
+    
+    // Các field tính toán (luôn được backend tính lại)
+    const calculatedFields = [
+      'diem_tong_ket', 'diem_chu', 'hoc_luc', 'xep_loai', 'dat', 'diem_thang_4'
+    ];
+    
+    // Thêm các field điểm thành phần (chỉ khi được gửi lên)
+    scoreFields.forEach(field => {
+      if (data[field] !== undefined) {
+        updates.push(`${field} = ?`);
+        values.push(data[field] === '' ? null : data[field]);
+      }
+    });
+    
+    // Thêm các field tính toán (nếu có)
+    calculatedFields.forEach(field => {
+      if (data[field] !== undefined) {
+        updates.push(`${field} = ?`);
+        values.push(data[field] === '' ? null : data[field]);
+      }
+    });
+    
+    // Nếu không có gì để update
+    if (updates.length === 0) {
+      return { affectedRows: 0 };
+    }
+    
+    // Thêm ID vào cuối
+    values.push(id);
+    
+    const query = `UPDATE KetQuaHocTap SET ${updates.join(', ')} WHERE id = ?`;
+    const [result] = await pool.execute(query, values);
+    
     return result;
   } catch (err) {
     console.error('❌ Lỗi khi cập nhật điểm:', err);

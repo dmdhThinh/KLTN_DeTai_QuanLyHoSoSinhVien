@@ -104,3 +104,14 @@ export async function getClassSchedule(req, res) {
     res.status(500).json({ message: 'Lỗi lấy lịch lớp', error: err.message })
   }
 }
+
+// Lấy danh sách sinh viên đã đăng ký 1 lớp học phần (cho giảng viên nhập điểm)
+export async function getStudentsByLopHocPhan(req, res) {
+  try {
+    const { lopHocPhanId } = req.params
+    const rows = await DkModel.getStudentsByLopHocPhan(+lopHocPhanId)
+    res.json(rows)
+  } catch (err) {
+    res.status(500).json({ message: 'Lỗi lấy danh sách sinh viên', error: err.message })
+  }
+}

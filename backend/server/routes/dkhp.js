@@ -31,5 +31,7 @@ router.get('/hp/pending', ctrl.listPendingCourses)
 // NEW: chi tiết lịch của 1 lớp học phần (để hiện modal “Xem”)
 router.get('/lich/:lopHocPhanId', ctrl.getClassSchedule)
 
+// Lấy danh sách sinh viên đã đăng ký 1 lớp học phần (cho giảng viên nhập điểm)
+router.get('/lop-hoc-phan/:lopHocPhanId', ctrl.getStudentsByLopHocPhan)
 
 export default router

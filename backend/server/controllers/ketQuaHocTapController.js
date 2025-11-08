@@ -1,10 +1,11 @@
-import * as KetQuaHocTapModel from '../models/ketQuaHocTap.js';
-import * as DiemTrungBinhModel from '../models/diemTrungBinh.js';
+import * as KetQuaHocTapModel from '../models/ketQuaHocTap.js'
+import * as DiemTrungBinhModel from '../models/diemTrungBinh.js'
 import { pool } from "../config/db.js";
 // 🧮 Hàm tính điểm tổng kết IUH
 function tinhDiemTongKetIUH(data) {
   const toNum = v => (v === undefined || v === null || v === '' ? null : Number(v));
   const pick = k => toNum(data[k]);
+  // ... (rest of the code remains the same)
 
   const ly = [pick('diem_ly_thuyet_1'), pick('diem_ly_thuyet_2'), pick('diem_ly_thuyet_3'), pick('diem_ly_thuyet_4')].filter(v => v !== null);
   const th = [pick('diem_thuc_hanh_1'), pick('diem_thuc_hanh_2'), pick('diem_thuc_hanh_3')].filter(v => v !== null);
@@ -20,7 +21,19 @@ function tinhDiemTongKetIUH(data) {
   else if (tx !== null) qt = tx;
   else if (thx !== null) qt = thx;
 
-  const tongKet = (qt ?? 0) * 0.3 + (gk ?? 0) * 0.2 + (ck ?? 0) * 0.5;
+  // ⚠️ CHỈ TÍNH ĐIỂM TỔNG KẾT KHI CÓ ĐIỂM CUỐI KỲ
+  if (ck === null) {
+    return {
+      diem_tong_ket: null,
+      diem_chu: null,
+      hoc_luc: null,
+      xep_loai: null,
+      dat: null,
+      diem_thang_4: null
+    };
+  }
+
+  const tongKet = (qt ?? 0) * 0.3 + (gk ?? 0) * 0.2 + ck * 0.5;
 
   let diemChu, hocLuc, xepLoai, dat;
   if (tongKet >= 8.5) { diemChu = 'A'; hocLuc = xepLoai = 'Giỏi'; dat = 'Đạt'; }
@@ -45,27 +58,57 @@ function tinhDiemTongKetIUH(data) {
   };
 }
 
-// ➕ Thêm điểm số (tự tính luôn khi tạo)
+// ➕ Thêm điểm số (UPSERT - tự động merge với data cũ nếu đã tồn tại)
 export async function create(req, res) {
   try {
-    let data = req.body;
+    const { sinh_vien_id, hoc_phan_id, hoc_ky, nam_hoc } = req.body;
+    
+    // Kiểm tra xem đã tồn tại record chưa
+    const [existing] = await pool.execute(
+      `SELECT * FROM KetQuaHocTap 
+       WHERE sinh_vien_id = ? AND hoc_phan_id = ? AND hoc_ky = ? AND nam_hoc = ?`,
+      [sinh_vien_id, hoc_phan_id, hoc_ky, nam_hoc]
+    );
+    
+    // Merge data cũ (nếu có) với data mới
+    const oldData = existing[0] || {};
+    
+    let data = {
+      sinh_vien_id,
+      hoc_phan_id,
+      hoc_ky,
+      nam_hoc,
+      diem_ly_thuyet_1: req.body.diem_ly_thuyet_1 ?? oldData.diem_ly_thuyet_1 ?? null,
+      diem_ly_thuyet_2: req.body.diem_ly_thuyet_2 ?? oldData.diem_ly_thuyet_2 ?? null,
+      diem_ly_thuyet_3: req.body.diem_ly_thuyet_3 ?? oldData.diem_ly_thuyet_3 ?? null,
+      diem_ly_thuyet_4: req.body.diem_ly_thuyet_4 ?? oldData.diem_ly_thuyet_4 ?? null,
+      diem_thuc_hanh_1: req.body.diem_thuc_hanh_1 ?? oldData.diem_thuc_hanh_1 ?? null,
+      diem_thuc_hanh_2: req.body.diem_thuc_hanh_2 ?? oldData.diem_thuc_hanh_2 ?? null,
+      diem_thuc_hanh_3: req.body.diem_thuc_hanh_3 ?? oldData.diem_thuc_hanh_3 ?? null,
+      diem_giua_ky: req.body.diem_giua_ky ?? oldData.diem_giua_ky ?? null,
+      diem_cuoi_ky: req.body.diem_cuoi_ky ?? oldData.diem_cuoi_ky ?? null,
+    };
+    
     const auto = tinhDiemTongKetIUH(data);
     data = { ...data, ...auto };
+    
     const result = await KetQuaHocTapModel.createKetQuaHocTap(data);
     
     // 🔄 Tự động cập nhật bảng DiemTrungBinh
-    const { sinh_vien_id, hoc_ky, nam_hoc } = data;
     if (sinh_vien_id && hoc_ky && nam_hoc) {
       try {
         await DiemTrungBinhModel.capNhatDiemTrungBinh(sinh_vien_id, hoc_ky, nam_hoc);
-        console.log('✅ Đã cập nhật điểm TB cho SV:', sinh_vien_id, hoc_ky, nam_hoc);
       } catch (err) {
         console.error('⚠️ Lỗi khi cập nhật điểm TB:', err.message);
       }
     }
     
-    res.status(201).json({ message: 'Điểm số đã được tạo và tính tự động', data: result });
+    res.status(201).json({ 
+      message: 'Điểm số đã được tạo và tính tự động', 
+      data: { insertId: result.insertId } 
+    });
   } catch (err) {
+    console.error('❌ Lỗi CREATE:', err);
     res.status(500).json({ message: 'Lỗi khi tạo điểm số', error: err.message });
   }
 }
@@ -110,17 +153,20 @@ export async function update(req, res) {
   try {
     // 1️⃣ Lấy bản ghi hiện có
     const current = await KetQuaHocTapModel.getKetQuaHocTapById(id);
-    if (!current) return res.status(404).json({ message: 'Không tìm thấy điểm số để sửa' });
+    if (!current) {
+      return res.status(404).json({ message: 'Không tìm thấy điểm số để sửa' });
+    }
 
     // 2️⃣ Hợp nhất dữ liệu mới và cũ
     const merged = { ...current, ...req.body };
 
     // 3️⃣ Tính lại theo dữ liệu hợp nhất
     const auto = tinhDiemTongKetIUH(merged);
-    const payload = { ...merged, ...auto };
+    const payload = { ...req.body, ...auto }; // CHỈ gửi field frontend gửi + auto
 
     // 4️⃣ Update vào DB
     const result = await KetQuaHocTapModel.updateKetQuaHocTap(id, payload);
+    
     if (result.affectedRows === 0)
       return res.status(404).json({ message: 'Không tìm thấy điểm số để sửa' });
 
@@ -129,7 +175,6 @@ export async function update(req, res) {
     if (sinh_vien_id && hoc_ky && nam_hoc) {
       try {
         await DiemTrungBinhModel.capNhatDiemTrungBinh(sinh_vien_id, hoc_ky, nam_hoc);
-        console.log('✅ Đã cập nhật điểm TB cho SV:', sinh_vien_id, hoc_ky, nam_hoc);
       } catch (err) {
         console.error('⚠️ Lỗi khi cập nhật điểm TB:', err.message);
       }
