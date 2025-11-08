@@ -274,28 +274,48 @@ function NhapDiem() {
       return;
     }
 
-    // Chuẩn bị dữ liệu
-    const data = sinhVienList.map((sv, index) => ({
-      'STT': index + 1,
-      'Mã SV': sv.ma_sv,
-      'Họ và tên': sv.ho_ten,
-      'TX1': sv.diem_ly_thuyet_1 || '',
-      'TX2': sv.diem_ly_thuyet_2 || '',
-      'TX3': sv.diem_ly_thuyet_3 || '',
-      'TX4': sv.diem_ly_thuyet_4 || '',
-      'TH1': sv.diem_thuc_hanh_1 || '',
-      'TH2': sv.diem_thuc_hanh_2 || '',
-      'TH3': sv.diem_thuc_hanh_3 || '',
-      'Giữa kỳ': sv.diem_giua_ky || '',
-      'Cuối kỳ': sv.diem_cuoi_ky || '',
-      'Tổng kết': sv.diem_tong_ket || '',
-      'Chữ': sv.diem_chu || '',
-      'Xếp loại': sv.xep_loai || '',
-      'Kết quả': sv.dat || '',
-    }));
+    // Chuẩn bị dữ liệu với thông tin lớp ở đầu
+    const data = [];
+    
+    // Row 1-3: Thông tin lớp
+    data.push(['Mã lớp học phần:', lopHocPhan?.maLopHocPhan || '']);
+    data.push(['Tên môn học:', lopHocPhan?.tenHocPhan || '']);
+    data.push(['Lớp học:', lopHocPhan?.tenLop || '']);
+    data.push([]); // Row trống
+    
+    // Row 5: Header
+    data.push([
+      'STT', 'Mã SV', 'Họ và tên',
+      'TX1', 'TX2', 'TX3', 'TX4',
+      'TH1', 'TH2', 'TH3',
+      'Giữa kỳ', 'Cuối kỳ', 'Tổng kết',
+      'Chữ', 'Xếp loại', 'Kết quả'
+    ]);
+    
+    // Dữ liệu sinh viên
+    sinhVienList.forEach((sv, index) => {
+      data.push([
+        index + 1,
+        sv.ma_sv,
+        sv.ho_ten,
+        sv.diem_ly_thuyet_1 || '',
+        sv.diem_ly_thuyet_2 || '',
+        sv.diem_ly_thuyet_3 || '',
+        sv.diem_ly_thuyet_4 || '',
+        sv.diem_thuc_hanh_1 || '',
+        sv.diem_thuc_hanh_2 || '',
+        sv.diem_thuc_hanh_3 || '',
+        sv.diem_giua_ky || '',
+        sv.diem_cuoi_ky || '',
+        sv.diem_tong_ket || '',
+        sv.diem_chu || '',
+        sv.xep_loai || '',
+        sv.dat || ''
+      ]);
+    });
 
     // Tạo worksheet và workbook
-    const ws = XLSX.utils.json_to_sheet(data);
+    const ws = XLSX.utils.aoa_to_sheet(data);
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, 'Bảng điểm');
 

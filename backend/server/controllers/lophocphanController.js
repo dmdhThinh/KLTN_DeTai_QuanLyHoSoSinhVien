@@ -75,3 +75,18 @@ export async function getLopHocPhanByGiangVien(req, res) {
     });
   }
 }
+
+// ✅ Lấy danh sách sinh viên trong lớp học phần
+export async function getSinhVienByLopHocPhan(req, res) {
+  const { id } = req.params;
+  try {
+    const rows = await LopHocPhanModel.getSinhVienByLopHocPhan(id);
+    res.status(200).json(rows);
+  } catch (err) {
+    console.error('❌ Lỗi khi lấy sinh viên trong lớp:', err);
+    res.status(500).json({
+      message: 'Lỗi khi lấy sinh viên trong lớp',
+      error: err.message,
+    });
+  }
+}
