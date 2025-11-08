@@ -14,6 +14,7 @@ function NhapDiem() {
   const [message, setMessage] = useState('');
   const [trangThaiDot, setTrangThaiDot] = useState(null); // Trạng thái đợt nhập điểm từ DB
   const [viewMode, setViewMode] = useState('input'); // 'input' hoặc 'view'
+  const [showConfirm, setShowConfirm] = useState(false); // Modal xác nhận
 
   // Load thông tin lớp học phần và danh sách sinh viên
   const loadData = async () => {
@@ -56,9 +57,13 @@ function NhapDiem() {
                   }
                 );
 
+                // Lưu giá trị gốc từ DB để kiểm tra sau
+                const originalCK = existingScore?.diemCuoiKy || existingScore?.diem_cuoi_ky || '';
+                
                 return {
                   ...sv,
                   ketQuaId: existingScore?.id || null,
+                  originalCK: originalCK, // Lưu giá trị CK gốc từ DB
                   // Backend trả về camelCase, cần map sang snake_case
                   diem_ly_thuyet_1: existingScore?.diemThuongXuyen1 || existingScore?.diem_ly_thuyet_1 || '',
                   diem_ly_thuyet_2: existingScore?.diemThuongXuyen2 || existingScore?.diem_ly_thuyet_2 || '',
@@ -68,14 +73,17 @@ function NhapDiem() {
                   diem_thuc_hanh_2: existingScore?.diemThucHanh2 || existingScore?.diem_thuc_hanh_2 || '',
                   diem_thuc_hanh_3: existingScore?.diemThucHanh3 || existingScore?.diem_thuc_hanh_3 || '',
                   diem_giua_ky: existingScore?.diemGiuaKy || existingScore?.diem_giua_ky || '',
-                  diem_cuoi_ky: existingScore?.diemCuoiKy || existingScore?.diem_cuoi_ky || '',
+                  diem_cuoi_ky: originalCK,
                   diem_tong_ket: existingScore?.diemTongKet || existingScore?.diem_tong_ket || '',
                   diem_chu: existingScore?.diemChu || existingScore?.diem_chu || '',
+                  xep_loai: existingScore?.xepLoai || existingScore?.xep_loai || '',
+                  dat: existingScore?.dat || existingScore?.dat || '',
                 };
               } catch (err) {
                 return {
                   ...sv,
                   ketQuaId: null,
+                  originalCK: '',
                   diem_ly_thuyet_1: '',
                   diem_ly_thuyet_2: '',
                   diem_ly_thuyet_3: '',
@@ -87,6 +95,8 @@ function NhapDiem() {
                   diem_cuoi_ky: '',
                   diem_tong_ket: '',
                   diem_chu: '',
+                  xep_loai: '',
+                  dat: '',
                 };
               }
             })
@@ -142,10 +152,11 @@ function NhapDiem() {
     // Đợt 2 đang mở → Chỉ cho nhập CK | Khóa TX, TH, GK
     if (trangThaiDot === 'DOT_2_DANG_MO') {
       if (field === 'diem_cuoi_ky') {
-        // Nếu đã có điểm CK trong DB → Khóa (không cho sửa)
-        const hasCK = sv.diem_cuoi_ky !== '' && sv.diem_cuoi_ky !== null;
-        if (hasCK) return true;
-        // Nếu chưa → Cho nhập
+        // Kiểm tra xem SV đã hoàn tất (có cả ketQuaId và CK đã được load từ DB)
+        // Nếu đang nhập lần đầu thì sv.originalCK sẽ là rỗng
+        const isSavedInDB = sv.ketQuaId && sv.originalCK !== '' && sv.originalCK !== null && sv.originalCK !== undefined;
+        if (isSavedInDB) return true; // Đã lưu CK rồi → khóa
+        // Chưa lưu → Cho nhập
         return false;
       }
       
@@ -161,7 +172,8 @@ function NhapDiem() {
 
   // Helper: Kiểm tra sinh viên đã hoàn tất chưa
   const getDotNhap = (sv) => {
-    const hasCK = sv.diem_cuoi_ky !== '' && sv.diem_cuoi_ky !== null && sv.diem_cuoi_ky !== undefined;
+    // Sử dụng originalCK (giá trị từ DB) thay vì diem_cuoi_ky (có thể đang sửa)
+    const hasCK = sv.originalCK !== '' && sv.originalCK !== null && sv.originalCK !== undefined;
     const hasSavedRecord = sv.ketQuaId !== null && sv.ketQuaId !== undefined;
 
     if (hasCK && hasSavedRecord) return 'HOAN_TAT';
@@ -174,10 +186,15 @@ function NhapDiem() {
     return getDotNhap(sv) === 'HOAN_TAT';
   };
 
-  // Lưu điểm tất cả sinh viên
-  const handleSaveAll = async () => {
+  // Hiện modal xác nhận
+  const confirmSaveAll = () => {
     if (!lopHocPhan) return;
-    
+    setShowConfirm(true);
+  };
+
+  // Lưu điểm tất cả sinh viên (sau khi confirm)
+  const handleSaveAll = async () => {
+    setShowConfirm(false);
     setSaving(true);
     setMessage("");
     let successCount = 0;
@@ -253,7 +270,7 @@ function NhapDiem() {
   // Xuất danh sách điểm ra Excel
   const exportToExcel = () => {
     if (!sinhVienList || sinhVienList.length === 0) {
-      alert('Không có dữ liệu để xuất!');
+      setMessage('⚠️ Không có dữ liệu để xuất!');
       return;
     }
 
@@ -273,6 +290,8 @@ function NhapDiem() {
       'Cuối kỳ': sv.diem_cuoi_ky || '',
       'Tổng kết': sv.diem_tong_ket || '',
       'Chữ': sv.diem_chu || '',
+      'Xếp loại': sv.xep_loai || '',
+      'Kết quả': sv.dat || '',
     }));
 
     // Tạo worksheet và workbook
@@ -551,18 +570,13 @@ function NhapDiem() {
                 </div>
                 <div className="d-flex gap-2">
                   <button 
-                    className="btn btn-success btn-lg" 
-                    onClick={handleSaveAll}
+                    className="btn btn-success" 
+                    onClick={confirmSaveAll}
                     disabled={saving}
                   >
                     {saving ? ' Đang lưu...' : ' Lưu tất cả điểm'}
                   </button>
-                  <button 
-                    className="btn btn-primary btn-lg" 
-                    onClick={exportToExcel}
-                  >
-                     Xuất Excel
-                  </button>
+                 
                 </div>
               </div>
             </>
@@ -638,7 +652,17 @@ function NhapDiem() {
                             {sv.diem_chu || '-'}
                           </span>
                         </td>
-                        <td className="text-center small">{sv.xep_loai || '-'}</td>
+                        <td className="text-center">
+                          <span className={`badge ${
+                            sv.xep_loai === 'Xuất sắc' ? 'bg-success' :
+                            sv.xep_loai === 'Giỏi' ? 'bg-primary' :
+                            sv.xep_loai === 'Khá' ? 'bg-info' :
+                            sv.xep_loai === 'Trung bình' ? 'bg-warning text-dark' :
+                            sv.xep_loai === 'Yếu' ? 'bg-danger' : 'bg-secondary'
+                          }`}>
+                            {sv.xep_loai || '-'}
+                          </span>
+                        </td>
                       </tr>
                     ))}
                   </tbody>
@@ -652,13 +676,13 @@ function NhapDiem() {
                     <strong>Tổng sinh viên:</strong> {sinhVienList.length}
                   </div>
                   <div className="col-md-3">
-                    <strong>Đã nhập CK:</strong> {sinhVienList.filter(sv => sv.diem_cuoi_ky).length}
+                    <strong>Đã nhập đủ điểm:</strong> {sinhVienList.filter(sv => sv.diem_cuoi_ky).length}
                   </div>
                   <div className="col-md-3">
-                    <strong>Đạt:</strong> {sinhVienList.filter(sv => sv.dat === 'Đạt').length}
+                    <strong className="text-success">Đạt:</strong> <span className="text-success fw-bold">{sinhVienList.filter(sv => sv.dat === 'Đạt').length}</span>
                   </div>
                   <div className="col-md-3">
-                    <strong>Không đạt:</strong> {sinhVienList.filter(sv => sv.dat === 'Không đạt').length}
+                    <strong className="text-danger">Không đạt:</strong> <span className="text-danger fw-bold">{sinhVienList.filter(sv => sv.dat === 'Không đạt').length}</span>
                   </div>
                 </div>
               </div>
@@ -670,6 +694,34 @@ function NhapDiem() {
           )}
         </div>
       </div>
+
+      {/* Modal xác nhận lưu điểm */}
+      {showConfirm && (
+        <div className="modal show d-block" style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}>
+          <div className="modal-dialog modal-dialog-centered">
+            <div className="modal-content">
+              <div className="modal-header bg-warning text-dark">
+                <h5 className="modal-title">⚠️ Xác nhận lưu điểm</h5>
+                <button type="button" className="btn-close" onClick={() => setShowConfirm(false)}></button>
+              </div>
+              <div className="modal-body">
+                <p className="mb-2"><strong>Bạn có chắc chắn muốn lưu tất cả điểm?</strong></p>
+                <p className="text-muted mb-0">
+                  <small>⚠️ Hành động này sẽ cập nhật điểm cho tất cả sinh viên có dữ liệu. Điểm đã lưu sẽ không thể sửa lại!</small>
+                </p>
+              </div>
+              <div className="modal-footer">
+                <button className="btn btn-secondary" onClick={() => setShowConfirm(false)}>
+                  Hủy
+                </button>
+                <button className="btn btn-success" onClick={handleSaveAll}>
+                  <i className="bi bi-check-circle me-1"></i> Xác nhận lưu
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </TeacherLayout>
   );
 }

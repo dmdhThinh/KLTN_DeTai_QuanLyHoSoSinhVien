@@ -28,7 +28,7 @@ export default function AddLopHocPhan() {
   const [lopId, setLopId] = useState('')
   const [hocKy, setHocKy] = useState('HK1')
   const [namHoc, setNamHoc] = useState('2025-2026')
-  const [trangThai, setTrangThai] = useState('Đang học')
+  const [trangThai, setTrangThai] = useState('Chấp nhận mở lớp')
   const [ngayBatDau, setNgayBatDau] = useState('')
   const [ngayKetThuc, setNgayKetThuc] = useState('')
   const [soTuanHoc, setSoTuanHoc] = useState('')
@@ -325,9 +325,9 @@ export default function AddLopHocPhan() {
                   value={trangThai}
                   onChange={(e) => setTrangThai(e.target.value)}
                 >
-                  <option value="Đang học">Đang học</option>
-                  <option value="Đã kết thúc">Đã kết thúc</option>
-                  <option value="Chưa mở">Chưa mở</option>
+                  <option value="Chờ sinh viên đăng ký">Chờ sinh viên đăng ký</option>
+                  <option value="Chấp nhận mở lớp">Chấp nhận mở lớp</option>
+                  <option value="Hủy mở lớp">Hủy mở lớp</option>
                 </select>
               </div>
 
