@@ -6,6 +6,8 @@ import dayjs from 'dayjs'
 import '../../styles/SinhVien/StudentDashboard.css' // giữ nguyên đường dẫn cũ của bạn
 import StudentDetailModal from './StudentDetailModal' // ⬅️ thêm import modal
 import GradeChart from '../../components/GradeChart' // ⬅️ import biểu đồ
+import ProgressChart from '../../components/ProgressChart' // ⬅️ import biểu đồ tiến độ
+import EnrolledClassesCard from '../../components/EnrolledClassesCard' // ⬅️ import lớp học phần
 
 function StatCard({ title, value, variant, link }) {
   return (
@@ -134,13 +136,13 @@ export default function StudentDashboard() {
                       </div>
                       <div>
                         <div className="fs-5 fw-semibold">{sv?.hoTen || '—'}</div>
-                        {/* ⬇️ mở modal xem chi tiết (SV + người thân) */}
-                        <button
+                        {/* ⬇️ chuyển sang trang chi tiết sinh viên */}
+                        <a
+                          href="/student/detail"
                           className="btn btn-link p-0 small"
-                          onClick={() => setOpenDetail(true)}
                         >
                           Xem chi tiết
-                        </button>
+                        </a>
                       </div>
                     </div>
 
@@ -227,10 +229,16 @@ export default function StudentDashboard() {
               </div>
             </div>
 
-            {/* 📊 Biểu đồ kết quả học tập */}
-            <div className="row mt-4">
+            {/* 📊 Biểu đồ kết quả học tập, tiến độ và lớp học phần */}
+            <div className="row mt-4 g-4">
               <div className="col-lg-4">
                 <GradeChart sinhVienId={studentId} />
+              </div>
+              <div className="col-lg-4">
+                <ProgressChart sinhVienId={studentId} />
+              </div>
+              <div className="col-lg-4">
+                <EnrolledClassesCard sinhVienId={studentId} />
               </div>
             </div>
 

@@ -37,6 +37,7 @@ import dotDangKyRoutes from './routes/dotDangKy.js'
 import yeuCauTuVanRoutes from './routes/yeuCauTuVan.js'
 import tinNhanTuVanRoutes from './routes/tinNhanTuVan.js'
 import statisticsRoutes from './routes/statistics.js'
+import hocTapRoutes from './routes/hocTap.js'
 dotenv.config()
 const app = express()
 const __filename = fileURLToPath(import.meta.url)
@@ -81,6 +82,7 @@ app.use('/api/dot-dang-ky', dotDangKyRoutes)
 app.use('/api/yeu-cau-tu-van', yeuCauTuVanRoutes)
 app.use('/api/tin-nhan-tu-van', tinNhanTuVanRoutes)
 app.use('/api/statistics', statisticsRoutes)
+app.use('/api/hoc-tap', hocTapRoutes)
 
 // ✅ Public folder cho ảnh thẻ
 app.use('/uploads', express.static(path.resolve('uploads')))
