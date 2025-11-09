@@ -12,25 +12,110 @@ export default function DiemSo() {
   const [diemSo, setDiemSo] = useState([])
   const [sv, setSv] = useState(null)
   const [diemTrungBinh, setDiemTrungBinh] = useState([])
+  const [dangKyHocPhan, setDangKyHocPhan] = useState([])
   
   useEffect(() => {
-    const sinhVienId = getSinhVienId()   // ✅ dùng hàm giống lịch học
+    const loadData = async () => {
+      const sinhVienId = getSinhVienId()
+      if (!sinhVienId) return
 
-    if (sinhVienId) {
-      getSinhVienById(sinhVienId).then(setSv).catch(()=>setSv(null))
-      
-      // Lấy điểm số
-      apiFetch(`/api/ket-qua-hoc-tap/by-sinhvien?sinhVienId=${sinhVienId}`)
-        .then(setDiemSo)
-        .catch(() => setDiemSo([]))
-      
-      // Lấy điểm trung bình
-      apiFetch(`/api/diem-trung-binh/theo-sinh-vien?sinhVienId=${sinhVienId}`)
-        .then(setDiemTrungBinh)
-        .catch(() => setDiemTrungBinh([]))
+      try {
+        // Load thông tin sinh viên
+        const svData = await getSinhVienById(sinhVienId)
+        setSv(svData)
+      } catch {
+        setSv(null)
+      }
+
+      try {
+        // Load điểm số
+        const diemData = await apiFetch(`/api/ket-qua-hoc-tap/by-sinhvien?sinhVienId=${sinhVienId}`)
+        setDiemSo(diemData || [])
+
+        // Load danh sách đăng ký học phần để kiểm tra
+        const dangKyData = await apiFetch(`/api/dkhp/my?sinh_vien_id=${sinhVienId}`)
+        setDangKyHocPhan(dangKyData || [])
+
+        // Nếu có điểm số, kiểm tra xem đã nhập đủ điểm chưa
+        if (diemData && diemData.length > 0 && dangKyData && dangKyData.length > 0) {
+          // Nhóm điểm theo học kỳ
+          const diemGrouped = {}
+          diemData.forEach(item => {
+            const key = `${item.hocKy}_${item.namHoc}`
+            if (!diemGrouped[key]) {
+              diemGrouped[key] = []
+            }
+            diemGrouped[key].push(item)
+          })
+
+          // Nhóm đăng ký theo học kỳ (chỉ lấy môn đã được chấp nhận - THANH_CONG)
+          const dangKyGrouped = {}
+          dangKyData.forEach(item => {
+            // Chỉ tính các môn đã được chấp nhận (THANH_CONG)
+            // trang_thai_dk có thể là: 'CHO_DUYET', 'THANH_CONG', 'HUY', 'TU_CHOI'
+            if (item.trang_thai_dk === 'THANH_CONG') {
+              const key = `${item.hoc_ky}_${item.nam_hoc}`
+              if (!dangKyGrouped[key]) {
+                dangKyGrouped[key] = []
+              }
+              dangKyGrouped[key].push(item)
+            }
+          })
+
+          // Kiểm tra từng học kỳ: số môn có điểm = số môn đã đăng ký
+          let shouldUpdate = false
+          for (const [key, diemList] of Object.entries(diemGrouped)) {
+            const dangKyList = dangKyGrouped[key] || []
+            
+            // Đếm số môn có điểm tổng kết
+            const soMonCoDiem = diemList.filter(item => 
+              item.diemTongKet !== null && 
+              item.diemTongKet !== undefined && 
+              item.diemTongKet !== ''
+            ).length
+
+            console.log(`📊 Học kỳ ${key}:`, {
+              soMonDangKy: dangKyList.length,
+              soMonCoDiem: soMonCoDiem,
+              duDieuKien: soMonCoDiem > 0 && soMonCoDiem === dangKyList.length
+            })
+
+            // Nếu số môn có điểm = số môn đã đăng ký -> đủ điều kiện
+            if (soMonCoDiem > 0 && soMonCoDiem === dangKyList.length) {
+              shouldUpdate = true
+              console.log(`✅ Học kỳ ${key} đã nhập đủ điểm, sẽ cập nhật điểm tích lũy`)
+              break
+            }
+          }
+
+          // Nếu có ít nhất 1 học kỳ đã nhập đủ điểm, cập nhật điểm tích lũy
+          if (shouldUpdate) {
+            try {
+              await apiFetch('/api/diem-trung-binh/cap-nhat-tat-ca', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ sinhVienId })
+              })
+            } catch (err) {
+              console.error('⚠️ Không thể cập nhật điểm tích lũy tự động:', err)
+            }
+          }
+        }
+
+        // Load điểm trung bình (sau khi cập nhật)
+        const dtbData = await apiFetch(`/api/diem-trung-binh/theo-sinh-vien?sinhVienId=${sinhVienId}`)
+        setDiemTrungBinh(dtbData || [])
+      } catch (err) {
+        console.error('Lỗi khi tải dữ liệu:', err)
+        setDiemSo([])
+        setDiemTrungBinh([])
+      }
     }
+
+    loadData()
   }, [])
-   // 🧾 In PDF
+
+  // 🧾 In PDF
   const handlePrintPDF = () => {
   const grouped = {}
   diemSo.forEach(d => {
@@ -86,7 +171,7 @@ export default function DiemSo() {
         it.diemThang4 ?? '',
         it.diemChu ?? '',
         it.xepLoai ?? '',
-        it.dat ?? ''
+        (it.diemTongKet !== null && it.diemTongKet !== undefined && it.diemTongKet !== '') ? (it.dat ?? '') : '—'
       ])
     })
 
@@ -119,7 +204,23 @@ export default function DiemSo() {
     const namHoc = items[0]?.namHoc
     const dtb = diemTrungBinh.find(d => d.hoc_ky === hocKy && d.nam_hoc === namHoc)
     
-    if (dtb) {
+    // Kiểm tra xem đã nhập đủ điểm chưa
+    const soMonDangKy = dangKyHocPhan.filter(dk => 
+      dk.hoc_ky === hocKy && 
+      dk.nam_hoc === namHoc && 
+      dk.trang_thai_dk === 'THANH_CONG'
+    ).length
+    
+    const soMonCoDiem = items.filter(item =>
+      item.diemTongKet !== null && 
+      item.diemTongKet !== undefined && 
+      item.diemTongKet !== ''
+    ).length
+    
+    // Chỉ in điểm tích lũy khi đã nhập đủ điểm
+    const shouldShowDTB = dtb && soMonDangKy > 0 && soMonCoDiem === soMonDangKy
+    
+    if (shouldShowDTB) {
       content.push({
         table: {
           widths: ['*', '*'],
@@ -290,6 +391,22 @@ export default function DiemSo() {
       const namHoc = items[0]?.namHoc
       const dtb = diemTrungBinh.find(d => d.hoc_ky === hocKy && d.nam_hoc === namHoc)
       
+      // Kiểm tra xem đã nhập đủ điểm chưa
+      const soMonDangKy = dangKyHocPhan.filter(dk => 
+        dk.hoc_ky === hocKy && 
+        dk.nam_hoc === namHoc && 
+        dk.trang_thai_dk === 'THANH_CONG'
+      ).length
+      
+      const soMonCoDiem = items.filter(item =>
+        item.diemTongKet !== null && 
+        item.diemTongKet !== undefined && 
+        item.diemTongKet !== ''
+      ).length
+      
+      // Chỉ hiển thị điểm tích lũy khi đã nhập đủ điểm tất cả môn đã đăng ký
+      const showDiemTichLuy = dtb && soMonDangKy > 0 && soMonCoDiem === soMonDangKy
+      
       return (
         <React.Fragment key={hocKyNam}>
           {/* Dòng hiển thị tiêu đề học kỳ */}
@@ -365,33 +482,37 @@ export default function DiemSo() {
               </td>
               <td style={{ textAlign: 'center', fontSize: '0.9rem' }}>{item.xepLoai}</td>
               <td style={{ textAlign: 'center' }}>
-                {item.dat?.trim().toLowerCase() === 'đạt' ? (
-                  <img
-                    src="https://cdn-icons-png.flaticon.com/512/190/190411.png"
-                    alt="Đạt"
-                    width="24"
-                    height="24"
-                    style={{ transition: 'transform 0.2s' }}
-                    onMouseOver={e => e.currentTarget.style.transform = 'scale(1.2)'}
-                    onMouseOut={e => e.currentTarget.style.transform = 'scale(1)'}
-                  />
+                {item.diemTongKet !== null && item.diemTongKet !== undefined && item.diemTongKet !== '' ? (
+                  item.dat?.trim().toLowerCase() === 'đạt' ? (
+                    <img
+                      src="https://cdn-icons-png.flaticon.com/512/190/190411.png"
+                      alt="Đạt"
+                      width="24"
+                      height="24"
+                      style={{ transition: 'transform 0.2s' }}
+                      onMouseOver={e => e.currentTarget.style.transform = 'scale(1.2)'}
+                      onMouseOut={e => e.currentTarget.style.transform = 'scale(1)'}
+                    />
+                  ) : (
+                    <img
+                      src="https://cdn-icons-png.flaticon.com/512/1828/1828843.png"
+                      alt="Không đạt"
+                      width="24"
+                      height="24"
+                      style={{ transition: 'transform 0.2s' }}
+                      onMouseOver={e => e.currentTarget.style.transform = 'scale(1.2)'}
+                      onMouseOut={e => e.currentTarget.style.transform = 'scale(1)'}
+                    />
+                  )
                 ) : (
-                  <img
-                    src="https://cdn-icons-png.flaticon.com/512/1828/1828843.png"
-                    alt="Không đạt"
-                    width="24"
-                    height="24"
-                    style={{ transition: 'transform 0.2s' }}
-                    onMouseOver={e => e.currentTarget.style.transform = 'scale(1.2)'}
-                    onMouseOut={e => e.currentTarget.style.transform = 'scale(1)'}
-                  />
+                  <span style={{ color: '#6c757d', fontSize: '0.85rem' }}>—</span>
                 )}
               </td>
             </tr>
           ))}
 
           {/* Thêm dòng thông tin điểm trung bình */}
-          {dtb && (
+          {showDiemTichLuy && (
             <tr style={{ 
               background: 'linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%)',
               borderTop: '3px solid #667eea'

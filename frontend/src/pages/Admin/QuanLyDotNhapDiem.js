@@ -114,7 +114,7 @@ function QuanLyDotNhapDiem() {
     <AdminLayout>
       <div className="container-fluid mt-4">
         <div className="d-flex justify-content-between align-items-center mb-4">
-          <h3 className="mb-0">🎯 Quản lý đợt nhập điểm</h3>
+          <h3 className="mb-0"> Quản lý đợt nhập điểm</h3>
           <button className="btn btn-primary" onClick={() => setShowModal(true)}>
             ➕ Thêm học kỳ mới
           </button>
@@ -164,7 +164,7 @@ function QuanLyDotNhapDiem() {
                                 className="btn btn-success"
                                 onClick={() => handleUpdateTrangThai(dot.hoc_ky, dot.nam_hoc, 'DOT_1_DANG_MO')}
                               >
-                                ▶️ Mở đợt 1
+                                 Mở đợt 1
                               </button>
                             )}
                             
@@ -173,7 +173,7 @@ function QuanLyDotNhapDiem() {
                                 className="btn btn-warning"
                                 onClick={() => handleUpdateTrangThai(dot.hoc_ky, dot.nam_hoc, 'DOT_1_DA_DONG')}
                               >
-                                ⏸️ Đóng đợt 1
+                                 Đóng đợt 1
                               </button>
                             )}
                             
@@ -182,7 +182,7 @@ function QuanLyDotNhapDiem() {
                                 className="btn btn-primary"
                                 onClick={() => handleUpdateTrangThai(dot.hoc_ky, dot.nam_hoc, 'DOT_2_DANG_MO')}
                               >
-                                ⚡ Mở đợt 2
+                                 Mở đợt 2
                               </button>
                             )}
                             
@@ -191,7 +191,7 @@ function QuanLyDotNhapDiem() {
                                 className="btn btn-danger"
                                 onClick={() => handleUpdateTrangThai(dot.hoc_ky, dot.nam_hoc, 'DA_KHOA')}
                               >
-                                🔒 Khóa điểm
+                                 Khóa điểm
                               </button>
                             )}
 
@@ -202,7 +202,7 @@ function QuanLyDotNhapDiem() {
                                 onClick={() => handleUpdateTrangThai(dot.hoc_ky, dot.nam_hoc, 'CHUA_MO')}
                                 title="Reset về chưa mở (khẩn cấp)"
                               >
-                                🔄 Reset
+                                 Reset
                               </button>
                             )}
                             
@@ -213,7 +213,7 @@ function QuanLyDotNhapDiem() {
                                 onClick={() => handleDelete(dot.hoc_ky, dot.nam_hoc)}
                                 title="Xóa đợt nhập điểm này"
                               >
-                                🗑️ Xóa
+                                 Xóa
                               </button>
                             )}
                           </div>
@@ -225,7 +225,7 @@ function QuanLyDotNhapDiem() {
               </div>
 
               <div className="mt-4 p-3 bg-light rounded">
-                <h6 className="mb-3">📋 Hướng dẫn:</h6>
+                <h6 className="mb-3"> Hướng dẫn:</h6>
                 <div className="row">
                   <div className="col-md-6">
                     <p className="mb-2"><strong>Quy trình chuẩn:</strong></p>

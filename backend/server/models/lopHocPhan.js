@@ -52,7 +52,10 @@ export async function getAllLopHocPhan() {
     lhp.nam_hoc AS namHoc,
     l.ten_lop AS tenLop,
     lhp.ngay_bat_dau AS ngayBatDau,
-    lhp.ngay_ket_thuc AS ngayKetThuc
+    lhp.ngay_ket_thuc AS ngayKetThuc,
+    lhp.lop_id AS lopId,
+    l.nganh_id AS nganhId,
+    l.khoa_id AS khoaId
 FROM LopHocPhan lhp
 JOIN HocPhan hp ON hp.id = lhp.hoc_phan_id
 JOIN GiangVien gv ON gv.id = lhp.giang_vien_id
@@ -171,6 +174,8 @@ export async function getLopHocPhanByGiangVien(giangVienId) {
         hp.ten_hoc_phan AS tenHocPhan,
         hp.so_tin_chi AS soTinChi,
         l.ten_lop AS tenLop,
+        lhp.hoc_ky AS hocKy,
+        lhp.nam_hoc AS namHoc,
         COUNT(DISTINCT dk.sinh_vien_id) AS siSo
       FROM LopHocPhan lhp
       JOIN HocPhan hp ON lhp.hoc_phan_id = hp.id
@@ -179,6 +184,7 @@ export async function getLopHocPhanByGiangVien(giangVienId) {
         AND dk.trang_thai_dk = 'THANH_CONG'
       WHERE lhp.giang_vien_id = ?
       GROUP BY lhp.id
+      ORDER BY lhp.nam_hoc DESC, lhp.hoc_ky DESC, lhp.ma_lop_hoc_phan ASC
     `, [giangVienId]);
     return rows;
   } catch (err) {

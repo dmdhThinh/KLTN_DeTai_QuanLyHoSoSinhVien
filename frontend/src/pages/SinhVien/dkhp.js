@@ -67,7 +67,7 @@ function ChiTietLopHocPhan({ lhp, onClose, onRegister }) {
           </div>
           <div className="modal-footer">
             <button className="btn btn-secondary" onClick={onClose}>Đóng</button>
-            <button className="btn btn-success" onClick={() => onRegister(lhp)}>Đăng ký</button>
+            
           </div>
         </div>
       </div>
