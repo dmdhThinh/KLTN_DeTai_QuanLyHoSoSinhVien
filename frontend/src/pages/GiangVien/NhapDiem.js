@@ -14,7 +14,7 @@ function NhapDiem() {
   const [message, setMessage] = useState('');
   const [trangThaiDot, setTrangThaiDot] = useState(null); // Trạng thái đợt nhập điểm từ DB
   const [showConfirm, setShowConfirm] = useState(false); // Modal xác nhận
-
+  const [viewMode, setViewMode] = useState('input');
   // Load thông tin lớp học phần và danh sách sinh viên
   const loadData = async () => {
     if (!lopHocPhanId) return;

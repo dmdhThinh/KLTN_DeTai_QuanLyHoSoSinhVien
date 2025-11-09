@@ -19,6 +19,11 @@ export default function LopHocPhanList() {
   const [lopId, setLopId] = useState('') // Thêm state cho lớp học phần
   const [lops, setLops] = useState([]) // Thêm state cho danh sách lớp
   const [filteredLops, setFilteredLops] = useState([]) // Thêm state cho danh sách lớp đã lọc
+
+  // Phân trang
+  const [currentPage, setCurrentPage] = useState(1)
+  const [itemsPerPage] = useState(10)
+
   // 🚀 Load dữ liệu ban đầu
   useEffect(() => {
     loadDropdowns()
@@ -36,6 +41,7 @@ export default function LopHocPhanList() {
       setNganhId('') // reset ngành khi đổi khoa
     }
   }, [khoaId, nganhs])
+
   // 🔹 Khi chọn Ngành → lọc lớp thuộc ngành đó
   useEffect(() => {
     if (!nganhId) {
@@ -102,9 +108,8 @@ export default function LopHocPhanList() {
     }
   }
 
-  // ===== Xử lý tìm kiếm & lọc
-  const handleSubmit = (e) => {
-    e.preventDefault()
+  // ===== Xử lý tìm kiếm & lọc (tự động)
+  useEffect(() => {
     let result = [...list]
 
     // Lọc theo tên lớp học phần
@@ -129,7 +134,8 @@ export default function LopHocPhanList() {
     }
 
     setFiltered(result)
-  }
+    setCurrentPage(1) // Reset về trang 1 khi lọc
+  }, [search, khoaId, nganhId, lopId, list])
 
   // ===== Xử lý xoá
   const handleDelete = async (id) => {
@@ -179,10 +185,7 @@ export default function LopHocPhanList() {
 
       {/* Thanh công cụ */}
       <div className="d-flex align-items-center mb-3 flex-wrap gap-2">
-        <form
-          onSubmit={handleSubmit}
-          className="d-flex align-items-center gap-2 flex-wrap"
-        >
+        <div className="d-flex align-items-center gap-2 flex-wrap">
           {/* 🔍 Tìm kiếm lớp học phần */}
           <input
             type="text"
@@ -219,6 +222,7 @@ export default function LopHocPhanList() {
               <option key={n.id} value={n.id}>{n.ten_nganh}</option>
             ))}
           </select>
+
           {/* 🏫 Chọn lớp (lọc theo ngành) */}
           <select
             className="form-select"
@@ -232,11 +236,7 @@ export default function LopHocPhanList() {
               <option key={l.id} value={l.id}>{l.tenLop}</option>
             ))}
           </select>
-
-          <button className="btn btn-outline-primary" type="submit">
-            Tìm kiếm
-          </button>
-        </form>
+        </div>
 
         <div className="ms-auto">
           <button
@@ -273,9 +273,11 @@ export default function LopHocPhanList() {
                   </tr>
                 </thead>
                 <tbody>
-                  {filtered.map((lop, i) => (
+                  {filtered
+                    .slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage)
+                    .map((lop, i) => (
                     <tr key={lop.id}>
-                      <td>{i + 1}</td>
+                      <td>{(currentPage - 1) * itemsPerPage + i + 1}</td>
                       <td>{lop.maLopHocPhan}</td>
                       <td>{lop.tenHocPhan}</td>
                       <td>{lop.tenLop || '—'}</td>
@@ -303,6 +305,47 @@ export default function LopHocPhanList() {
             </div>
           )}
         </div>
+
+        {/* Phân trang */}
+        {filtered.length > 0 && (
+          <div className="card-footer d-flex justify-content-between align-items-center">
+            <div className="text-muted small">
+              Hiển thị {Math.min((currentPage - 1) * itemsPerPage + 1, filtered.length)} - {Math.min(currentPage * itemsPerPage, filtered.length)} trong tổng số {filtered.length} lớp học phần
+            </div>
+            <nav>
+              <ul className="pagination pagination-sm mb-0">
+                <li className={`page-item ${currentPage === 1 ? 'disabled' : ''}`}>
+                  <button
+                    className="page-link"
+                    onClick={() => setCurrentPage(currentPage - 1)}
+                    disabled={currentPage === 1}
+                  >
+                    « Trước
+                  </button>
+                </li>
+                {Array.from({ length: Math.ceil(filtered.length / itemsPerPage) }, (_, i) => i + 1).map(page => (
+                  <li key={page} className={`page-item ${currentPage === page ? 'active' : ''}`}>
+                    <button
+                      className="page-link"
+                      onClick={() => setCurrentPage(page)}
+                    >
+                      {page}
+                    </button>
+                  </li>
+                ))}
+                <li className={`page-item ${currentPage === Math.ceil(filtered.length / itemsPerPage) ? 'disabled' : ''}`}>
+                  <button
+                    className="page-link"
+                    onClick={() => setCurrentPage(currentPage + 1)}
+                    disabled={currentPage === Math.ceil(filtered.length / itemsPerPage)}
+                  >
+                    Sau »
+                  </button>
+                </li>
+              </ul>
+            </nav>
+          </div>
+        )}
       </div>
     </AdminLayout>
   )
