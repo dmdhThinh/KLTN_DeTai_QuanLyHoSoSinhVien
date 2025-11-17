@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { apiFetch } from '../../api';
 import TeacherLayout from '../../components/TeacherLayout';
 import * as XLSX from 'xlsx';
+import ExcelJS from 'exceljs';
 
 function SinhVienTrongLop() {
   const { lopHocPhanId } = useParams();
@@ -39,127 +40,278 @@ function SinhVienTrongLop() {
     }
   };
 
-  // Xuất Excel điểm danh
-  const exportDiemDanh = () => {
-    if (!lopHocPhan || !sinhVienList.length) {
-      alert('Không có dữ liệu để xuất!');
-      return;
+
+const exportDiemDanh = async () => {
+  if (!lopHocPhan || !sinhVienList.length) {
+    alert('Không có dữ liệu để xuất!');
+    return;
+  }
+
+  // ===== 1. Tính các buổi học =====
+  const ngayBatDau = lopHocPhan.ngay_bat_dau || lopHocPhan.ngayBatDau;
+  const ngayKetThuc = lopHocPhan.ngay_ket_thuc || lopHocPhan.ngayKetThuc;
+  const cacNgayHoc = [];
+
+  if (ngayBatDau && ngayKetThuc && lichHoc && lichHoc.length > 0) {
+    const start = new Date(ngayBatDau);
+    let end = new Date(ngayKetThuc);
+    const endDow = end.getDay();
+    const offsetToSunday = (7 - endDow) % 7;
+    if (offsetToSunday > 0) {
+      end.setDate(end.getDate() + offsetToSunday);
     }
 
-    // Tạo workbook
-    const wb = XLSX.utils.book_new();
-
-    // Chuẩn bị dữ liệu
-    const data = [];
-    
-    // Row 1-3: Thông tin lớp
-    data.push(['Mã lớp học phần:', lopHocPhan.ma_lop_hoc_phan || lopHocPhan.maLopHocPhan]);
-    data.push(['Tên môn học:', lopHocPhan.ten_hoc_phan || lopHocPhan.tenHocPhan]);
-    data.push(['Lớp học:', lopHocPhan.ten_lop || lopHocPhan.tenLop || 'N/A']);
-    data.push([]); // Row trống
-    data.push([]); // Row trống
-
-    // Tính các ngày học dựa trên lịch học
-    const ngayBatDau = lopHocPhan.ngay_bat_dau || lopHocPhan.ngayBatDau;
-    const ngayKetThuc = lopHocPhan.ngay_ket_thuc || lopHocPhan.ngayKetThuc;
-    const cacNgayHoc = [];
-    
-    if (ngayBatDau && ngayKetThuc && lichHoc.length > 0) {
-      // Lấy các thứ học từ lịch học (2 = Thứ 2, 3 = Thứ 3, ...)
-      const cacThuHoc = lichHoc.map(l => l.thu || l.thu_hoc).filter(t => t);
-      
-      const startDate = new Date(ngayBatDau);
-      const endDate = new Date(ngayKetThuc);
-      let currentDate = new Date(startDate);
-      
-      // Lặp qua từng ngày từ ngày bắt đầu đến ngày kết thúc
-      while (currentDate <= endDate) {
-        const dayOfWeek = currentDate.getDay(); // 0=CN, 1=T2, 2=T3,...
-        // Convert sang format DB: T2=2, T3=3,..., CN=8
-        let thuHoc;
-        if (dayOfWeek === 0) {
-          thuHoc = 8; // Chủ nhật
-        } else {
-          thuHoc = dayOfWeek + 1; // 1->2(T2), 2->3(T3),..., 6->7(T7)
-        }
-        
-        // Nếu thứ này có trong lịch học
-        if (cacThuHoc.includes(thuHoc)) {
-          cacNgayHoc.push(new Date(currentDate));
-        }
-        
-        // Tăng lên 1 ngày
-        currentDate.setDate(currentDate.getDate() + 1);
+    const thuHocDB = lichHoc.map(l => l.thu || l.thu_hoc).filter(Boolean).map(Number);
+    let current = new Date(start);
+    while (current <= end) {
+      const dow = current.getDay();
+      const thuDB = dow === 0 ? 8 : dow + 1;
+      if (thuHocDB.includes(thuDB)) {
+        cacNgayHoc.push(new Date(current));
       }
+      current.setDate(current.getDate() + 1);
     }
-    
-    // Row 6: Header - STT | Họ đệm | Tên | Các cột ngày học
-    const headerRow = ['STT', 'Họ đệm', 'Tên'];
-    if (cacNgayHoc.length > 0) {
-      cacNgayHoc.forEach(date => {
-        // Format: dd/MM/yyyy
-        headerRow.push(date.toLocaleDateString('vi-VN', { 
-          day: '2-digit', 
-          month: '2-digit', 
-          year: 'numeric' 
-        }));
-      });
-    } else {
-      // Fallback nếu không có lịch: 8 cột trống
-      for (let i = 1; i <= 8; i++) {
-        headerRow.push('');
-      }
-    }
-    data.push(headerRow);
+  }
 
-    // Số ngày học để tính cột
-    const soNgayHoc = cacNgayHoc.length > 0 ? cacNgayHoc.length : 8;
-    
-    // Dữ liệu sinh viên
-    sinhVienList.forEach((sv, index) => {
-      // Tách họ đệm và tên
-      const fullName = sv.ho_ten || sv.hoTen || '';
-      const nameParts = fullName.trim().split(' ');
-      const ten = nameParts.length > 0 ? nameParts[nameParts.length - 1] : '';
-      const hoDem = nameParts.slice(0, -1).join(' ');
+  if (cacNgayHoc.length === 0) {
+    alert('Lỗi: Không tìm thấy buổi học nào!');
+    return;
+  }
 
-      const row = [
-        index + 1,
-        hoDem,
-        ten
-      ];
-      
-      // Thêm ô trống cho mỗi ngày học
-      for (let i = 0; i < soNgayHoc; i++) {
-        row.push('');
-      }
-      data.push(row);
-    });
+  const soBuoi = cacNgayHoc.length;
 
-    // Tạo worksheet
-    const ws = XLSX.utils.aoa_to_sheet(data);
+  // ===== 2. Tạo workbook và worksheet =====
+  const workbook = new ExcelJS.Workbook();
+  const worksheet = workbook.addWorksheet('Sheet1');
+  worksheet.views = [{ showGridLines: false }];
 
-    // Set độ rộng cột động theo số ngày học
-    const colWidths = [
-      { wch: 5 },  // STT
-      { wch: 20 }, // Họ đệm
-      { wch: 10 }, // Tên
-    ];
-    
-    // Thêm độ rộng cho các cột ngày học
-    for (let i = 0; i < soNgayHoc; i++) {
-      colWidths.push({ wch: 12 });
-    }
-    
-    ws['!cols'] = colWidths;
+  // ===== 3. Thông tin lớp =====
+  const hk = lopHocPhan.hoc_ky || lopHocPhan.hocKy || '';
+  const namHoc = lopHocPhan.nam_hoc || lopHocPhan.namHoc || '';
+  const hkDisplay = hk && namHoc ? `${hk} (${namHoc})` : (hk || namHoc);
+  const maLHP = lopHocPhan.ma_lop_hoc_phan || lopHocPhan.maLopHocPhan || '';
+  const tenMon = lopHocPhan.ten_hoc_phan || lopHocPhan.tenHocPhan || '';
+  const lopHoc = lopHocPhan.ten_lop || lopHocPhan.tenLop || '';
 
-    // Thêm worksheet vào workbook
-    XLSX.utils.book_append_sheet(wb, ws, 'Điểm danh');
+  let currentRow = 1;
 
-    // Xuất file
-    const fileName = `DiemDanh_${lopHocPhan.ma_lop_hoc_phan || lopHocPhan.maLopHocPhan}_${new Date().getTime()}.xlsx`;
-    XLSX.writeFile(wb, fileName);
+  // ===== 4. Header chính =====
+  worksheet.mergeCells(currentRow, 1, currentRow, 12);
+  const titleCell = worksheet.getCell(currentRow, 1);
+  titleCell.value = 'DANH SÁCH ĐIỂM DANH LỚP HỌC PHẦN';
+  titleCell.font = { name: 'Arial', size: 14, bold: true };
+  // Canh trái để gần khối thông tin Đợt/Cơ sở/Lớp học
+  titleCell.alignment = { horizontal: 'center', vertical: 'middle' };
+
+  currentRow++;
+
+  // ===== 5. Thông tin đợt, cơ sở, mã lớp... =====
+  const infoRows = [
+    ['Đợt:', '', hkDisplay],
+    ['Cơ sở:', '', 'Cơ sở 1 '],
+    ['Mã lớp học phần:', '', maLHP],
+    ['Tên môn học:', '', `${tenMon} `],
+    ['Lớp học', '', lopHoc]
+  ];
+
+  infoRows.forEach(info => {
+    const row = worksheet.getRow(currentRow);
+    row.values = info;
+
+    // Gộp cột 1-2 cho nhãn (Đợt, Cơ sở, ...) và bôi đậm nhãn
+    worksheet.mergeCells(currentRow, 1, currentRow, 2);
+    const labelCell = worksheet.getCell(currentRow, 1);
+    labelCell.font = { name: 'Arial', size: 10, bold: true };
+
+    // Giá trị bên phải giữ font thường
+    const valueCell = worksheet.getCell(currentRow, 3);
+    valueCell.font = { name: 'Arial', size: 10 , bold: true};
+
+    currentRow++;
+  });
+
+  currentRow++; // Dòng trống
+
+  // ===== 6. Headers bảng =====
+  const tableStartRow = currentRow;
+
+  // Header 1: Tên buổi học
+  const header1 = ['STT', 'Mã sinh viên', 'Họ đệm', 'Tên', 'Giới tính', 'Ngày sinh'];
+  cacNgayHoc.forEach(date => {
+    const thu = date.getDay();
+    const thuStr = thu === 0 ? 'Chủ nhật' : `Thứ ${['hai','ba','tư','năm','sáu','bảy'][thu-1]}`;
+    const dateStr = date.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' });
+    header1.push(`[${thuStr}] - [7->9] - ${dateStr}`);
+  });
+  header1.push('Tổng cộng');
+
+  const row1 = worksheet.getRow(currentRow);
+  let colIndex = 1;
+  // Tăng chiều cao dòng để hiển thị rõ ngày/thứ
+  row1.height = 32;
+
+  // Các cột cố định (STT, Mã SV, Họ đệm, Tên, Giới tính, Ngày sinh)
+  for (let i = 0; i < 6; i++) {
+    worksheet.mergeCells(currentRow, colIndex, currentRow + 1, colIndex);
+    const cell = worksheet.getCell(currentRow, colIndex);
+    cell.value = header1[i];
+    cell.font = { name: 'Arial', size: 10, bold: true };
+    cell.alignment = { horizontal: 'center', vertical: 'middle', wrapText: true };
+    cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFD9E1F2' } };
+    cell.border = {
+      top: { style: 'thin' },
+      left: { style: 'thin' },
+      bottom: { style: 'thin' },
+      right: { style: 'thin' }
+    };
+    colIndex++;
+  }
+
+  // Các buổi học (mỗi buổi 3 cột)
+  for (let i = 0; i < soBuoi; i++) {
+    worksheet.mergeCells(currentRow, colIndex, currentRow, colIndex + 2);
+    const cell = worksheet.getCell(currentRow, colIndex);
+    cell.value = header1[6 + i];
+    cell.font = { name: 'Arial', size: 10, bold: true };
+    cell.alignment = { horizontal: 'center', vertical: 'middle', wrapText: true };
+    cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFD9E1F2' } };
+    cell.border = {
+      top: { style: 'thin' },
+      left: { style: 'thin' },
+      bottom: { style: 'thin' },
+      right: { style: 'thin' }
+    };
+    colIndex += 3;
+  }
+
+  // Tổng cộng (4 cột)
+  worksheet.mergeCells(currentRow, colIndex, currentRow, colIndex + 3);
+  const totalCell = worksheet.getCell(currentRow, colIndex);
+  totalCell.value = 'Tổng cộng';
+  totalCell.font = { name: 'Arial', size: 10, bold: true };
+  totalCell.alignment = { horizontal: 'center', vertical: 'middle', wrapText: true };
+  totalCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFD9E1F2' } };
+  totalCell.border = {
+    top: { style: 'thin' },
+    left: { style: 'thin' },
+    bottom: { style: 'thin' },
+    right: { style: 'thin' }
   };
+
+  currentRow++;
+
+  // Header 2: (P/K), ST, LD
+  const row2 = worksheet.getRow(currentRow);
+  colIndex = 7; // Bắt đầu từ cột sau "Ngày sinh"
+
+  for (let i = 0; i < soBuoi; i++) {
+    ['(P/K)', 'ST', 'LD'].forEach(label => {
+      const cell = worksheet.getCell(currentRow, colIndex);
+      cell.value = label;
+      cell.font = { name: 'Arial', size: 10, bold: true };
+      cell.alignment = { horizontal: 'center', vertical: 'middle' };
+      cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFD9E1F2' } };
+      cell.border = {
+        top: { style: 'thin' },
+        left: { style: 'thin' },
+        bottom: { style: 'thin' },
+        right: { style: 'thin' }
+      };
+      colIndex++;
+    });
+  }
+
+  // Tổng cộng sub-headers
+  ['Vắng có phép', 'Vắng không phép', 'Tổng số tiết', '(%) vắng'].forEach(label => {
+    const cell = worksheet.getCell(currentRow, colIndex);
+    cell.value = label;
+    cell.font = { name: 'Arial', size: 10, bold: true };
+    cell.alignment = { horizontal: 'center', vertical: 'middle', wrapText: true };
+    cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFD9E1F2' } };
+    cell.border = {
+      top: { style: 'thin' },
+      left: { style: 'thin' },
+      bottom: { style: 'thin' },
+      right: { style: 'thin' }
+    };
+    colIndex++;
+  });
+
+  currentRow++;
+
+  // ===== 7. Dữ liệu sinh viên =====
+  sinhVienList.forEach((sv, idx) => {
+    const row = worksheet.getRow(currentRow);
+    
+    const hoTen = (sv.ho_ten || sv.hoTen || '').trim();
+    const parts = hoTen.split(' ');
+    const ten = parts.pop() || '';
+    const hoDem = parts.join(' ');
+    const ns = sv.ngay_sinh ? new Date(sv.ngay_sinh).toLocaleDateString('vi-VN', {day:'2-digit', month:'2-digit', year:'numeric'}) : '';
+
+    const rowData = [
+      idx + 1,
+      sv.ma_sv || sv.maSV || '',
+      hoDem,
+      ten,
+      sv.gioi_tinh || sv.gioiTinh || '',
+      ns
+    ];
+
+    // Thêm các cột điểm danh
+    for (let i = 0; i < soBuoi; i++) {
+      rowData.push('', 0, ''); // (P/K), ST, LD
+    }
+
+    // Thêm tổng cộng
+    rowData.push(0, 0, soBuoi * 3, 0);
+
+    row.values = rowData;
+
+    // Style cho từng cell
+    for (let c = 1; c <= rowData.length; c++) {
+      const cell = worksheet.getCell(currentRow, c);
+      cell.font = { name: 'Arial', size: 10 };
+      cell.alignment = { 
+        horizontal: c === 1 ? 'center' : 'left', 
+        vertical: 'middle' 
+      };
+      cell.border = {
+        top: { style: 'thin' },
+        left: { style: 'thin' },
+        bottom: { style: 'thin' },
+        right: { style: 'thin' }
+      };
+    }
+
+    currentRow++;
+  });
+
+  // ===== 8. Độ rộng cột =====
+  worksheet.columns = [
+    { width: 6 },  // STT
+    { width: 14 }, // Mã SV
+    { width: 22 }, // Họ đệm
+    { width: 12 }, // Tên
+    { width: 10 }, // Giới tính
+    { width: 14 }, // Ngày sinh
+    ...Array(soBuoi * 3).fill(null).map((_, i) => ({ width: i % 3 === 0 ? 8 : 6 })),
+    { width: 14 }, // Vắng có phép
+    { width: 16 }, // Vắng không phép
+    { width: 12 }, // Tổng số tiết
+    { width: 10 }  // % vắng
+  ];
+
+  // ===== 9. Xuất file =====
+  const buffer = await workbook.xlsx.writeBuffer();
+  const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+  const url = window.URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = `diem-danh-sinh-vien-${Date.now()}.xlsx`;
+  link.click();
+  window.URL.revokeObjectURL(url);
+};
 
   return (
     <TeacherLayout title="Danh sách sinh viên">

@@ -19,7 +19,8 @@ export default function EnrolledClassesCard({ sinhVienId }) {
         // Chọn học kỳ mới nhất mặc định
         if (data.length > 0) {
           const latest = data[0]
-          setSelectedHocKy(`${latest.hocKy}-${latest.namHoc}`)
+          // Dùng ký tự '|' để tách hocKy và namHoc, tránh xung đột với dấu '-' trong năm học (2024-2025)
+          setSelectedHocKy(`${latest.hocKy}|${latest.namHoc}`)
           loadLopHocPhan(latest.hocKy, latest.namHoc)
         } else {
           setLoading(false)
@@ -52,7 +53,8 @@ export default function EnrolledClassesCard({ sinhVienId }) {
     const value = e.target.value
     setSelectedHocKy(value)
     
-    const [hocKy, namHoc] = value.split('-')
+    // value có dạng "HK1|2025-2026" => tách bằng '|'
+    const [hocKy, namHoc] = value.split('|')
     loadLopHocPhan(hocKy, namHoc)
   }
 
@@ -75,8 +77,8 @@ export default function EnrolledClassesCard({ sinhVienId }) {
               onChange={handleHocKyChange}
             >
               {hocKyList.map((hk) => (
-                <option key={`${hk.hocKy}-${hk.namHoc}`} value={`${hk.hocKy}-${hk.namHoc}`}>
-                  HK{hk.hocKy} ({hk.namHoc})
+                <option key={`${hk.hocKy}-${hk.namHoc}`} value={`${hk.hocKy}|${hk.namHoc}`}>
+                  {hk.hocKy} ({hk.namHoc})
                 </option>
               ))}
             </select>

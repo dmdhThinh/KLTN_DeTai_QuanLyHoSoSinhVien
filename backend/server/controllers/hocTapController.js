@@ -16,9 +16,10 @@ export async function getLopHocPhanDaDangKy(req, res) {
       })
     }
 
+    // Không convert hocKy sang Number để giữ đúng định dạng 'HK1', 'HK2' như trong DB
     const data = await HocTapModel.getLopHocPhanDaDangKy(
       Number(sinhVienId),
-      hocKy ? Number(hocKy) : null,
+      hocKy || null,
       namHoc || null
     )
 
