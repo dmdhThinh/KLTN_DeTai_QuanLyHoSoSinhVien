@@ -26,6 +26,8 @@ export default function AddGiangVien() {
   const [lops, setLops] = useState([])
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
+  const [photoFile, setPhotoFile] = useState(null)
+  const [uploading, setUploading] = useState(false)
 
   useEffect(() => {
     (async () => {
@@ -61,15 +63,37 @@ export default function AddGiangVien() {
     setSaving(true)
     setError('')
     try {
-      await apiFetch('/api/giangviens', {
+      // Tạo giảng viên trước
+      const result = await apiFetch('/api/giangviens', {
         method: 'POST',
         body: JSON.stringify(form)
       })
+      
+      const newId = result.id
+      
+      // Upload ảnh nếu có
+      if (photoFile && newId) {
+        setUploading(true)
+        const formData = new FormData()
+        formData.append('photo', photoFile)
+        
+        const uploadRes = await fetch(`http://localhost:8080/api/giangviens/${newId}/upload-photo`, {
+          method: 'POST',
+          body: formData
+        })
+        
+        if (!uploadRes.ok) {
+          console.error('Upload ảnh thất bại')
+        }
+        setUploading(false)
+      }
+      
       navigate('/admin/teachers', { replace: true })
     } catch (err) {
       setError(err.message || 'Không thể tạo giảng viên')
     } finally {
       setSaving(false)
+      setUploading(false)
     }
   }
 
@@ -163,29 +187,39 @@ export default function AddGiangVien() {
 
             {/* Ảnh thẻ */}
             <div className="col-md-6">
-              <label className="form-label">Ảnh thẻ (URL hoặc chọn file)</label>
-              <input
-                type="text"
-                className="form-control mb-2"
-                placeholder="Dán URL ảnh (nếu có)"
-                value={form.anh_the}
-                onChange={update('anh_the')}
-              />
+              <label className="form-label">Ảnh thẻ</label>
+              {form.anh_the && (
+                <div className="mb-2">
+                  <img 
+                    src={form.anh_the} 
+                    alt="Preview" 
+                    style={{ width: '100px', height: '100px', objectFit: 'cover', borderRadius: '8px' }}
+                  />
+                </div>
+              )}
               <input
                 type="file"
                 className="form-control"
                 accept="image/*"
                 onChange={(e) => {
                   const file = e.target.files?.[0]
-                  if (file) setForm(s => ({ ...s, anh_the: file.name }))
+                  if (file) {
+                    setPhotoFile(file)
+                    // Preview ảnh
+                    const reader = new FileReader()
+                    reader.onload = (event) => {
+                      setForm(s => ({ ...s, anh_the: event.target.result }))
+                    }
+                    reader.readAsDataURL(file)
+                  }
                 }}
               />
-              {form.anh_the && <small className="text-muted">Ảnh hiện tại: <b>{form.anh_the}</b></small>}
+              <small className="text-muted d-block mt-1">Chọn ảnh thẻ cho giảng viên</small>
             </div>
 
             <div className="col-12 d-flex justify-content-end">
-              <button className="btn btn-primary" disabled={saving}>
-                {saving ? 'Đang lưu...' : 'Tạo giảng viên'}
+              <button className="btn btn-primary" disabled={saving || uploading}>
+                {uploading ? 'Đang upload ảnh...' : saving ? 'Đang lưu...' : 'Tạo giảng viên'}
               </button>
             </div>
           </form>

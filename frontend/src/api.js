@@ -138,3 +138,18 @@ export async function markThongBaoAsRead(sinhVienId, thongBaoId) {
   })
   return res.json()
 }
+
+// Giảng viên
+export async function getUnreadCountGiangVien(giangVienId) {
+  const res = await fetch(`/api/thongbao-dadoc/giangvien/${giangVienId}`)
+  return res.json()
+}
+
+export async function markThongBaoAsReadGiangVien(giangVienId, thongBaoId) {
+  const res = await fetch('/api/thongbao-dadoc/giangvien/read', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ giangVienId, thongBaoId })
+  })
+  return res.json()
+}

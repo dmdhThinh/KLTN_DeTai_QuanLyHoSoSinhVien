@@ -26,22 +26,44 @@ async function deleteFileFromS3(fileUrl) {
 }
 
 
-// ✅ Lấy danh sách tin tức kèm trạng thái đọc của sinh viên
+// ✅ Lấy danh sách tin tức kèm trạng thái đọc của sinh viên hoặc giảng viên
 export async function getThongBao(req, res) {
   try {
-    const { sinhVienId } = req.query || {}
-    let sql = `
-      SELECT tb.*, 
-             CASE 
-               WHEN td.da_doc = 'Đã đọc' THEN 'Đã đọc'
-               ELSE 'Chưa đọc'
-             END AS da_doc
-      FROM ThongBao tb
-      LEFT JOIN ThongBao_DaDoc td
-        ON tb.id = td.thong_bao_id AND td.sinh_vien_id = ?
-      ORDER BY tb.ngay_gui DESC
-    `
-    const [rows] = await pool.query(sql, [sinhVienId || null])
+    const { sinhVienId, giangVienId } = req.query || {}
+    
+    let sql, params
+    
+    if (giangVienId) {
+      // Query cho giảng viên
+      sql = `
+        SELECT tb.*, 
+               CASE 
+                 WHEN td.da_doc = 'Đã đọc' THEN 'Đã đọc'
+                 ELSE 'Chưa đọc'
+               END AS da_doc
+        FROM ThongBao tb
+        LEFT JOIN ThongBao_DaDoc td
+          ON tb.id = td.thong_bao_id AND td.giang_vien_id = ?
+        ORDER BY tb.ngay_gui DESC
+      `
+      params = [giangVienId]
+    } else {
+      // Query cho sinh viên (default)
+      sql = `
+        SELECT tb.*, 
+               CASE 
+                 WHEN td.da_doc = 'Đã đọc' THEN 'Đã đọc'
+                 ELSE 'Chưa đọc'
+               END AS da_doc
+        FROM ThongBao tb
+        LEFT JOIN ThongBao_DaDoc td
+          ON tb.id = td.thong_bao_id AND td.sinh_vien_id = ?
+        ORDER BY tb.ngay_gui DESC
+      `
+      params = [sinhVienId || null]
+    }
+    
+    const [rows] = await pool.query(sql, params)
     res.json(rows)
   } catch (err) {
     console.error('❌ Lỗi lấy tin tức:', err)

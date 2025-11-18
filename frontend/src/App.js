@@ -68,6 +68,8 @@ import QuanLyHocPhi from './pages/Admin/QuanLyHocPhi.js'
 import YeuCauTuVanSinhVien from './pages/SinhVien/YeuCauTuVan.js'
 import YeuCauTuVanGiangVien from './pages/GiangVien/YeuCauTuVan.js'
 import YeuCauTuVanAdmin from './pages/Admin/YeuCauTuVan.js'
+import ThongBaoGiangVien from './pages/GiangVien/ThongBaoGiangVien.js'
+import ThongBaoChiTietGiangVien from './pages/GiangVien/ThongBaoChiTietGiangVien.js'
 
 
 function App() {
@@ -145,6 +147,14 @@ function App() {
 <Route
   path="/teacher/yeu-cau-tu-van"
   element={<PrivateRoute allowRoles={['Giảng viên']}><YeuCauTuVanGiangVien /></PrivateRoute>}
+/>
+<Route
+  path="/teacher/thong-bao"
+  element={<PrivateRoute allowRoles={['Giảng viên']}><ThongBaoGiangVien /></PrivateRoute>}
+/>
+<Route
+  path="/teacher/thong-bao/:id"
+  element={<PrivateRoute allowRoles={['Giảng viên']}><ThongBaoChiTietGiangVien /></PrivateRoute>}
 />
 
         {/* Quản trị */}

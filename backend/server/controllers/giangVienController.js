@@ -138,3 +138,55 @@ export async function deleteGiangVien(req, res) {
     res.status(500).json({ message: 'Không thể xoá giảng viên' })
   }
 }
+
+// Upload ảnh thẻ giảng viên lên S3
+export async function uploadTeacherPhoto(req, res) {
+  try {
+    const { id } = req.params
+    
+    console.log('🚀 Upload request received:', {
+      teacherId: id,
+      hasFile: !!req.file,
+      body: req.body
+    })
+    
+    // Kiểm tra file có được upload không
+    if (!req.file) {
+      console.error('❌ Không có file trong request')
+      return res.status(400).json({ message: 'Không có file ảnh được upload' })
+    }
+
+    console.log('📁 File info:', {
+      key: req.file.key,
+      location: req.file.location,
+      size: req.file.size,
+      mimetype: req.file.mimetype
+    })
+
+    // URL ảnh từ S3
+    const photoUrl = req.file.location
+
+    // Cập nhật URL ảnh vào database
+    const [result] = await pool.query(
+      'UPDATE GiangVien SET anh_the = ? WHERE id = ?',
+      [photoUrl, Number(id)]
+    )
+
+    console.log('✅ Updated database:', {
+      affectedRows: result.affectedRows,
+      url: photoUrl
+    })
+
+    return res.json({
+      message: 'Upload ảnh thẻ thành công',
+      url: photoUrl
+    })
+  } catch (err) {
+    console.error('❌ Lỗi upload ảnh thẻ:', err)
+    console.error('Error stack:', err.stack)
+    return res.status(500).json({ 
+      message: 'Lỗi upload ảnh thẻ',
+      error: process.env.NODE_ENV === 'development' ? err.message : undefined
+    })
+  }
+}

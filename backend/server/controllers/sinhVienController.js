@@ -348,16 +348,31 @@ export const update = async (req, res) => {
 
 
 export const remove = async (req, res) => {
+  const conn = await pool.getConnection()
   try {
     const { id } = req.params
     const studentId = Number(id)
  
+    await conn.beginTransaction()
+
     // Lấy tai_khoan_id của sinh viên
-    const [rows] = await pool.query('SELECT tai_khoan_id FROM SinhVien WHERE id = ?', [studentId])
+    const [rows] = await conn.query('SELECT tai_khoan_id FROM SinhVien WHERE id = ?', [studentId])
     const taiKhoanId = rows[0]?.tai_khoan_id
 
-    // Xóa sinh viên trước (để tránh vi phạm ràng buộc khóa ngoại)
-    await pool.query('DELETE FROM SinhVien WHERE id = ?', [studentId])
+    // Xóa các bản ghi liên quan không có ON DELETE CASCADE
+    await conn.query('DELETE FROM ThongBao_DaDoc WHERE sinh_vien_id = ?', [studentId])
+    await conn.query('DELETE FROM DangKyHocPhan WHERE sinh_vien_id = ?', [studentId])
+    await conn.query('DELETE FROM HoSoHanhChinh WHERE sinh_vien_id = ?', [studentId])
+    await conn.query('DELETE FROM HocPhi WHERE sinh_vien_id = ?', [studentId])
+    await conn.query('DELETE FROM KeHoachHocTap WHERE sinh_vien_id = ?', [studentId])
+    await conn.query('DELETE FROM KetQuaHocTap WHERE sinh_vien_id = ?', [studentId])
+    await conn.query('DELETE FROM RenLuyen WHERE sinh_vien_id = ?', [studentId])
+    await conn.query('DELETE FROM ThamGiaHoatDong WHERE sinh_vien_id = ?', [studentId])
+
+    // Xóa sinh viên (các bảng có ON DELETE CASCADE sẽ tự xóa)
+    await conn.query('DELETE FROM SinhVien WHERE id = ?', [studentId])
+
+    await conn.commit()
 
     // Nếu có tài khoản, xóa tài khoản sau
     if (taiKhoanId) {
@@ -366,8 +381,11 @@ export const remove = async (req, res) => {
 
     return res.status(204).send()
   } catch (err) {
+    try { await conn.rollback() } catch {}
     console.error(err)
     return res.status(500).json({ message: 'Lỗi xoá sinh viên' })
+  } finally {
+    conn.release()
   }
 }
 export const removeMany = async (req, res) => {
@@ -387,7 +405,17 @@ export const removeMany = async (req, res) => {
     )
     const accountIds = (acc || []).map(r => r.tai_khoan_id).filter(Boolean)
 
-    // xoá sinh viên (NguoiThan sẽ tự xoá nếu FK ON DELETE CASCADE)
+    // xoá các bản ghi liên quan không có ON DELETE CASCADE
+    await conn.query('DELETE FROM ThongBao_DaDoc WHERE sinh_vien_id IN (?)', [ids])
+    await conn.query('DELETE FROM DangKyHocPhan WHERE sinh_vien_id IN (?)', [ids])
+    await conn.query('DELETE FROM HoSoHanhChinh WHERE sinh_vien_id IN (?)', [ids])
+    await conn.query('DELETE FROM HocPhi WHERE sinh_vien_id IN (?)', [ids])
+    await conn.query('DELETE FROM KeHoachHocTap WHERE sinh_vien_id IN (?)', [ids])
+    await conn.query('DELETE FROM KetQuaHocTap WHERE sinh_vien_id IN (?)', [ids])
+    await conn.query('DELETE FROM RenLuyen WHERE sinh_vien_id IN (?)', [ids])
+    await conn.query('DELETE FROM ThamGiaHoatDong WHERE sinh_vien_id IN (?)', [ids])
+
+    // xoá sinh viên (các bảng có ON DELETE CASCADE như NguoiThan sẽ tự xoá)
     await conn.query('DELETE FROM SinhVien WHERE id IN (?)', [ids])
 
     // xoá tài khoản

@@ -63,6 +63,48 @@ export const uploadStudentPhoto = multer({
   }
 })
 
+// Cấu hình multer-s3 để upload ảnh thẻ giảng viên
+export const uploadTeacherPhoto = multer({
+  storage: multerS3({
+    s3: s3,
+    bucket: S3_BUCKET,
+    acl: 'public-read',
+    contentType: multerS3.AUTO_CONTENT_TYPE,
+    key: function (req, file, cb) {
+      // Tạo tên file unique: teacher-photos/maGv-timestamp.ext
+      const maGv = req.body.ma_gv || req.params.id || 'unknown'
+      const sanitized = sanitizeFilename(file.originalname)
+      const ext = path.extname(sanitized)
+      const fileName = `teacher-photos/${maGv}-${Date.now()}${ext}`
+      console.log('📝 Generated S3 key:', fileName)
+      cb(null, fileName)
+    },
+    metadata: function (req, file, cb) {
+      cb(null, { fieldName: file.fieldname })
+    }
+  }),
+  limits: {
+    fileSize: 5 * 1024 * 1024 // giới hạn 5MB
+  },
+  fileFilter: (req, file, cb) => {
+    console.log('🔍 File filter:', {
+      originalname: file.originalname,
+      mimetype: file.mimetype,
+      size: file.size
+    })
+    
+    // Chỉ cho phép upload ảnh
+    const allowedMimes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp']
+    if (allowedMimes.includes(file.mimetype)) {
+      console.log('✅ File accepted')
+      cb(null, true)
+    } else {
+      console.log('❌ File rejected - invalid mimetype')
+      cb(new Error('Chỉ chấp nhận file ảnh (JPEG, PNG, GIF, WEBP)'), false)
+    }
+  }
+})
+
 // Cấu hình multer-s3 cho upload file thông báo (ảnh, video, tệp đính kèm)
 export const uploadThongBaoFiles = multer({
   storage: multerS3({

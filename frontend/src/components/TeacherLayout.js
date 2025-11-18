@@ -1,12 +1,13 @@
 import React, { useEffect, useState } from 'react'
 import { useLocation, Link } from 'react-router-dom'
-import { getGiangVienId, getGiangVienById, apiFetch } from '../api'
+import { getGiangVienId, getGiangVienById, apiFetch, getUnreadCountGiangVien } from '../api'
 import 'bootstrap-icons/font/bootstrap-icons.css'
 
 export default function TeacherLayout({ children, title = '', activeMenu = '' }) {
   const location = useLocation()
   const [gv, setGv] = useState(null)
   const [tuVanCount, setTuVanCount] = useState(0)
+  const [thongBaoCount, setThongBaoCount] = useState(0)
 
   // Lấy thông tin giảng viên đang đăng nhập
   useEffect(() => {
@@ -28,17 +29,31 @@ export default function TeacherLayout({ children, title = '', activeMenu = '' })
         .then((res) => setTuVanCount(res.count || 0))
         .catch(() => setTuVanCount(0))
     }
-    fetchTuVanCount()
     
-    // Cập nhật mỗi 3 giây
-    const interval = setInterval(fetchTuVanCount, 3000)
+    // Lấy số thông báo chưa đọc
+    const fetchThongBaoCount = () => {
+      getUnreadCountGiangVien(id)
+        .then((res) => setThongBaoCount(res.count || 0))
+        .catch(() => setThongBaoCount(0))
+    }
+    
+    fetchTuVanCount()
+    fetchThongBaoCount()
+    
+    // Cập nhật mỗi 5 giây
+    const interval = setInterval(() => {
+      fetchTuVanCount()
+      fetchThongBaoCount()
+    }, 5000)
     
     // Expose refresh function globally for child components
     window.refreshTuVanCount = fetchTuVanCount
+    window.refreshThongBaoCount = fetchThongBaoCount
     
     return () => {
       clearInterval(interval)
       delete window.refreshTuVanCount
+      delete window.refreshThongBaoCount
     }
   }, [])
 
@@ -195,16 +210,21 @@ export default function TeacherLayout({ children, title = '', activeMenu = '' })
           </li>
 
           <li>
-            <a
-              href="/teacher/thong-bao"
-              className={`nav-link ${
+            <Link
+              to="/teacher/thong-bao"
+              className={`nav-link d-flex align-items-center justify-content-between ${
                 location.pathname.includes('/thong-bao')
                   ? 'active bg-success'
                   : 'text-white-50'
               }`}
             >
-              <i className="bi bi-bell me-2"></i> Thông báo
-            </a>
+              <span>
+                <i className="bi bi-bell me-2"></i> Thông báo
+              </span>
+              {thongBaoCount > 0 && (
+                <span className="badge bg-danger rounded-pill">{thongBaoCount}</span>
+              )}
+            </Link>
           </li>
         </ul>
 
@@ -236,9 +256,19 @@ export default function TeacherLayout({ children, title = '', activeMenu = '' })
                 Xin chào, <b>{gv?.hoTen || 'Giảng viên'}</b>
               </div>
               <div
-                className="rounded-circle bg-light border"
-                style={{ width: 32, height: 32 }}
-              ></div>
+                className="rounded-circle bg-light border d-flex align-items-center justify-content-center overflow-hidden"
+                style={{ width: 40, height: 40 }}
+              >
+                {gv?.anh_the || gv?.anhThe ? (
+                  <img 
+                    src={gv.anh_the || gv.anhThe} 
+                    alt="Avatar"
+                    style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                  />
+                ) : (
+                  <i className="bi bi-person-circle text-secondary" style={{ fontSize: '28px' }}></i>
+                )}
+              </div>
             </div>
           </div>
         </div>

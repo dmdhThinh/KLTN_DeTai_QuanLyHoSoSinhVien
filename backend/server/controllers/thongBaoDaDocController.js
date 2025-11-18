@@ -40,6 +40,44 @@ export async function getUnreadCount(req, res) {
   }
 }
 
+// Lấy số tin chưa đọc của giảng viên
+export async function getUnreadCountGiangVien(req, res) {
+  try {
+    const { giangVienId } = req.params
+    if (!giangVienId) return res.status(400).json({ message: 'Thiếu giangVienId' })
+
+    let retries = 2
+    let lastError
+    
+    while (retries > 0) {
+      try {
+        const [rows] = await pool.query(
+          `SELECT COUNT(*) AS count
+           FROM ThongBao tb
+           LEFT JOIN ThongBao_DaDoc td
+             ON tb.id = td.thong_bao_id AND td.giang_vien_id = ?
+           WHERE td.da_doc IS NULL OR td.da_doc = 'Chưa đọc'`,
+          [giangVienId]
+        )
+        return res.json({ count: rows[0].count || 0 })
+      } catch (err) {
+        lastError = err
+        if (err.code === 'ECONNRESET' && retries > 1) {
+          retries--
+          await new Promise(resolve => setTimeout(resolve, 100))
+          continue
+        }
+        throw err
+      }
+    }
+    
+    throw lastError
+  } catch (err) {
+    console.error('❌ getUnreadCountGiangVien error:', err)
+    res.json({ count: 0 })
+  }
+}
+
 // Đánh dấu 1 tin là đã đọc
 export async function markAsRead(req, res) {
   try {
@@ -70,6 +108,40 @@ export async function markAsRead(req, res) {
     res.json({ message: 'Đã đánh dấu đã đọc' })
   } catch (err) {
     console.error('❌ markAsRead error:', err)
+    res.status(500).json({ message: 'Lỗi đánh dấu đã đọc' })
+  }
+}
+
+// Đánh dấu 1 tin là đã đọc cho giảng viên
+export async function markAsReadGiangVien(req, res) {
+  try {
+    const { giangVienId, thongBaoId } = req.body
+    if (!giangVienId || !thongBaoId)
+      return res.status(400).json({ message: 'Thiếu dữ liệu' })
+
+    // Nếu đã có thì cập nhật, chưa có thì thêm mới
+    const [rows] = await pool.query(
+      'SELECT id FROM ThongBao_DaDoc WHERE giang_vien_id=? AND thong_bao_id=?',
+      [giangVienId, thongBaoId]
+    )
+
+    if (rows.length) {
+      await pool.query(
+        `UPDATE ThongBao_DaDoc SET da_doc='Đã đọc', ngay_doc=NOW()
+         WHERE giang_vien_id=? AND thong_bao_id=?`,
+        [giangVienId, thongBaoId]
+      )
+    } else {
+      await pool.query(
+        `INSERT INTO ThongBao_DaDoc (giang_vien_id, thong_bao_id, da_doc, ngay_doc)
+         VALUES (?, ?, 'Đã đọc', NOW())`,
+        [giangVienId, thongBaoId]
+      )
+    }
+
+    res.json({ message: 'Đã đánh dấu đã đọc' })
+  } catch (err) {
+    console.error('❌ markAsReadGiangVien error:', err)
     res.status(500).json({ message: 'Lỗi đánh dấu đã đọc' })
   }
 }
