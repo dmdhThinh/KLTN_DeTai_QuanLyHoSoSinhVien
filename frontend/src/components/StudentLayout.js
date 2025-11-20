@@ -10,7 +10,7 @@ import {
   getUnreadCount,
   apiFetch
 } from '../api'
-import { Bell } from 'lucide-react'
+import { Bell, MessageCircle } from 'lucide-react'
 import 'bootstrap-icons/font/bootstrap-icons.css'
 
 
@@ -280,7 +280,7 @@ export default function StudentLayout({ children, title = '' }) {
           <li className="mb-2">
             <Link
               to="/yeu-cau-tu-van"
-              className="d-flex align-items-center justify-content-between text-decoration-none px-3 py-2"
+              className="d-flex align-items-center text-decoration-none px-3 py-2"
               style={{
                 fontWeight:
                   location.pathname === '/yeu-cau-tu-van'
@@ -305,9 +305,6 @@ export default function StudentLayout({ children, title = '' }) {
               <span>
                 <i className="bi bi-chat-dots me-2"></i> Yêu cầu tư vấn
               </span>
-              {tuVanCount > 0 && (
-                <span className="badge bg-danger rounded-pill">{tuVanCount}</span>
-              )}
             </Link>
           </li>
         </ul>
@@ -334,7 +331,7 @@ export default function StudentLayout({ children, title = '' }) {
         <div className="d-flex justify-content-between align-items-center">
           <h5 className="fw-semibold mb-0">{title}</h5>
 
-          {/* 🔔 Tin tức + User dropdown */}
+          {/* 🔔 Tin tức + Tin nhắn + User dropdown */}
           <div className="d-flex align-items-center gap-4" ref={menuRef}>
             {/* Tin tức */}
             <div
@@ -350,6 +347,24 @@ export default function StudentLayout({ children, title = '' }) {
                   style={{ fontSize: 10 }}
                 >
                   {unread}
+                </span>
+              )}
+            </div>
+
+            {/* Tin nhắn */}
+            <div
+              className="position-relative text-secondary small d-flex align-items-center gap-1 iuh-hover-item"
+              style={{ cursor: 'pointer' }}
+              onClick={() => navigate('/yeu-cau-tu-van')}
+            >
+              <MessageCircle size={16} />
+              <span>Tin nhắn</span>
+              {tuVanCount > 0 && (
+                <span
+                  className="badge bg-danger position-absolute top-0 start-100 translate-middle rounded-pill"
+                  style={{ fontSize: 10 }}
+                >
+                  {tuVanCount}
                 </span>
               )}
             </div>

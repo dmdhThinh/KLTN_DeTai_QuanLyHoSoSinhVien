@@ -12,6 +12,7 @@ function SinhVienTrongLop() {
   const [sinhVienList, setSinhVienList] = useState([]);
   const [lichHoc, setLichHoc] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [showExportMenu, setShowExportMenu] = useState(false);
 
   // Load thông tin lớp và sinh viên
   useEffect(() => {
@@ -41,9 +42,14 @@ function SinhVienTrongLop() {
   };
 
 
-const exportDiemDanh = async () => {
+const exportDiemDanh = async (loaiDiemDanh) => {
   if (!lopHocPhan || !sinhVienList.length) {
     alert('Không có dữ liệu để xuất!');
+    return;
+  }
+
+  if (!loaiDiemDanh) {
+    alert('Vui lòng chọn loại buổi (lý thuyết / thực hành / trực tuyến) để xuất điểm danh.');
     return;
   }
 
@@ -61,15 +67,26 @@ const exportDiemDanh = async () => {
       end.setDate(end.getDate() + offsetToSunday);
     }
 
-    const thuHocDB = lichHoc.map(l => l.thu || l.thu_hoc).filter(Boolean).map(Number);
-    let current = new Date(start);
-    while (current <= end) {
-      const dow = current.getDay();
-      const thuDB = dow === 0 ? 8 : dow + 1;
-      if (thuHocDB.includes(thuDB)) {
-        cacNgayHoc.push(new Date(current));
+    // Chỉ lấy các lịch học định kỳ của đúng loại buổi được chọn
+    // (không có ngay_hoc / ngayHoc), bỏ qua lịch có ngày cụ thể (buổi bù / thi)
+    const thuHocDB = lichHoc
+      .filter(l => l.loai === loaiDiemDanh)
+      .filter(l => !(l.ngay_hoc || l.ngayHoc))
+      .map(l => l.thu || l.thu_hoc)
+      .filter(Boolean)
+      .map(Number);
+
+    // Nếu sau khi lọc không còn thứ nào thì không sinh buổi nào
+    if (thuHocDB.length > 0) {
+      let current = new Date(start);
+      while (current <= end) {
+        const dow = current.getDay();
+        const thuDB = dow === 0 ? 8 : dow + 1;
+        if (thuHocDB.includes(thuDB)) {
+          cacNgayHoc.push(new Date(current));
+        }
+        current.setDate(current.getDate() + 1);
       }
-      current.setDate(current.getDate() + 1);
     }
   }
 
@@ -302,6 +319,29 @@ const exportDiemDanh = async () => {
     { width: 10 }  // % vắng
   ];
 
+  // ===== 8.1. Tô xám vùng ngoài form (dưới và bên phải) =====
+  const tableEndRow = currentRow - 1;               // dòng dữ liệu cuối cùng
+  const tableEndCol = worksheet.columns.length;     // cột cuối cùng của form
+  const extraRows = 40;                             // số dòng xám thêm bên dưới
+  const extraCols = 5;                             // số cột xám thêm bên phải
+  const grayFill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFD0D0D0' } };
+
+  // Dưới cùng: từ dòng ngay sau SV cuối đến vài dòng phía dưới
+  for (let r = tableEndRow + 1; r <= tableEndRow + extraRows; r++) {
+    for (let c = 1; c <= tableEndCol; c++) {
+      const cell = worksheet.getCell(r, c);
+      cell.fill = grayFill;
+    }
+  }
+
+  // Bên phải: từ cột sau cột cuối cùng, phủ xám theo chiều dọc bảng (kể cả phần trên tiêu đề)
+  for (let r = 1; r <= tableEndRow + extraRows; r++) {
+    for (let c = tableEndCol + 1; c <= tableEndCol + extraCols; c++) {
+      const cell = worksheet.getCell(r, c);
+      cell.fill = grayFill;
+    }
+  }
+
   // ===== 9. Xuất file =====
   const buffer = await workbook.xlsx.writeBuffer();
   const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
@@ -346,14 +386,63 @@ const exportDiemDanh = async () => {
                     <i className="bi bi-people me-2"></i>
                     Danh sách sinh viên
                   </h5>
-                  <button
-                    className="btn btn-light"
-                    onClick={exportDiemDanh}
-                    disabled={!sinhVienList.length}
-                  >
-                    <i className="bi bi-file-earmark-excel me-1"></i>
-                    Xuất Excel điểm danh
-                  </button>
+                  <div className="btn-group">
+                    <button
+                      type="button"
+                      className="btn btn-light dropdown-toggle"
+                      onClick={() => setShowExportMenu(prev => !prev)}
+                      disabled={!sinhVienList.length}
+                    >
+                      <i className="bi bi-file-earmark-excel me-1"></i>
+                      Xuất Excel điểm danh
+                    </button>
+                    <ul
+                      className={
+                        "dropdown-menu dropdown-menu-end" +
+                        (showExportMenu ? " show" : "")
+                      }
+                    >
+                      <li>
+                        <button
+                          className="dropdown-item"
+                          type="button"
+                          onClick={() => {
+                            setShowExportMenu(false);
+                            exportDiemDanh('lythuyet');
+                          }}
+                          disabled={!lichHoc.some(l => l.loai === 'lythuyet')}
+                        >
+                          Lý thuyết
+                        </button>
+                      </li>
+                      <li>
+                        <button
+                          className="dropdown-item"
+                          type="button"
+                          onClick={() => {
+                            setShowExportMenu(false);
+                            exportDiemDanh('thuchanh');
+                          }}
+                          disabled={!lichHoc.some(l => l.loai === 'thuchanh')}
+                        >
+                          Thực hành
+                        </button>
+                      </li>
+                      <li>
+                        <button
+                          className="dropdown-item"
+                          type="button"
+                          onClick={() => {
+                            setShowExportMenu(false);
+                            exportDiemDanh('tructuyen');
+                          }}
+                          disabled={!lichHoc.some(l => l.loai === 'tructuyen')}
+                        >
+                          Trực tuyến
+                        </button>
+                      </li>
+                    </ul>
+                  </div>
                 </div>
               </div>
               <div className="card-body">
