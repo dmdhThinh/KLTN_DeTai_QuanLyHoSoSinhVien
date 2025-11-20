@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react'
 import { useLocation, Link } from 'react-router-dom'
 import { getGiangVienId, getGiangVienById, apiFetch, getUnreadCountGiangVien } from '../api'
+import { Bell, MessageCircle } from 'lucide-react'
 import 'bootstrap-icons/font/bootstrap-icons.css'
 
 export default function TeacherLayout({ children, title = '', activeMenu = '' }) {
@@ -168,7 +169,8 @@ export default function TeacherLayout({ children, title = '', activeMenu = '' })
             <Link
               to="/teacher/lophocphan"
               className={`nav-link ${
-                location.pathname.includes('/teacher/lophocphan')
+                (location.pathname.includes('/teacher/lophocphan') ||
+                  location.pathname.includes('/teacher/nhapdiem'))
                   ? 'active bg-success'
                   : 'text-white-50'
               }`}
@@ -194,36 +196,26 @@ export default function TeacherLayout({ children, title = '', activeMenu = '' })
           <li>
             <Link
               to="/teacher/yeu-cau-tu-van"
-              className={`nav-link d-flex align-items-center justify-content-between ${
+              className={`nav-link ${
                 location.pathname.includes('/yeu-cau-tu-van')
                   ? 'active bg-success'
                   : 'text-white-50'
               }`}
             >
-              <span>
-                <i className="bi bi-chat-dots me-2"></i> Yêu cầu tư vấn
-              </span>
-              {tuVanCount > 0 && (
-                <span className="badge bg-danger rounded-pill">{tuVanCount}</span>
-              )}
+              <i className="bi bi-chat-dots me-2"></i> Yêu cầu tư vấn
             </Link>
           </li>
 
           <li>
             <Link
               to="/teacher/thong-bao"
-              className={`nav-link d-flex align-items-center justify-content-between ${
+              className={`nav-link ${
                 location.pathname.includes('/thong-bao')
                   ? 'active bg-success'
                   : 'text-white-50'
               }`}
             >
-              <span>
-                <i className="bi bi-bell me-2"></i> Thông báo
-              </span>
-              {thongBaoCount > 0 && (
-                <span className="badge bg-danger rounded-pill">{thongBaoCount}</span>
-              )}
+              <i className="bi bi-bell me-2"></i> Thông báo
             </Link>
           </li>
         </ul>
@@ -245,13 +237,43 @@ export default function TeacherLayout({ children, title = '', activeMenu = '' })
         <div className="p-4 pb-3 bg-white shadow-sm" style={{ flexShrink: 0, zIndex: 100 }}>
           <div className="d-flex justify-content-between align-items-center">
             <h5 className="fw-semibold mb-0">{title}</h5>
-            <div className="d-flex align-items-center gap-2">
-              <input
-                type="text"
-                className="form-control form-control-sm"
-                placeholder="Tìm kiếm..."
-                style={{ maxWidth: 250 }}
-              />
+
+            {/* Tin tức + Tin nhắn + Thông tin GV */}
+            <div className="d-flex align-items-center gap-4">
+              {/* Tin tức */}
+              <Link
+                to="/teacher/thong-bao"
+                className="position-relative text-secondary small d-flex align-items-center gap-1 iuh-hover-item text-decoration-none"
+              >
+                <Bell size={16} />
+                <span>Tin tức</span>
+                {thongBaoCount > 0 && (
+                  <span
+                    className="badge bg-danger position-absolute top-0 start-100 translate-middle rounded-pill"
+                    style={{ fontSize: 10 }}
+                  >
+                    {thongBaoCount}
+                  </span>
+                )}
+              </Link>
+
+              {/* Tin nhắn */}
+              <Link
+                to="/teacher/yeu-cau-tu-van"
+                className="position-relative text-secondary small d-flex align-items-center gap-1 iuh-hover-item text-decoration-none"
+              >
+                <MessageCircle size={16} />
+                <span>Tin nhắn</span>
+                {tuVanCount > 0 && (
+                  <span
+                    className="badge bg-danger position-absolute top-0 start-100 translate-middle rounded-pill"
+                    style={{ fontSize: 10 }}
+                  >
+                    {tuVanCount}
+                  </span>
+                )}
+              </Link>
+
               <div className="text-muted small">
                 Xin chào, <b>{gv?.hoTen || 'Giảng viên'}</b>
               </div>
@@ -260,8 +282,8 @@ export default function TeacherLayout({ children, title = '', activeMenu = '' })
                 style={{ width: 40, height: 40 }}
               >
                 {gv?.anh_the || gv?.anhThe ? (
-                  <img 
-                    src={gv.anh_the || gv.anhThe} 
+                  <img
+                    src={gv.anh_the || gv.anhThe}
                     alt="Avatar"
                     style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                   />
