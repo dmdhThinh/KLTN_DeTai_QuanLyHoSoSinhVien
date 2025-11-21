@@ -1,29 +1,91 @@
 /* src/styles/SinhVien/ChuongTrinhKhung.css */
 
-/* Scoped tất cả selector với .ctk-table */
-.ctk-table th,
-.ctk-table td {
-    vertical-align: middle;
-    font-size: 0.95rem;
-}
 
-.ctk-table thead th {
-    background: linear-gradient(90deg, #0d6efd, #0a58ca);
+/* Header bảng cố định (STT, Mã môn học, ...) */
+.table-header th {
+    background: linear-gradient(135deg, #0288d1 0%, #0277bd 100%);
     color: white;
-    font-weight: 600;
+    font-weight: 700;
     text-transform: uppercase;
-    font-size: 0.85rem;
+    font-size: 0.8rem;
     letter-spacing: 0.5px;
+    padding: 12px 8px;
+    border: 1px solid #0277bd;
 }
 
-.ctk-table tfoot td {
-    background-color: #e3f2fd !important;
-    color: #1565c0;
+/* HỌC KỲ X + TỔNG SỐ TC (nằm dưới header bảng) */
+.hoc-ky-row {
+    background: linear-gradient(135deg, #00bcd4 0%, #00acc1 100%);
+    color: white;
+    padding: 10px 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-weight: 700;
+    font-size: 1rem;
+    letter-spacing: 0.8px;
+}
+
+.hoc-ky-label {
     font-size: 1.1rem;
 }
 
-.ctk-table-hover tbody tr:hover {
-    background-color: #f8f9fa;
+.tong-tc-label {
+    font-size: 1.05rem;
+}
+
+/* Section header: HỌC PHẦN BẮT BUỘC / TỰ CHỌN */
+.section-header {
+    background-color: #d9edf7;
+    color: #31708f;
+    padding: 10px 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-radius: 0;
+    margin-top: 0;
+    margin-bottom: 0;
+    border: none;
+    border-bottom: 2px solid #bce8f1;
+}
+
+.section-title {
+    font-size: 0.95rem;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    background: transparent !important;
+}
+
+.section-total {
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: #31708f;
+    background: transparent !important;
+}
+
+/* Table styling */
+.ctk-table th,
+.ctk-table td {
+    vertical-align: middle;
+    font-size: 0.9rem;
+    padding: 10px 8px;
+    border: 1px solid #dee2e6;
+}
+
+/* Zebra striping - dòng xen kẽ */
+.ctk-table tbody tr:nth-child(odd) {
+    background-color: #f9f9f9;
+}
+
+.ctk-table tbody tr:nth-child(even) {
+    background-color: white;
+}
+
+/* Giữ màu xám cho môn đã học khi có background */
+.ctk-table tbody tr td[style*="background-color: rgb(224, 224, 224)"],
+.ctk-table tbody tr td[style*="background-color: #e0e0e0"] {
+    background-color: #e0e0e0 !important;
 }
 
 .form-select {

@@ -2,6 +2,7 @@
 import React, { useEffect, useState } from 'react'
 import { getSinhVienId, apiFetch } from '../../api'
 import StudentLayout from '../../components/StudentLayout'
+import { Check } from 'lucide-react'
 import '../../styles/SinhVien/ChuongTrinhKhung.css'
 
 export default function ChuongTrinhKhung() {
@@ -22,6 +23,8 @@ export default function ChuongTrinhKhung() {
         return apiFetch(`/api/chuongtrinhkhung/${hocKy}/${sv.nganhId}?sinh_vien_id=${id}`)
       })
       .then((result) => {
+        console.log('📦 Data từ API:', result)
+        console.log('📋 Danh sách môn:', result.danh_sach)
         setData(result)
         setLoading(false)
       })
@@ -43,30 +46,112 @@ export default function ChuongTrinhKhung() {
     )
   }
 
-  if (!data || !data.danh_sach.length) {
+  // Group môn theo loại
+  const monBatBuoc = data && data.danh_sach ? data.danh_sach.filter(item => item.loai_mon === 'BAT_BUOC') : []
+  const monTuChon = data && data.danh_sach ? data.danh_sach.filter(item => item.loai_mon === 'TU_CHON') : []
+
+  // Tính tổng TC cho từng nhóm
+  const tongTcBatBuoc = monBatBuoc.reduce((sum, item) => sum + (item.so_tc_dvht || 0), 0)
+  const tongTcTuChon = monTuChon.reduce((sum, item) => sum + (item.so_tc_dvht || 0), 0)
+
+  // Check có dữ liệu không
+  const hasData = data && data.danh_sach && data.danh_sach.length > 0
+
+  // Render một bảng
+  const renderTable = (danhSach, tieuDe, tongTc) => {
+    if (!danhSach.length) return null
+
     return (
-      <StudentLayout title="Chương trình khung">
-        <div className="alert alert-info text-center">
-          Không có dữ liệu chương trình khung cho học kỳ <strong>{hocKy}</strong>
+      <div className="mb-4">
+        {/* Section header */}
+        <div className="section-header">
+          <div className="section-title">{tieuDe}</div>
+          <div className="section-total">TỔNG SỐ TC: {tongTc}</div>
         </div>
-      </StudentLayout>
+
+        {/* Bảng */}
+        <div className="shadow-sm">
+          <div className="table-responsive">
+            <table className="ctk-table table table-hover align-middle mb-0">
+              <tbody>
+                {danhSach.map((item, index) => {
+                  const daHoc = item.da_dkhp === 1 || 
+                                item.diem_tong_ket !== null || 
+                                (item.dat && item.dat !== 'Chưa đạt')
+
+                  const dat = (item.diem_tong_ket !== null && item.diem_tong_ket >= 4.0) ||
+                              item.dat === 'Đạt'
+                  const rot = item.diem_tong_ket !== null && item.diem_tong_ket < 4.0
+
+                  return (
+                    <tr key={index}>
+                      <td 
+                        className="text-center fw-semibold"
+                        style={{ backgroundColor: daHoc ? '#e0e0e0' : 'transparent', width: '50px' }}
+                      >
+                        {index + 1}
+                      </td>
+                      <td style={{ backgroundColor: daHoc ? '#e0e0e0' : 'transparent', width: '100px' }}>
+                        {item.ma_mon_hoc}
+                      </td>
+                      <td 
+                        className="fw-medium"
+                        style={{ backgroundColor: daHoc ? '#e0e0e0' : 'transparent' }}
+                      >
+                        {item.ten_mon_hoc}
+                      </td>
+                      <td style={{ backgroundColor: daHoc ? '#e0e0e0' : 'transparent', width: '120px' }}>
+                        {item.ma_hoc_phan}
+                      </td>
+                      <td style={{ backgroundColor: daHoc ? '#e0e0e0' : 'transparent', width: '250px' }}>
+                        <small>{item.hoc_phan_loai}</small>
+                      </td>
+                      <td 
+                        className="text-center"
+                        style={{ backgroundColor: daHoc ? '#e0e0e0' : 'transparent', width: '80px' }}
+                      >
+                        {item.so_tc_dvht}
+                      </td>
+                      <td 
+                        className="text-center"
+                        style={{ backgroundColor: daHoc ? '#e0e0e0' : 'transparent', width: '80px' }}
+                      >
+                        {item.so_tiet_lt}
+                      </td>
+                      <td 
+                        className="text-center"
+                        style={{ backgroundColor: daHoc ? '#e0e0e0' : 'transparent', width: '80px' }}
+                      >
+                        {item.so_tiet_th}
+                      </td>
+                      <td 
+                        className="text-center"
+                        style={{ backgroundColor: daHoc ? '#e0e0e0' : 'transparent', width: '60px' }}
+                      >
+                        {dat ? (
+                          <Check size={20} className="text-success" strokeWidth={3} />
+                        ) : rot ? (
+                          <span className="text-danger fw-bold">✗</span>
+                        ) : (
+                          <span className="text-muted">—</span>
+                        )}
+                      </td>
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
     )
   }
 
   return (
     <StudentLayout title="Chương trình khung">
       <div className="container-fluid">
-        {/* Header */}
-        <div className="d-flex justify-content-between align-items-center mb-4">
-          <div>
-            
-            <p className="text-muted small mb-0">
-              Ngành: <strong>{sinhVien?.tenNganh}</strong> | 
-              Lớp: <strong>{sinhVien?.tenLop}</strong>
-            </p>
-          </div>
-
-          {/* Chọn học kỳ */}
+        {/* Dropdown chọn học kỳ */}
+        <div className="mb-3">
           <select
             className="form-select w-auto"
             value={hocKy}
@@ -83,53 +168,70 @@ export default function ChuongTrinhKhung() {
           </select>
         </div>
 
-        {/* Bảng chương trình khung - THÊM class "ctk-table" */}
-        <div className="card border-0 shadow-sm">
+        {/* Header bảng cố định */}
+        <div className="card border-0 shadow-sm mb-0">
           <div className="card-body p-0">
             <div className="table-responsive">
-              <table className="ctk-table table table-hover align-middle mb-0">
-                <thead className="table-primary text-white">
+              <table className="ctk-table table mb-0">
+                <thead className="table-header">
                   <tr>
-                    <th className="text-center" style={{ width: '50px' }}>#</th>
-                    <th>Mã môn học</th>
+                    <th className="text-center" style={{ width: '50px' }}>STT</th>
+                    <th style={{ width: '100px' }}>Mã môn học</th>
                     <th>Tên môn học</th>
-                    
-                    <th>Học phần: học trước (a), tiền quyết (b), song hành (c)</th>
-                    <th className="text-center">Số TC/DVHT</th>
-                    <th className="text-center">Số tiết LT</th>
-                    <th className="text-center">Số tiết TH</th>
-                    <th className="text-center">Đạt</th>
+                    <th style={{ width: '120px' }}>Mã học phần</th>
+                    <th style={{ width: '250px' }}>Học phần: học trước (a), tiền quyết (b), song hành (c)</th>
+                    <th className="text-center" style={{ width: '80px' }}>Số TC/DVHT</th>
+                    <th className="text-center" style={{ width: '80px' }}>Số tiết LT</th>
+                    <th className="text-center" style={{ width: '80px' }}>Số tiết TH</th>
+                    <th className="text-center" style={{ width: '60px' }}>Đạt</th>
                   </tr>
                 </thead>
-                <tbody>
-                  {data.danh_sach.map((item, index) => (
-                    <tr key={index}>
-                      <td className="text-center fw-semibold">{index + 1}</td>
-                      <td>{item.ma_mon_hoc}</td>
-                      <td className="fw-medium">{item.ten_mon_hoc}</td>
-                      
-                      <td><small>{item.hoc_phan_loai}</small></td>
-                      <td className="text-center">{item.so_tc_dvht}</td>
-                      <td className="text-center">{item.so_tiet_lt}</td>
-                      <td className="text-center">{item.so_tiet_th}</td>
-                      <td className="text-center">
-                        {item.dat === 'Đạt' ? (
-                          <span className="text-success fw-bold">Checkmark</span>
-                        ) : (
-                          <span className="text-muted">—</span>
-                        )}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-                <tfoot>
-                  <tr className="table-info fw-bold">
-                    <td colSpan="5" className="text-end">TỔNG SỐ TC:</td>
-                    <td className="text-center">{data.tong_tc}</td>
-                    <td colSpan="3"></td>
-                  </tr>
-                </tfoot>
               </table>
+            </div>
+          </div>
+        </div>
+
+        {/* HỌC KỲ X + TỔNG SỐ TC (nằm dưới header bảng) */}
+        <div className="hoc-ky-row">
+          <div className="hoc-ky-label">HỌC KỲ {hocKy.replace('HK', '')}</div>
+          <div className="tong-tc-label">TỔNG SỐ TC: {data?.tong_tc || 0}</div>
+        </div>
+
+        {/* Thông báo nếu không có dữ liệu */}
+        {!hasData ? (
+          <div className="alert alert-info text-center mt-3">
+            Không có dữ liệu chương trình khung cho học kỳ <strong>{hocKy}</strong>
+          </div>
+        ) : (
+          <>
+            {/* Render 2 bảng: Bắt buộc và Tự chọn */}
+            {renderTable(monBatBuoc, 'HỌC PHẦN BẮT BUỘC', tongTcBatBuoc)}
+            {renderTable(monTuChon, 'HỌC PHẦN TỰ CHỌN', tongTcTuChon)}
+          </>
+        )}
+
+        {/* Chú thích - dưới cùng */}
+        <div className="card border-0 shadow-sm mt-4" style={{ backgroundColor: '#f8f9fa' }}>
+          <div className="card-body py-2 px-3">
+            <div className="d-flex align-items-center gap-4 small">
+              <div className="d-flex align-items-center gap-2">
+                <div style={{ 
+                  width: '24px', 
+                  height: '24px', 
+                  backgroundColor: 'rgba(200, 200, 200, 0.3)',
+                  border: '1px solid #cccccc5e',
+                  borderRadius: '4px'
+                }}></div>
+                <span><i>Môn đã học/đang học</i></span>
+              </div>
+              <div className="d-flex align-items-center gap-2">
+                <Check size={20} className="text-success" strokeWidth={3} />
+                <span><i>Đã đạt</i></span>
+              </div>
+              <div className="d-flex align-items-center gap-2">
+                <span className="text-danger fw-bold" style={{ fontSize: '18px' }}>✗</span>
+                <span><i>Rớt </i></span>
+              </div>
             </div>
           </div>
         </div>
