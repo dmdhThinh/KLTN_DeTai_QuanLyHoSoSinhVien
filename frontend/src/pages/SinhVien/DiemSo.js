@@ -5,6 +5,7 @@ import { getSinhVienId, apiFetch } from '../../api'
 
 import { getSinhVienById } from '../../api'
 import StudentLayout from '../../components/StudentLayout'
+import ChatBot from '../../components/ChatBot'
 import pdfMake from 'pdfmake/build/pdfmake'
 import * as pdfFonts from 'pdfmake/build/vfs_fonts'
 pdfMake.vfs = pdfFonts.vfs
@@ -606,6 +607,9 @@ export default function DiemSo() {
       </div>
       </div>
       </div>
+      
+      {/* ⬇️ Chatbot */}
+      <ChatBot />
   </StudentLayout>
   )
 }
