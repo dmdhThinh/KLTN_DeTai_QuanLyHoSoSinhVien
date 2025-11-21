@@ -31,6 +31,12 @@ export default function LichList() {
   const [nganhId, setNganhId] = useState('');
   const [nganhs, setNganhs] = useState([]);
   const [khoas, setKhoas] = useState([]);
+  const [hocKyNamHoc, setHocKyNamHoc] = useState('');
+  const [ngayNghiKhoa, setNgayNghiKhoa] = useState('');
+  const [showNghiKhoaModal, setShowNghiKhoaModal] = useState(false);
+  const [showConfirmNghiKhoaModal, setShowConfirmNghiKhoaModal] = useState(false);
+  const [globalMessage, setGlobalMessage] = useState(null);
+  const [nghiKhoaError, setNghiKhoaError] = useState('');
   
   // State cho modal đánh dấu nghỉ
   const [showNghiModal, setShowNghiModal] = useState(false)
@@ -41,12 +47,27 @@ export default function LichList() {
 
   const navigate = useNavigate()
 
-    // 🚀 Load Khoa
+  useEffect(() => {
+    if (!globalMessage) return
+    const timer = setTimeout(() => setGlobalMessage(null), 4000)
+    return () => clearTimeout(timer)
+  }, [globalMessage])
+
+  // 🚀 Load Khoa (tự động chọn khoa đầu tiên, không hiển thị combobox)
   useEffect(() => {
     apiFetch('/api/khoa')
-      .then((data) => setKhoas(data || []))
-      .catch(() => setKhoas([]));
-  }, []);
+      .then((data) => {
+        const list = Array.isArray(data) ? data : []
+        setKhoas(list)
+        if (list.length > 0) {
+          setKhoaId(list[0].id)
+        }
+      })
+      .catch(() => {
+        setKhoas([])
+        setKhoaId('')
+      })
+  }, [])
 
   // 🚀 Load Ngành based on selected Khoa
   useEffect(() => {
@@ -74,22 +95,24 @@ export default function LichList() {
 
   // 🚀 Load Lớp Học Phần based on selected Lớp
   useEffect(() => {
+    setHocKyNamHoc('')
+    setLopHocPhanId('')
+
     if (lopId) {
-      console.log('🔍 Fetching LopHocPhan for lopId:', lopId);
+      console.log('🔍 Fetching LopHocPhan for lopId:', lopId)
       apiFetch(`/api/lich-admin/combo/lophocphan?lopId=${lopId}`)
         .then((data) => {
-          console.log('✅ LopHocPhan data received:', data);
-          setLopHocPhans(data || []);
+          console.log('✅ LopHocPhan data received:', data)
+          setLopHocPhans(data || [])
         })
         .catch((err) => {
-          console.error('❌ Error fetching LopHocPhan:', err);
-          setLopHocPhans([]);
-        });
+          console.error('❌ Error fetching LopHocPhan:', err)
+          setLopHocPhans([])
+        })
     } else {
-      setLopHocPhans([]);
-      setLopHocPhanId('');
+      setLopHocPhans([])
     }
-  }, [lopId]);
+  }, [lopId])
 
 
 
@@ -104,6 +127,25 @@ export default function LichList() {
   })
 
   const caHoc = ['Sáng', 'Chiều', 'Tối']
+
+  // Danh sách học kỳ - năm học rút gọn từ các lớp học phần
+  const hocKyNamHocOptions = Array.from(
+    new Map(
+      lopHocPhans
+        .filter((lhp) => lhp.hoc_ky && lhp.nam_hoc)
+        .map((lhp) => {
+          const value = `${lhp.hoc_ky}-${lhp.nam_hoc}`
+          return [value, { value, label: `${lhp.hoc_ky} (${lhp.nam_hoc})` }]
+        })
+    ).values()
+  )
+
+  // Filter lớp học phần theo học kỳ - năm học đã chọn
+  const filteredLopHocPhans = hocKyNamHoc
+    ? lopHocPhans.filter(
+        (lhp) => `${lhp.hoc_ky}-${lhp.nam_hoc}` === hocKyNamHoc
+      )
+    : lopHocPhans
 
   // 🧠 Gọi API lịch học (theo lớp học phần, tuần)
 useEffect(() => {
@@ -150,7 +192,7 @@ const handleDanhDauNghi = async () => {
         lyDo: lyDoNghi
       })
     })
-    alert('Đã đánh dấu nghỉ thành công!')
+    setGlobalMessage({ type: 'success', text: 'Đã đánh dấu nghỉ thành công!' })
     setShowNghiModal(false)
     setLyDoNghi('')
     // Reload lịch
@@ -165,7 +207,47 @@ const handleDanhDauNghi = async () => {
       })
       .finally(() => setLoading(false))
   } catch (err) {
-    alert('Lỗi: ' + (err.message || 'Không thể đánh dấu nghỉ'))
+    setGlobalMessage({
+      type: 'error',
+      text: 'Lỗi: ' + (err.message || 'Không thể đánh dấu nghỉ'),
+    })
+  }
+}
+
+// Hàm đánh dấu ngày nghỉ cho toàn khoa
+const handleNghiToanKhoa = async () => {
+  if (!ngayNghiKhoa) {
+    setNghiKhoaError('Vui lòng chọn ngày nghỉ toàn khoa')
+    return
+  }
+
+  setNghiKhoaError('')
+
+  try {
+    await apiFetch('/api/lich-nghi/khoa-nghi', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        khoaId: khoaId || null,
+        ngayNghi: ngayNghiKhoa,
+        lyDo: 'Nghỉ toàn khoa',
+      }),
+    })
+
+    setGlobalMessage({ type: 'success', text: 'Đã đánh dấu nghỉ cho toàn khoa!' })
+
+    // Đóng modal và reset ngày nghỉ
+    setShowNghiKhoaModal(false)
+    setShowConfirmNghiKhoaModal(false)
+    setNgayNghiKhoa('')
+
+    // Reload lịch tuần hiện tại (tạo object Date mới để useEffect chạy lại)
+    setWeekStart((prev) => new Date(prev))
+  } catch (err) {
+    setGlobalMessage({
+      type: 'error',
+      text: 'Lỗi: ' + (err.message || 'Không thể đánh dấu nghỉ toàn khoa'),
+    })
   }
 }
 
@@ -190,21 +272,16 @@ const handleDanhDauNghi = async () => {
   className="btn btn-success btn-sm"
   onClick={() => navigate('/admin/lich/new')}
 >
+
   ➕ Thêm tiết học
 </button>
-<select
-          className="form-select"
-          style={{ width: 200 }}
-          value={khoaId}
-          onChange={(e) => setKhoaId(e.target.value)}
-        >
-          <option value="">-- Chọn Khoa --</option>
-          {khoas.map((k) => (
-            <option key={k.id} value={k.id}>
-              {k.tenKhoa}
-            </option>
-          ))}
-        </select>
+
+<button
+  className="btn btn-danger btn-sm"
+  onClick={() => setShowNghiKhoaModal(true)}
+>
+  Nghỉ toàn khoa
+</button>
 
         <select
           className="form-select"
@@ -238,13 +315,31 @@ const handleDanhDauNghi = async () => {
 
         <select
           className="form-select"
+          style={{ width: 180 }}
+          value={hocKyNamHoc}
+          onChange={(e) => {
+            setHocKyNamHoc(e.target.value)
+            setLopHocPhanId('')
+          }}
+          disabled={lopHocPhans.length === 0}
+        >
+          <option value="">Tất cả học kỳ</option>
+          {hocKyNamHocOptions.map((opt) => (
+            <option key={opt.value} value={opt.value}>
+              {opt.label}
+            </option>
+          ))}
+        </select>
+
+        <select
+          className="form-select"
           style={{ width: 300 }}
           value={lopHocPhanId}
           onChange={(e) => setLopHocPhanId(e.target.value)}
-          disabled={!lopId}
+          disabled={!lopId || filteredLopHocPhans.length === 0}
         >
           <option value="">-- Chọn Lớp Học Phần --</option>
-          {lopHocPhans.map((lhp) => (
+          {filteredLopHocPhans.map((lhp) => (
             <option key={lhp.id} value={lhp.id}>
               {lhp.ma_lop_hoc_phan} - {lhp.ten_hoc_phan} ({lhp.hoc_ky} {lhp.nam_hoc})
             </option>
@@ -288,6 +383,17 @@ const handleDanhDauNghi = async () => {
             Tiếp →
           </button>
         </div>
+
+        {globalMessage && (
+          <div
+            className={`alert mt-3 ${
+              globalMessage.type === 'error' ? 'alert-danger' : 'alert-success'
+            }`}
+            style={{ fontSize: 14 }}
+          >
+            {globalMessage.text}
+          </div>
+        )}
 
         {/* Lỗi */}
         {error && (
@@ -440,6 +546,96 @@ const handleDanhDauNghi = async () => {
             <span style={{ background: '#ef5350', border: '1px solid #b71c1c' }}></span> Tạm ngưng
           </div>
         </div>
+
+        {/* Modal nghỉ toàn khoa */}
+        {showNghiKhoaModal && (
+          <div className="modal fade show d-block" style={{ background: 'rgba(0,0,0,0.5)' }}>
+            <div className="modal-dialog">
+              <div className="modal-content">
+                <div className="modal-header bg-danger text-white">
+                  <h5 className="modal-title">Nghỉ toàn khoa</h5>
+                  <button className="btn-close" onClick={() => setShowNghiKhoaModal(false)}></button>
+                </div>
+                <div className="modal-body">
+                  <div className="mb-3">
+                    <label className="form-label">Chọn ngày nghỉ:</label>
+                    <input
+                      type="date"
+                      className="form-control"
+                      value={ngayNghiKhoa}
+                      onChange={(e) => setNgayNghiKhoa(e.target.value)}
+                    />
+                  </div>
+                  <div className="small text-muted">
+                    Tất cả các lớp thuộc khoa sẽ được đánh dấu nghỉ trong ngày này.
+                  </div>
+                  {nghiKhoaError && (
+                    <div className="mt-2 text-danger small">
+                      {nghiKhoaError}
+                    </div>
+                  )}
+                  
+                </div>
+                <div className="modal-footer">
+                  <button className="btn btn-secondary" onClick={() => setShowNghiKhoaModal(false)}>
+                    Hủy
+                  </button>
+                  <button
+                    className="btn btn-danger"
+                    onClick={() => {
+                      if (!ngayNghiKhoa) {
+                        setNghiKhoaError('Vui lòng chọn ngày nghỉ toàn khoa')
+                        return
+                      }
+                      setNghiKhoaError('')
+                      setShowNghiKhoaModal(false)
+                      setShowConfirmNghiKhoaModal(true)
+                    }}
+                  >
+                    Xác nhận
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Modal xác nhận nghỉ toàn khoa */}
+        {showConfirmNghiKhoaModal && (
+          <div className="modal fade show d-block" style={{ background: 'rgba(0,0,0,0.5)' }}>
+            <div className="modal-dialog">
+              <div className="modal-content">
+                <div className="modal-header bg-danger text-white">
+                  <h5 className="modal-title">Xác nhận nghỉ toàn khoa</h5>
+                  <button className="btn-close" onClick={() => setShowConfirmNghiKhoaModal(false)}></button>
+                </div>
+                <div className="modal-body">
+                  <div>
+                    Bạn chắc chắn cho toàn khoa nghỉ ngày{' '}
+                    {ngayNghiKhoa ? dayjs(ngayNghiKhoa).format('DD/MM/YYYY') : '...'}?
+                  </div>
+                </div>
+                <div className="modal-footer">
+                  <button
+                    className="btn btn-secondary"
+                    onClick={() => {
+                      setShowConfirmNghiKhoaModal(false)
+                      setShowNghiKhoaModal(true)
+                    }}
+                  >
+                    Hủy
+                  </button>
+                  <button
+                    className="btn btn-danger"
+                    onClick={handleNghiToanKhoa}
+                  >
+                    Xác nhận
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Modal đánh dấu nghỉ */}
         {showNghiModal && (

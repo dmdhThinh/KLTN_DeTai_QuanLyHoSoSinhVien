@@ -58,3 +58,45 @@ export async function getDanhSachBuoiNghi(req, res) {
     res.status(500).json({ message: 'Lỗi server khi lấy danh sách buổi nghỉ' })
   }
 }
+
+// Thêm buổi nghỉ cho toàn khoa trong một ngày (nghỉ lễ, nghỉ toàn khoa)
+export async function themBuoiNghiToanKhoa(req, res) {
+  try {
+    const { khoaId, ngayNghi, lyDo } = req.body
+
+    if (!ngayNghi) {
+      return res.status(400).json({ message: 'Thiếu thông tin ngayNghi' })
+    }
+
+    // Nếu không truyền khoaId thì áp dụng cho tất cả khoa
+    const params = [ngayNghi, lyDo || null]
+
+    let whereClause = ''
+    if (khoaId) {
+      whereClause = 'WHERE l.khoa_id = ?'
+      params.push(khoaId)
+    }
+
+    const sql = `
+      INSERT IGNORE INTO LichNghi (lich_hoc_id, ngay_nghi, ly_do)
+      SELECT 
+        lh.id AS lich_hoc_id,
+        ?,
+        ?
+      FROM LichHoc lh
+      JOIN LopHocPhan lhp ON lhp.id = lh.lop_hoc_phan_id
+      JOIN Lop l ON l.id = lhp.lop_id
+      ${whereClause}
+    `
+
+    const [result] = await pool.execute(sql, params)
+
+    res.json({
+      message: 'Đã thêm ngày nghỉ cho toàn khoa thành công',
+      affectedRows: result.affectedRows || 0,
+    })
+  } catch (err) {
+    console.error('❌ Lỗi themBuoiNghiToanKhoa:', err)
+    res.status(500).json({ message: 'Lỗi server khi thêm buổi nghỉ toàn khoa' })
+  }
+}
