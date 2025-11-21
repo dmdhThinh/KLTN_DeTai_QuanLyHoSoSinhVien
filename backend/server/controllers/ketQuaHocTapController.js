@@ -33,7 +33,7 @@ function tinhDiemTongKetIUH(data) {
     };
   }
 
-  const tongKet = (qt ?? 0) * 0.3 + (gk ?? 0) * 0.2 + ck * 0.5;
+  const tongKet = (qt ?? 0) * 0.2 + (gk ?? 0) * 0.3 + ck * 0.5;
 
   let diemChu, hocLuc, xepLoai, dat;
   if (tongKet >= 8.5) { diemChu = 'A'; hocLuc = xepLoai = 'Giỏi'; dat = 'Đạt'; }
