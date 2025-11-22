@@ -150,14 +150,17 @@ export async function registerLHP({
     if (lhp.trang_thai_dk !== 'MO_DK') throw bizError('Lớp chưa mở đăng ký hoặc đã khóa', { trang_thai_dk: lhp.trang_thai_dk })
     
     // 3) Kiểm tra đã đăng ký học phần này (bất kỳ lớp nào) trong đợt này chưa
-    const [existingHP] = await conn.execute(
-      `SELECT 1 FROM DangKyHocPhan d
-       JOIN LopHocPhan lhp2 ON lhp2.id = d.lop_hoc_phan_id
-       WHERE d.sinh_vien_id = ? AND lhp2.hoc_phan_id = ? AND d.dot_dang_ky_id = ?
-       LIMIT 1`,
-      [sinh_vien_id, lhp.hoc_phan_id, dot.id]
-    )
-    if (existingHP.length) throw bizError('Bạn đã đăng ký học phần này rồi')
+    // CHỈ kiểm tra nếu là HOC_MOI. HOC_LAI và HOC_CAI_THIEN được phép đăng ký lại
+    if (loai_dang_ky === 'HOC_MOI') {
+      const [existingHP] = await conn.execute(
+        `SELECT 1 FROM DangKyHocPhan d
+         JOIN LopHocPhan lhp2 ON lhp2.id = d.lop_hoc_phan_id
+         WHERE d.sinh_vien_id = ? AND lhp2.hoc_phan_id = ? AND d.dot_dang_ky_id = ?
+         LIMIT 1`,
+        [sinh_vien_id, lhp.hoc_phan_id, dot.id]
+      )
+      if (existingHP.length) throw bizError('Bạn đã đăng ký học phần này rồi')
+    }
 
     // 3) Sĩ số (đếm bản ghi đăng ký thực sự tồn tại, vì hủy = xóa dòng)
     const [[{ so_dk }]] = await conn.execute(

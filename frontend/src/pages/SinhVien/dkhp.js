@@ -94,6 +94,9 @@ export default function DkhpPage() {
   // Filter checkbox
   const [hideConflictClasses, setHideConflictClasses] = useState(false);
   
+  // Loại đăng ký: HOC_MOI, HOC_LAI, HOC_CAI_THIEN
+  const [loaiDangKy, setLoaiDangKy] = useState('HOC_MOI');
+  
   // state mới
 const [selectedClass, setSelectedClass] = useState(null);     // lớp học phần đã chọn ở bảng giữa
 const [classDetail, setClassDetail] = useState({ header: null, lich: [] }); // lịch chi tiết lớp
@@ -134,14 +137,12 @@ const loadClassDetail = async (lop) => {
         setDot(d);
 
         // Sử dụng học kỳ/năm học từ dropdown
-        const [avail, regs, pend] = await Promise.all([
+        const [avail, regs] = await Promise.all([
           apiFetch(`/api/dkhp/available?sinh_vien_id=${sinhVienId}&hoc_ky=${selectedHocKy}&nam_hoc=${selectedNamHoc}&dot_dang_ky_id=${d?.id || ''}`),
-          apiFetch(`/api/dkhp/my?sinh_vien_id=${sinhVienId}&hoc_ky=${selectedHocKy}&nam_hoc=${selectedNamHoc}&dot_dang_ky_id=${d?.id || ''}`),
-          apiFetch(`/api/dkhp/hp/pending?sinh_vien_id=${sinhVienId}&hoc_ky=${selectedHocKy}&nam_hoc=${selectedNamHoc}&dot_dang_ky_id=${d?.id || ''}`)
+          apiFetch(`/api/dkhp/my?sinh_vien_id=${sinhVienId}&hoc_ky=${selectedHocKy}&nam_hoc=${selectedNamHoc}&dot_dang_ky_id=${d?.id || ''}`)
         ]);
         setAvailable(avail);
         setRegistered(regs);
-        setPendingHP(pend);
       } catch (err) {
         console.error(err);
         setMessage('Lỗi tải dữ liệu: ' + (err.message || 'Unknown error'));
@@ -153,6 +154,34 @@ const loadClassDetail = async (lop) => {
 
     load();
   }, [sinhVienId, selectedHocKy, selectedNamHoc]);
+
+  // Load danh sách môn theo loại đăng ký
+  useEffect(() => {
+    if (!sinhVienId || !dot) return;
+
+    const loadPending = async () => {
+      try {
+        let pend = [];
+        
+        if (loaiDangKy === 'HOC_LAI') {
+          // Lấy danh sách môn rớt
+          pend = await apiFetch(`/api/dkhp/mon-rot?sinh_vien_id=${sinhVienId}&hoc_ky=${selectedHocKy}&nam_hoc=${selectedNamHoc}`);
+        } else if (loaiDangKy === 'HOC_CAI_THIEN') {
+          // Lấy danh sách môn cải thiện
+          pend = await apiFetch(`/api/dkhp/mon-cai-thien?sinh_vien_id=${sinhVienId}&hoc_ky=${selectedHocKy}&nam_hoc=${selectedNamHoc}`);
+        } else {
+          // HOC_MOI: Lấy môn chưa học (pending)
+          pend = await apiFetch(`/api/dkhp/hp/pending?sinh_vien_id=${sinhVienId}&hoc_ky=${selectedHocKy}&nam_hoc=${selectedNamHoc}`);
+        }
+        
+        setPendingHP(pend);
+      } catch (err) {
+        console.error('Lỗi load danh sách môn:', err);
+      }
+    };
+
+    loadPending();
+  }, [sinhVienId, loaiDangKy, selectedHocKy, selectedNamHoc, dot]);
 
   // Đăng ký
   const handleRegister = async (lhp) => {
@@ -174,7 +203,7 @@ const loadClassDetail = async (lop) => {
         sinh_vien_id: sinhVienId,
         lop_hoc_phan_id: lhp.id,
         dot_dang_ky_id: dot.id,
-        loai_dang_ky: 'HOC_MOI'
+        loai_dang_ky: loaiDangKy  // Gửi loại đăng ký đã chọn
       })
     });
 
@@ -195,6 +224,17 @@ const loadClassDetail = async (lop) => {
       `/api/dkhp/my?sinh_vien_id=${sinhVienId}&hoc_ky=${selectedHocKy}&nam_hoc=${selectedNamHoc}&dot_dang_ky_id=${dot?.id || ''}`
     );
     setRegistered(regs);
+
+    // Refresh danh sách môn pending (để bỏ môn vừa đăng ký)
+    let pend = [];
+    if (loaiDangKy === 'HOC_LAI') {
+      pend = await apiFetch(`/api/dkhp/mon-rot?sinh_vien_id=${sinhVienId}&hoc_ky=${selectedHocKy}&nam_hoc=${selectedNamHoc}`);
+    } else if (loaiDangKy === 'HOC_CAI_THIEN') {
+      pend = await apiFetch(`/api/dkhp/mon-cai-thien?sinh_vien_id=${sinhVienId}&hoc_ky=${selectedHocKy}&nam_hoc=${selectedNamHoc}`);
+    } else {
+      pend = await apiFetch(`/api/dkhp/hp/pending?sinh_vien_id=${sinhVienId}&hoc_ky=${selectedHocKy}&nam_hoc=${selectedNamHoc}&dot_dang_ky_id=${dot?.id || ''}`);
+    }
+    setPendingHP(pend);
 
     // Chi tiết lớp đang chọn (để bảng "CHI TIẾT LỚP HỌC PHẦN" cập nhật ngay)
     if (selectedClass?.id === lhp.id) {
@@ -240,6 +280,17 @@ const handleCancel = async () => {
     ]);
     setAvailable(avail);
     setRegistered(regs);
+
+    // Refresh danh sách môn pending (để môn xuất hiện lại sau khi hủy)
+    let pend = [];
+    if (loaiDangKy === 'HOC_LAI') {
+      pend = await apiFetch(`/api/dkhp/mon-rot?sinh_vien_id=${sinhVienId}&hoc_ky=${selectedHocKy}&nam_hoc=${selectedNamHoc}`);
+    } else if (loaiDangKy === 'HOC_CAI_THIEN') {
+      pend = await apiFetch(`/api/dkhp/mon-cai-thien?sinh_vien_id=${sinhVienId}&hoc_ky=${selectedHocKy}&nam_hoc=${selectedNamHoc}`);
+    } else {
+      pend = await apiFetch(`/api/dkhp/hp/pending?sinh_vien_id=${sinhVienId}&hoc_ky=${selectedHocKy}&nam_hoc=${selectedNamHoc}&dot_dang_ky_id=${dot?.id || ''}`);
+    }
+    setPendingHP(pend);
 
     // 3) Nếu đang mở chi tiết đúng lớp này thì load lại để cập nhật sĩ số
     if (selectedClass && (!lopHocPhanId || lopHocPhanId === selectedClass.id)) {
@@ -329,19 +380,40 @@ const getDaDangKy = (l) => {
           <div className="col-md-6">
             <div className="d-flex gap-3">
               <div className="form-check">
-                <input className="form-check-input" type="radio" name="loaiDK" id="hocMoi" defaultChecked />
+                <input 
+                  className="form-check-input" 
+                  type="radio" 
+                  name="loaiDK" 
+                  id="hocMoi" 
+                  checked={loaiDangKy === 'HOC_MOI'}
+                  onChange={() => setLoaiDangKy('HOC_MOI')}
+                />
                 <label className="form-check-label" htmlFor="hocMoi">
                   HỌC MỚI
                 </label>
               </div>
               <div className="form-check">
-                <input className="form-check-input" type="radio" name="loaiDK" id="hocLai" />
+                <input 
+                  className="form-check-input" 
+                  type="radio" 
+                  name="loaiDK" 
+                  id="hocLai"
+                  checked={loaiDangKy === 'HOC_LAI'}
+                  onChange={() => setLoaiDangKy('HOC_LAI')}
+                />
                 <label className="form-check-label" htmlFor="hocLai">
                   HỌC LẠI
                 </label>
               </div>
               <div className="form-check">
-                <input className="form-check-input" type="radio" name="loaiDK" id="hocCaiThien" />
+                <input 
+                  className="form-check-input" 
+                  type="radio" 
+                  name="loaiDK" 
+                  id="hocCaiThien"
+                  checked={loaiDangKy === 'HOC_CAI_THIEN'}
+                  onChange={() => setLoaiDangKy('HOC_CAI_THIEN')}
+                />
                 <label className="form-check-label" htmlFor="hocCaiThien">
                   HỌC CẢI THIỆN
                 </label>

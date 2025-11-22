@@ -34,4 +34,10 @@ router.get('/lich/:lopHocPhanId', ctrl.getClassSchedule)
 // Lấy danh sách sinh viên đã đăng ký 1 lớp học phần (cho giảng viên nhập điểm)
 router.get('/lop-hoc-phan/:lopHocPhanId', ctrl.getStudentsByLopHocPhan)
 
+// Lấy danh sách môn rớt (để học lại)
+router.get('/mon-rot', ctrl.getMonKhongDat)
+
+// Lấy danh sách môn cải thiện
+router.get('/mon-cai-thien', ctrl.getMonCaiThien)
+
 export default router

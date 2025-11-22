@@ -7,7 +7,8 @@ export async function createKetQuaHocTap(data) {
     diem_ly_thuyet_1, diem_ly_thuyet_2, diem_ly_thuyet_3, diem_ly_thuyet_4,
     diem_thuc_hanh_1, diem_thuc_hanh_2, diem_thuc_hanh_3,
     diem_giua_ky, diem_cuoi_ky,
-    diem_tong_ket, diem_chu, hoc_luc, xep_loai, dat, diem_thang_4
+    diem_tong_ket, diem_chu, hoc_luc, xep_loai, dat, diem_thang_4,
+    tinh_diem = 1  // Mặc định là tính điểm
   } = data;
 
   try {
@@ -17,8 +18,8 @@ export async function createKetQuaHocTap(data) {
         diem_ly_thuyet_1, diem_ly_thuyet_2, diem_ly_thuyet_3, diem_ly_thuyet_4,
         diem_thuc_hanh_1, diem_thuc_hanh_2, diem_thuc_hanh_3,
         diem_giua_ky, diem_cuoi_ky,
-        diem_tong_ket, diem_chu, hoc_luc, xep_loai, dat, diem_thang_4
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        diem_tong_ket, diem_chu, hoc_luc, xep_loai, dat, diem_thang_4, tinh_diem
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       ON DUPLICATE KEY UPDATE
         diem_ly_thuyet_1 = COALESCE(VALUES(diem_ly_thuyet_1), diem_ly_thuyet_1),
         diem_ly_thuyet_2 = COALESCE(VALUES(diem_ly_thuyet_2), diem_ly_thuyet_2),
@@ -34,13 +35,14 @@ export async function createKetQuaHocTap(data) {
         hoc_luc = VALUES(hoc_luc),
         xep_loai = VALUES(xep_loai),
         dat = VALUES(dat),
-        diem_thang_4 = VALUES(diem_thang_4)`,
+        diem_thang_4 = VALUES(diem_thang_4),
+        tinh_diem = VALUES(tinh_diem)`,
       [
         sinh_vien_id, hoc_phan_id, hoc_ky, nam_hoc,
         diem_ly_thuyet_1, diem_ly_thuyet_2, diem_ly_thuyet_3, diem_ly_thuyet_4,
         diem_thuc_hanh_1, diem_thuc_hanh_2, diem_thuc_hanh_3,
         diem_giua_ky, diem_cuoi_ky,
-        diem_tong_ket, diem_chu, hoc_luc, xep_loai, dat, diem_thang_4
+        diem_tong_ket, diem_chu, hoc_luc, xep_loai, dat, diem_thang_4, tinh_diem
       ]
     );
     return result;
@@ -132,6 +134,25 @@ export async function deleteKetQuaHocTap(id) {
     return result;
   } catch (err) {
     console.error('❌ Lỗi khi xóa điểm:', err);
+    throw err;
+  }
+}
+
+// 🔄 Vô hiệu hóa điểm cũ khi học lại/cải thiện
+export async function voHieuHoaDiemCu(sinhVienId, hocPhanId, idMoi) {
+  try {
+    const [result] = await pool.execute(
+      `UPDATE KetQuaHocTap
+       SET tinh_diem = 0
+       WHERE sinh_vien_id = ?
+         AND hoc_phan_id = ?
+         AND id != ?`,
+      [sinhVienId, hocPhanId, idMoi]
+    );
+    console.log(`[TINH_DIEM] Vô hiệu hóa ${result.affectedRows} điểm cũ của HP ${hocPhanId}`);
+    return result;
+  } catch (err) {
+    console.error('❌ Lỗi khi vô hiệu hóa điểm cũ:', err);
     throw err;
   }
 }

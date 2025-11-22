@@ -7,7 +7,7 @@ export default function ChatBot() {
   const [messages, setMessages] = useState([
     {
       role: 'bot',
-      content: 'Xin chào! Tôi là trợ lý ảo của bạn. Bạn có thể hỏi tôi về điểm số, lịch học, hoặc thông tin cá nhân. 😊',
+      content: 'Xin chào! Tôi là trợ lý ảo của bạn. Tôi có thể giúp gì cho bạn? 😊',
       timestamp: new Date()
     }
   ])

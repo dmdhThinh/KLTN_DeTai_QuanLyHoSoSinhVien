@@ -1,4 +1,6 @@
+import { pool } from '../config/db.js'
 import * as DkModel from '../models/dangKyHocPhan.js'
+import * as HocLaiModel from '../models/hocLai.js'
 
 // GET /api/dkhp/dot/current
 export async function getCurrentDot(req, res) {
@@ -54,14 +56,51 @@ export async function registerLHP(req, res) {
     if (!sinh_vien_id || !lop_hoc_phan_id) {
       return res.status(400).json({ message: 'Thiếu sinh_vien_id hoặc lop_hoc_phan_id' })
     }
+
+    // Lấy thông tin lớp học phần để kiểm tra hoc_phan_id
+    const [lhpRows] = await pool.execute(
+      'SELECT hoc_phan_id FROM LopHocPhan WHERE id = ?',
+      [lop_hoc_phan_id]
+    )
+    if (lhpRows.length === 0) {
+      return res.status(404).json({ message: 'Không tìm thấy lớp học phần' })
+    }
+    const hocPhanId = lhpRows[0].hoc_phan_id
+
+    // Kiểm tra loại đăng ký
+    const loai = loai_dang_ky || 'HOC_MOI'
+    
+    console.log(`[DKHP] Loại đăng ký: ${loai}, SV: ${sinh_vien_id}, HocPhan: ${hocPhanId}`)
+    
+    if (loai === 'HOC_LAI') {
+      // Kiểm tra môn có rớp không
+      const duocHocLai = await HocLaiModel.kiemTraDuocHocLai(sinh_vien_id, hocPhanId)
+      console.log(`[DKHP] Kiểm tra học lại: ${duocHocLai}`)
+      if (!duocHocLai) {
+        return res.status(400).json({ 
+          message: '⚠️ Bạn chưa rớp môn này nên không được học lại. Vui lòng chọn "HỌC Mới".' 
+        })
+      }
+    } else if (loai === 'HOC_CAI_THIEN') {
+      // Kiểm tra môn đã đạt nhưng chưa A
+      const duocCaiThien = await HocLaiModel.kiemTraDuocCaiThien(sinh_vien_id, hocPhanId)
+      console.log(`[DKHP] Kiểm tra cải thiện: ${duocCaiThien}`)
+      if (!duocCaiThien) {
+        return res.status(400).json({ 
+          message: '⚠️ Bạn chưa học môn này hoặc đã đạt điểm A (>=8.5). Không được học cải thiện.' 
+        })
+      }
+    }
+
     const out = await DkModel.registerLHP({
       sinh_vien_id: +sinh_vien_id,
       lop_hoc_phan_id: +lop_hoc_phan_id,
       dot_dang_ky_id: dot_dang_ky_id ? +dot_dang_ky_id : null,
-      loai_dang_ky: loai_dang_ky || 'HOC_MOI'
+      loai_dang_ky: loai
     })
     res.status(201).json(out)
   } catch (err) {
+    console.error('[DKHP ERROR]', err)
     const code = err.code === 'BUSINESS' ? 409 : 500
     res.status(code).json({ message: err.message, detail: err.detail })
   }
@@ -115,5 +154,33 @@ export async function getStudentsByLopHocPhan(req, res) {
     res.json(rows)
   } catch (err) {
     res.status(500).json({ message: 'Lỗi lấy danh sách sinh viên', error: err.message })
+  }
+}
+
+// GET /api/dkhp/mon-rot?sinh_vien_id=&hoc_ky=&nam_hoc=
+export async function getMonKhongDat(req, res) {
+  try {
+    const { sinh_vien_id, hoc_ky, nam_hoc } = req.query
+    if (!sinh_vien_id) {
+      return res.status(400).json({ message: 'Thiếu sinh_vien_id' })
+    }
+    const rows = await HocLaiModel.getMonKhongDat(+sinh_vien_id, hoc_ky, nam_hoc)
+    res.json(rows)
+  } catch (err) {
+    res.status(500).json({ message: 'Lỗi lấy danh sách môn không đạt', error: err.message })
+  }
+}
+
+// GET /api/dkhp/mon-cai-thien?sinh_vien_id=&hoc_ky=&nam_hoc=
+export async function getMonCaiThien(req, res) {
+  try {
+    const { sinh_vien_id, hoc_ky, nam_hoc } = req.query
+    if (!sinh_vien_id) {
+      return res.status(400).json({ message: 'Thiếu sinh_vien_id' })
+    }
+    const rows = await HocLaiModel.getMonDaDat(+sinh_vien_id, hoc_ky, nam_hoc)
+    res.json(rows)
+  } catch (err) {
+    res.status(500).json({ message: 'Lỗi lấy danh sách môn cải thiện', error: err.message })
   }
 }
