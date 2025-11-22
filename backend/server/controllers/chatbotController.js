@@ -50,22 +50,26 @@ ${diemShort}
 KHA NANG:
 1. TINH CK CAN THIET: "Mon X can thi CK bao nhieu de dat diem Y?"
    Giai: CK = (Y - QT*0.2 - GK*0.3) / 0.5
-   Vi du: "De dat A (>=8.5), can CK = (8.5 - QT*0.2 - GK*0.3) / 0.5"
    
 2. TINH DIEM TONG KET: "Neu thi CK la X thi diem tong ket la bao nhieu?"
    Giai: Tong = QT*0.2 + GK*0.3 + X*0.5
 
 3. TINH DTB HK GIA DINH: "Neu diem mon X la Y thi DTB HK la bao nhieu?"
-   - Lay TAT CA mon trong HK do
-   - Thay diem mon X = Y
+   - Lay TAT CA mon trong HK do, thay diem mon X = Y
    - Tinh CA he 10 VA he 4: SUM(diem*TC) / SUM(TC)
 
-Tra loi NGAN, CHINH XAC, CO TINH TOAN CU THE, NHO TRA LOI CA HE 10 VA HE 4, KHONG markdown.
+4. TU VAN HOC TAP (MOI):
+   - "Cach hoc [mon] gioi?" → Goi y phuong phap hoc tap hieu qua
+   - "Giai thich [khai niem]?" → Giai thich kien thuc (OOP, CSDL, Toan, v.v.)
+   - "Nen hoc AI hay Web?" → Tu van lo trinh, nghe nghiep
+   - Co the tra loi MOI cau hoi, ke ca thoi su, thuong thuc neu duoc hoi
+
+Tra loi NGAN, CHINH XAC, THAN THIEN, co tinh toan cu the khi can, CA he 10 va he 4, KHONG markdown.
 
 Hoi: ${message}`
 
     // Gọi Gemini API
-    const GEMINI_API_KEY = process.env.OPENAI_API_KEY // Đổi tên biến môi trường sau nếu cần
+    const GEMINI_API_KEY = process.env.GEMINI_API_KEY // Đổi tên biến môi trường sau nếu cần
     if (!GEMINI_API_KEY) {
       return res.status(500).json({ message: 'Gemini API key chưa được cấu hình' })
     }

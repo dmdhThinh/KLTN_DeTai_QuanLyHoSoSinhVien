@@ -15,6 +15,7 @@ export async function capNhatDiemTrungBinh(sinhVienId, hocKy, namHoc) {
         AND kq.hoc_ky = ?
         AND kq.nam_hoc = ?
         AND kq.diem_tong_ket IS NOT NULL
+        AND kq.tinh_diem = 1
     `, [sinhVienId, hocKy, namHoc]);
 
     // 2. Tính điểm TB tích lũy (TÍCH LŨY TỪ ĐẦU ĐẾN HỌC KỲ HIỆN TẠI)
@@ -29,6 +30,7 @@ export async function capNhatDiemTrungBinh(sinhVienId, hocKy, namHoc) {
       WHERE kq.sinh_vien_id = ?
         AND kq.diem_tong_ket IS NOT NULL
         AND kq.dat = 'Đạt'
+        AND kq.tinh_diem = 1
         AND (
           kq.nam_hoc < ? OR 
           (kq.nam_hoc = ? AND (
@@ -46,6 +48,7 @@ export async function capNhatDiemTrungBinh(sinhVienId, hocKy, namHoc) {
       JOIN HocPhan hp ON kq.hoc_phan_id = hp.id
       WHERE kq.sinh_vien_id = ?
         AND kq.diem_tong_ket IS NOT NULL
+        AND kq.tinh_diem = 1
         AND (
           kq.nam_hoc < ? OR 
           (kq.nam_hoc = ? AND (
@@ -65,6 +68,7 @@ export async function capNhatDiemTrungBinh(sinhVienId, hocKy, namHoc) {
         AND kq.hoc_ky = ?
         AND kq.nam_hoc = ?
         AND kq.dat = 'Đạt'
+        AND kq.tinh_diem = 1
     `, [sinhVienId, hocKy, namHoc]);
 
     // Tính TC nợ trong học kỳ hiện tại = TC có điểm trong HK - TC đạt trong HK
@@ -76,6 +80,7 @@ export async function capNhatDiemTrungBinh(sinhVienId, hocKy, namHoc) {
         AND kq.hoc_ky = ?
         AND kq.nam_hoc = ?
         AND kq.diem_tong_ket IS NOT NULL
+        AND kq.tinh_diem = 1
     `, [sinhVienId, hocKy, namHoc]);
 
     const tongTinChiDangKy = tinChiDangKy[0]?.tong_tin_chi_dang_ky || 0;
