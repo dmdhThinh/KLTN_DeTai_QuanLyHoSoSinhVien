@@ -221,3 +221,124 @@ export async function getSinhVienByLopHocPhan(lopHocPhanId) {
     throw err;
   }
 }
+
+// ✅ Admin: Thêm sinh viên vào lớp
+export async function addStudentToClass(lopHocPhanId, mssv) {
+  const conn = await pool.getConnection();
+  try {
+    await conn.beginTransaction();
+
+    // 1. Tìm sinh viên ID
+    const [svRows] = await conn.execute('SELECT id FROM SinhVien WHERE ma_sv = ?', [mssv]);
+    if (svRows.length === 0) {
+      throw new Error('Không tìm thấy sinh viên với MSSV này');
+    }
+    const sinhVienId = svRows[0].id;
+
+    // 2. Lấy thông tin lớp và sĩ số tối đa
+    const [lhpRows] = await conn.execute(
+      'SELECT id, si_so_toi_da, hoc_phan_id, hoc_ky, nam_hoc FROM LopHocPhan WHERE id = ?', 
+      [lopHocPhanId]
+    );
+    if (lhpRows.length === 0) {
+      throw new Error('Lớp học phần không tồn tại');
+    }
+    const lhp = lhpRows[0];
+
+    // 3. Đếm số lượng đã đăng ký
+    const [countRows] = await conn.execute(
+      `SELECT COUNT(*) as total FROM DangKyHocPhan 
+       WHERE lop_hoc_phan_id = ? AND trang_thai_dk = 'THANH_CONG'`,
+      [lopHocPhanId]
+    );
+    const currentCount = countRows[0].total;
+
+    if (currentCount >= lhp.si_so_toi_da) {
+      throw new Error(`Lớp đã đầy (${currentCount}/${lhp.si_so_toi_da})`);
+    }
+
+    // 4. Kiểm tra đã đăng ký chưa (bao gồm cả lớp khác của cùng môn trong cùng kỳ?)
+    // Ở đây admin thêm trực tiếp vào lớp này, nên chỉ check trùng trong lớp này hoặc môn này
+    // Check trùng môn trong cùng học kỳ
+    const [existRows] = await conn.execute(
+      `SELECT d.id, l.ma_lop_hoc_phan 
+       FROM DangKyHocPhan d
+       JOIN LopHocPhan l ON d.lop_hoc_phan_id = l.id
+       WHERE d.sinh_vien_id = ? 
+         AND l.hoc_phan_id = ?
+         AND l.hoc_ky = ? 
+         AND l.nam_hoc = ?
+         AND d.trang_thai_dk = 'THANH_CONG'`,
+      [sinhVienId, lhp.hoc_phan_id, lhp.hoc_ky, lhp.nam_hoc]
+    );
+
+    if (existRows.length > 0) {
+      throw new Error(`Sinh viên đã đăng ký môn này ở lớp ${existRows[0].ma_lop_hoc_phan}`);
+    }
+
+    // 5. Insert
+    await conn.execute(
+      `INSERT INTO DangKyHocPhan (sinh_vien_id, lop_hoc_phan_id, hoc_phan_id, thoi_diem_dk, trang_thai_dk, loai_dang_ky)
+       VALUES (?, ?, ?, NOW(), 'THANH_CONG', 'HOC_MOI')`, // Mặc định HOC_MOI, admin có thể sửa sau nếu cần
+      [sinhVienId, lopHocPhanId, lhp.hoc_phan_id]
+    );
+
+    await conn.commit();
+    return { success: true, message: 'Thêm sinh viên thành công' };
+
+  } catch (err) {
+    await conn.rollback();
+    throw err;
+  } finally {
+    conn.release();
+  }
+}
+
+// ✅ Admin: Xóa sinh viên khỏi lớp
+export async function removeStudentFromClass(lopHocPhanId, sinhVienId) {
+  try {
+    // 1. Lấy thông tin lớp học phần để biết môn học + học kỳ
+    const [lhpRows] = await pool.execute(
+      'SELECT hoc_phan_id, hoc_ky, nam_hoc FROM LopHocPhan WHERE id = ?',
+      [lopHocPhanId]
+    );
+    
+    if (lhpRows.length === 0) {
+      throw new Error('Lớp học phần không tồn tại');
+    }
+    const lhp = lhpRows[0];
+
+    // 2. Check điểm trong bảng KetQuaHocTap
+    // Bảng KetQuaHocTap lưu theo (sinh_vien_id, hoc_phan_id, hoc_ky, nam_hoc)
+    const [diemRows] = await pool.execute(
+      `SELECT id FROM KetQuaHocTap 
+       WHERE sinh_vien_id = ? 
+         AND hoc_phan_id = ? 
+         AND hoc_ky = ? 
+         AND nam_hoc = ?`,
+      [sinhVienId, lhp.hoc_phan_id, lhp.hoc_ky, lhp.nam_hoc]
+    );
+
+    if (diemRows.length > 0) {
+      throw new Error('Sinh viên này đã có điểm, không thể xóa khỏi lớp!');
+    }
+
+    // 3. Xóa bản ghi DangKyHocPhan
+    const [result] = await pool.execute(
+      `DELETE FROM DangKyHocPhan 
+       WHERE lop_hoc_phan_id = ? AND sinh_vien_id = ?`,
+      [lopHocPhanId, sinhVienId]
+    );
+
+    if (result.affectedRows === 0) {
+      // Có thể sinh viên đã đăng ký nhưng bị hủy? Hoặc chưa từng đăng ký?
+      // Check thử xem có bản ghi nào không
+      return { success: false, message: 'Sinh viên không có trong lớp này hoặc đã bị hủy' };
+    }
+
+    return { success: true };
+  } catch (err) {
+    console.error('❌ Lỗi model removeStudentFromClass:', err);
+    throw err;
+  }
+}

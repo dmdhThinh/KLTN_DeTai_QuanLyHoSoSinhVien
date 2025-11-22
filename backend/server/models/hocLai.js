@@ -31,17 +31,14 @@ export async function getMonKhongDat(sinhVienId, hocKy, namHoc) {
         WHERE dk.sinh_vien_id = ? 
           AND lhp.hoc_ky = ?
           AND lhp.nam_hoc = ?
+          AND dk.trang_thai_dk <> 'HUY'
       )`
     params.push(sinhVienId, hocKy, namHoc)
   }
   
   query += ` ORDER BY kq.nam_hoc DESC, kq.hoc_ky DESC`
   
-  console.log('[HOC_LAI] Query:', query)
-  console.log('[HOC_LAI] Params:', params)
-  
   const [rows] = await pool.execute(query, params)
-  console.log('[HOC_LAI] Môn không đạt:', rows.length)
   
   return rows
 }
@@ -78,6 +75,7 @@ export async function getMonDaDat(sinhVienId, hocKy, namHoc) {
         WHERE dk.sinh_vien_id = ? 
           AND lhp.hoc_ky = ?
           AND lhp.nam_hoc = ?
+          AND dk.trang_thai_dk <> 'HUY'
       )`
     params.push(sinhVienId, hocKy, namHoc)
   }

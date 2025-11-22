@@ -2,7 +2,8 @@ import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { apiFetch } from "../../api";
 import TeacherLayout from "../../components/TeacherLayout";
-import ExcelJS from 'exceljs';
+import { exportDiemToExcel } from '../../components/excelExport';
+import { exportDanhSachDuThiGK, exportDanhSachDuThiCK } from '../../components/excelExportDuThi';
 
 function NhapDiem() {
   const { lopHocPhanId } = useParams();
@@ -13,7 +14,6 @@ function NhapDiem() {
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState('');
   const [trangThaiDot, setTrangThaiDot] = useState(null); // Trạng thái đợt nhập điểm từ DB
-  const [dotDataFull, setDotDataFull] = useState(null); // Thông tin đầy đủ về đợt (để lấy ngày đóng)
   const [showConfirm, setShowConfirm] = useState(false); // Modal xác nhận
   const [viewMode, setViewMode] = useState('input');
   const [showExportMenu, setShowExportMenu] = useState(false);
@@ -31,7 +31,6 @@ function NhapDiem() {
         // Lấy trạng thái đợt nhập điểm
         const dotData = await apiFetch(`/api/dot-nhap-diem/trang-thai?hocKy=${lhpData.hocKy}&namHoc=${lhpData.namHoc}`);
         setTrangThaiDot(dotData?.trang_thai || 'CHUA_MO');
-        setDotDataFull(dotData);
 
         // Lấy danh sách sinh viên đã đăng ký từ API mới
         const svData = await apiFetch(`/api/dkhp/lop-hoc-phan/${lopHocPhanId}`);
@@ -269,322 +268,38 @@ function NhapDiem() {
 
   // Xuất bảng điểm ra Excel với nhiều loại (LT, TH, LT+TH+GK, tổng kết)
   const exportBangDiem = async (loaiBang) => {
-    if (!sinhVienList || sinhVienList.length === 0 || !lopHocPhan) {
-      setMessage('⚠️ Không có dữ liệu để xuất!');
-      return;
+    try {
+      await exportDiemToExcel(sinhVienList, lopHocPhan, loaiBang);
+      setMessage('✅ Đã xuất file Excel thành công!');
+      setTimeout(() => setMessage(''), 3000);
+    } catch (err) {
+      setMessage(err.message || '❌ Có lỗi khi xuất Excel!');
+      console.error('Export error:', err);
     }
+  };
 
-    if (!loaiBang) {
-      setMessage('⚠️ Vui lòng chọn loại bảng điểm để xuất!');
-      return;
+  // Xuất danh sách dự thi GIỮA KỲ
+  const exportDSGK = async () => {
+    try {
+      await exportDanhSachDuThiGK(sinhVienList, lopHocPhan, '');
+      setMessage('✅ Đã xuất danh sách dự thi Giữa kỳ!');
+      setTimeout(() => setMessage(''), 3000);
+    } catch (err) {
+      setMessage(err.message || '❌ Có lỗi khi xuất danh sách dự thi!');
+      console.error('Export error:', err);
     }
+  };
 
-    const workbook = new ExcelJS.Workbook();
-    const worksheet = workbook.addWorksheet('Bảng điểm');
-    worksheet.views = [{ showGridLines: false }];
-
-    let titleSuffix = '';
-    let columns = [];
-
-    switch (loaiBang) {
-      case 'lythuyet':
-        titleSuffix = 'LÝ THUYẾT';
-        columns = [
-          { header: 'STT', key: 'stt', width: 6, align: 'center' },
-          { header: 'Mã sinh viên', key: 'ma_sv', width: 14, align: 'center' },
-          { header: 'Họ đệm', key: 'ho_dem', width: 22 },
-          { header: 'Tên', key: 'ten', width: 12 },
-          { header: 'TX1', key: 'tx1', width: 8, align: 'center' },
-          { header: 'TX2', key: 'tx2', width: 8, align: 'center' },
-          { header: 'TX3', key: 'tx3', width: 8, align: 'center' },
-          { header: 'TX4', key: 'tx4', width: 8, align: 'center' },
-          { header: 'Ký tên', key: 'ky_ten', width: 18 }
-        ];
-        break;
-      case 'thuchanh':
-        titleSuffix = 'THỰC HÀNH';
-        columns = [
-          { header: 'STT', key: 'stt', width: 6, align: 'center' },
-          { header: 'Mã sinh viên', key: 'ma_sv', width: 14, align: 'center' },
-          { header: 'Họ đệm', key: 'ho_dem', width: 22 },
-          { header: 'Tên', key: 'ten', width: 12 },
-          { header: 'TH1', key: 'th1', width: 8, align: 'center' },
-          { header: 'TH2', key: 'th2', width: 8, align: 'center' },
-          { header: 'TH3', key: 'th3', width: 8, align: 'center' },
-          { header: 'Ký tên', key: 'ky_ten', width: 18 }
-        ];
-        break;
-      case 'lt_th_gk':
-        titleSuffix = 'LÝ THUYẾT - THỰC HÀNH - GIỮA KỲ';
-        columns = [
-          { header: 'STT', key: 'stt', width: 6, align: 'center' },
-          { header: 'Mã sinh viên', key: 'ma_sv', width: 14, align: 'center' },
-          { header: 'Họ đệm', key: 'ho_dem', width: 22 },
-          { header: 'Tên', key: 'ten', width: 12 },
-          { header: 'TX1', key: 'tx1', width: 8, align: 'center' },
-          { header: 'TX2', key: 'tx2', width: 8, align: 'center' },
-          { header: 'TX3', key: 'tx3', width: 8, align: 'center' },
-          { header: 'TX4', key: 'tx4', width: 8, align: 'center' },
-          { header: 'TH1', key: 'th1', width: 8, align: 'center' },
-          { header: 'TH2', key: 'th2', width: 8, align: 'center' },
-          { header: 'TH3', key: 'th3', width: 8, align: 'center' },
-          { header: 'Giữa kỳ', key: 'gk', width: 10, align: 'center' },
-          { header: 'Ký tên', key: 'ky_ten', width: 18 }
-        ];
-        break;
-      case 'tongket':
-        titleSuffix = 'TỔNG KẾT';
-        // Bảng điểm tổng kết: hiển thị đầy đủ tất cả cột thành phần
-        columns = [
-          { header: 'STT', key: 'stt', width: 6, align: 'center' },
-          { header: 'Mã sinh viên', key: 'ma_sv', width: 14, align: 'center' },
-          { header: 'Họ đệm', key: 'ho_dem', width: 22 },
-          { header: 'Tên', key: 'ten', width: 12 },
-          { header: 'TX1', key: 'tx1', width: 8, align: 'center' },
-          { header: 'TX2', key: 'tx2', width: 8, align: 'center' },
-          { header: 'TX3', key: 'tx3', width: 8, align: 'center' },
-          { header: 'TX4', key: 'tx4', width: 8, align: 'center' },
-          { header: 'TH1', key: 'th1', width: 8, align: 'center' },
-          { header: 'TH2', key: 'th2', width: 8, align: 'center' },
-          { header: 'TH3', key: 'th3', width: 8, align: 'center' },
-          { header: 'Giữa kỳ', key: 'gk', width: 10, align: 'center' },
-          { header: 'Cuối kỳ', key: 'ck', width: 10, align: 'center' },
-          { header: 'Tổng kết', key: 'tk', width: 10, align: 'center' },
-          { header: 'Điểm chữ', key: 'chu', width: 10, align: 'center' },
-          { header: 'Xếp loại', key: 'xep_loai', width: 12, align: 'center' },
-          { header: 'Kết quả', key: 'ket_qua', width: 12, align: 'center' },
-          { header: 'Ký tên', key: 'ky_ten', width: 18 }
-        ];
-        break;
-      default:
-        setMessage('⚠️ Loại bảng điểm không hợp lệ!');
-        return;
+  // Xuất danh sách dự thi CUỐI KỲ
+  const exportDSCK = async () => {
+    try {
+      await exportDanhSachDuThiCK(sinhVienList, lopHocPhan, '');
+      setMessage('✅ Đã xuất danh sách dự thi Cuối kỳ!');
+      setTimeout(() => setMessage(''), 3000);
+    } catch (err) {
+      setMessage(err.message || '❌ Có lỗi khi xuất danh sách dự thi!');
+      console.error('Export error:', err);
     }
-
-    const totalCols = columns.length;
-    let currentRow = 1;
-    const half = Math.floor(totalCols / 2);
-
-    const borderThin = {
-      top: { style: 'thin' },
-      left: { style: 'thin' },
-      bottom: { style: 'thin' },
-      right: { style: 'thin' }
-    };
-
-    // ===== Header quốc hiệu, tên trường =====
-    worksheet.mergeCells(currentRow, 1, currentRow, half);
-    const left1 = worksheet.getCell(currentRow, 1);
-    left1.value = 'BỘ CÔNG THƯƠNG';
-    left1.font = { name: 'Times New Roman', size: 12, bold: true };
-    left1.alignment = { horizontal: 'center', vertical: 'middle' };
-
-    worksheet.mergeCells(currentRow, half + 1, currentRow, totalCols);
-    const right1 = worksheet.getCell(currentRow, half + 1);
-    right1.value = 'CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM';
-    right1.font = { name: 'Times New Roman', size: 12, bold: true };
-    right1.alignment = { horizontal: 'center', vertical: 'middle' };
-
-    currentRow++;
-
-    worksheet.mergeCells(currentRow, 1, currentRow, half);
-    const left2 = worksheet.getCell(currentRow, 1);
-    left2.value = 'TRƯỜNG ĐẠI HỌC CÔNG NGHIỆP TP.HCM';
-    left2.font = { name: 'Times New Roman', size: 12, bold: true };
-    left2.alignment = { horizontal: 'center', vertical: 'middle' };
-
-    worksheet.mergeCells(currentRow, half + 1, currentRow, totalCols);
-    const right2 = worksheet.getCell(currentRow, half + 1);
-    right2.value = 'Độc lập - Tự do - Hạnh phúc';
-    right2.font = { name: 'Times New Roman', size: 12, italic: true };
-    right2.alignment = { horizontal: 'center', vertical: 'middle' };
-
-    currentRow += 2;
-
-    // ===== Tiêu đề bảng điểm =====
-    worksheet.mergeCells(currentRow, 1, currentRow, totalCols);
-    const titleCell = worksheet.getCell(currentRow, 1);
-    titleCell.value = `BẢNG ĐIỂM ${titleSuffix} LỚP HỌC PHẦN`;
-    titleCell.font = { name: 'Times New Roman', size: 14, bold: true };
-    titleCell.alignment = { horizontal: 'center', vertical: 'middle' };
-
-    currentRow += 2;
-
-    // ===== Thông tin lớp học phần =====
-    const hk = lopHocPhan.hocKy || lopHocPhan.hoc_ky || '';
-    const namHoc = lopHocPhan.namHoc || lopHocPhan.nam_hoc || '';
-    const hkDisplay = hk && namHoc ? `${hk} (${namHoc})` : (hk || namHoc);
-    const maLHP = lopHocPhan.maLopHocPhan || lopHocPhan.ma_lop_hoc_phan || '';
-    const tenMon = lopHocPhan.tenHocPhan || lopHocPhan.ten_hoc_phan || '';
-    const lopHoc = lopHocPhan.tenLop || lopHocPhan.ten_lop || '';
-
-    const infoRows = [
-      ['Môn học:', tenMon],
-      ['Mã lớp học phần:', maLHP],
-      ['Lớp học:', lopHoc],
-      ['Học kỳ / Năm học:', hkDisplay]
-    ];
-
-    infoRows.forEach(info => {
-      const row = worksheet.getRow(currentRow);
-      row.height = 18; // cao hơn chút để không bị khuất chữ
-
-      // Nhãn: gộp cột 1-2 để chữ không bị thiếu
-      worksheet.mergeCells(currentRow, 1, currentRow, 2);
-      const labelCell = worksheet.getCell(currentRow, 1);
-      labelCell.value = info[0];
-      labelCell.font = { name: 'Times New Roman', size: 11, bold: true };
-      labelCell.alignment = { horizontal: 'left', vertical: 'middle', wrapText: true };
-
-      // Giá trị: gộp từ cột 3 đến hết, đủ rộng cho cả chuỗi dài
-      worksheet.mergeCells(currentRow, 3, currentRow, totalCols);
-      const valueCell = worksheet.getCell(currentRow, 3);
-      valueCell.value = info[1];
-      valueCell.font = { name: 'Times New Roman', size: 11, bold: true };
-      valueCell.alignment = { horizontal: 'left', vertical: 'middle', wrapText: true };
-
-      currentRow++;
-    });
-
-    currentRow++; // dòng trống trước bảng
-
-    // ===== Header bảng điểm =====
-    // Chỉ set độ rộng cột, KHÔNG set header để tránh ExcelJS tự tạo dòng header ở dòng 1
-    worksheet.columns = columns.map(col => ({
-      width: col.width
-    }));
-
-    const tableStartRow = currentRow; // dùng cho tô xám bên phải
-    const headerRow = worksheet.getRow(currentRow);
-    columns.forEach((col, idx) => {
-      const cell = headerRow.getCell(idx + 1);
-      cell.value = col.header;
-      cell.font = { name: 'Times New Roman', size: 11, bold: true };
-      cell.alignment = { horizontal: 'center', vertical: 'middle', wrapText: true };
-      cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFD9E1F2' } };
-      cell.border = borderThin;
-    });
-
-    currentRow++;
-
-    // ===== Dữ liệu sinh viên =====
-    sinhVienList.forEach((sv, index) => {
-      const row = worksheet.getRow(currentRow);
-
-      const hoTen = (sv.ho_ten || sv.hoTen || '').trim();
-      const parts = hoTen.split(' ');
-      const ten = parts.pop() || '';
-      const hoDem = parts.join(' ');
-
-      const baseData = {
-        stt: index + 1,
-        ma_sv: sv.ma_sv || sv.maSV || '',
-        ho_dem: hoDem,
-        ten: ten
-      };
-
-      let rowData = {};
-      if (loaiBang === 'lythuyet') {
-        rowData = {
-          ...baseData,
-          tx1: sv.diem_ly_thuyet_1 || '',
-          tx2: sv.diem_ly_thuyet_2 || '',
-          tx3: sv.diem_ly_thuyet_3 || '',
-          tx4: sv.diem_ly_thuyet_4 || '',
-          ky_ten: ''
-        };
-      } else if (loaiBang === 'thuchanh') {
-        rowData = {
-          ...baseData,
-          th1: sv.diem_thuc_hanh_1 || '',
-          th2: sv.diem_thuc_hanh_2 || '',
-          th3: sv.diem_thuc_hanh_3 || '',
-          ky_ten: ''
-        };
-      } else if (loaiBang === 'lt_th_gk') {
-        rowData = {
-          ...baseData,
-          tx1: sv.diem_ly_thuyet_1 || '',
-          tx2: sv.diem_ly_thuyet_2 || '',
-          tx3: sv.diem_ly_thuyet_3 || '',
-          tx4: sv.diem_ly_thuyet_4 || '',
-          th1: sv.diem_thuc_hanh_1 || '',
-          th2: sv.diem_thuc_hanh_2 || '',
-          th3: sv.diem_thuc_hanh_3 || '',
-          gk: sv.diem_giua_ky || '',
-          ky_ten: ''
-        };
-      } else if (loaiBang === 'tongket') {
-        rowData = {
-          ...baseData,
-          tx1: sv.diem_ly_thuyet_1 || '',
-          tx2: sv.diem_ly_thuyet_2 || '',
-          tx3: sv.diem_ly_thuyet_3 || '',
-          tx4: sv.diem_ly_thuyet_4 || '',
-          th1: sv.diem_thuc_hanh_1 || '',
-          th2: sv.diem_thuc_hanh_2 || '',
-          th3: sv.diem_thuc_hanh_3 || '',
-          gk: sv.diem_giua_ky || '',
-          ck: sv.diem_cuoi_ky || '',
-          tk: sv.diem_tong_ket || '',
-          chu: sv.diem_chu || '',
-          xep_loai: sv.xep_loai || '',
-          ket_qua: sv.dat || '',
-          ky_ten: ''
-        };
-      }
-
-      columns.forEach((col, idx) => {
-        const cell = row.getCell(idx + 1);
-        const value = rowData[col.key];
-        cell.value = value !== undefined ? value : '';
-        cell.font = { name: 'Times New Roman', size: 10 };
-        cell.alignment = { horizontal: col.align || (idx === 0 ? 'center' : 'left'), vertical: 'middle' };
-        cell.border = borderThin;
-      });
-
-      currentRow++;
-    });
-
-    // ===== Tô xám vùng ngoài form (dưới và bên phải) giống file điểm danh =====
-    const tableEndRow = currentRow - 1;               // dòng dữ liệu cuối cùng
-    const tableEndCol = columns.length;               // cột cuối cùng của bảng
-    const extraRows = 40;                             // số dòng xám thêm bên dưới
-    const extraCols = 5;                              // số cột xám thêm bên phải
-    const grayFill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFD0D0D0' } };
-
-    // Dưới cùng: từ dòng ngay sau SV cuối đến vài dòng phía dưới
-    for (let r = tableEndRow + 1; r <= tableEndRow + extraRows; r++) {
-      for (let c = 1; c <= tableEndCol; c++) {
-        const cell = worksheet.getCell(r, c);
-        cell.fill = grayFill;
-      }
-    }
-
-    // Bên phải: từ cột sau cột cuối cùng, phủ xám theo chiều dọc (từ hàng 1 trở xuống)
-    for (let r = 1; r <= tableEndRow + extraRows; r++) {
-      for (let c = tableEndCol + 1; c <= tableEndCol + extraCols; c++) {
-        const cell = worksheet.getCell(r, c);
-        cell.fill = grayFill;
-      }
-    }
-
-    const fileTypeLabel =
-      loaiBang === 'lythuyet' ? 'LyThuyet' :
-      loaiBang === 'thuchanh' ? 'ThucHanh' :
-      loaiBang === 'lt_th_gk' ? 'LT_TH_GK' :
-      'TongKet';
-
-    const fileName = `BangDiem_${fileTypeLabel}_${lopHocPhan.maLopHocPhan || lopHocPhan.ma_lop_hoc_phan || 'LopHocPhan'}.xlsx`;
-
-    const buffer = await workbook.xlsx.writeBuffer();
-    const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
-    const url = window.URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = fileName;
-    link.click();
-    window.URL.revokeObjectURL(url);
   };
 
   return (
@@ -637,11 +352,6 @@ function NhapDiem() {
             {trangThaiDot === 'DOT_1_DANG_MO' && (
               <div className="alert alert-success">
                  <strong>Đợt 1 đang mở:</strong> Nhập điểm TX1-4, TH1-3, GK (KHÔNG nhập CK)
-                 {dotDataFull?.ngay_dong_dot_1 && (
-                   <div className="mt-1 small">
-                     ⏳ Hạn chót nhập điểm: <strong>{new Date(dotDataFull.ngay_dong_dot_1).toLocaleDateString('vi-VN')}</strong>
-                   </div>
-                 )}
               </div>
             )}
             {trangThaiDot === 'DOT_1_DA_DONG' && (
@@ -652,11 +362,6 @@ function NhapDiem() {
             {trangThaiDot === 'DOT_2_DANG_MO' && (
               <div className="alert alert-success">
                  <strong>Đợt 2 đang mở:</strong> Chỉ nhập điểm Cuối kỳ (TX, TH, GK đã khóa)
-                 {dotDataFull?.ngay_dong_dot_2 && (
-                   <div className="mt-1 small">
-                     ⏳ Hạn chót nhập điểm: <strong>{new Date(dotDataFull.ngay_dong_dot_2).toLocaleDateString('vi-VN')}</strong>
-                   </div>
-                 )}
               </div>
             )}
             {trangThaiDot === 'DA_KHOA' && (
@@ -932,6 +637,25 @@ function NhapDiem() {
                         onClick={() => { setShowExportMenu(false); exportBangDiem('tongket'); }}
                       >
                         Bảng điểm tổng kết
+                      </button>
+                    </li>
+                    <li><hr className="dropdown-divider" /></li>
+                    <li>
+                      <button
+                        className="dropdown-item"
+                        type="button"
+                        onClick={() => { setShowExportMenu(false); exportDSGK(); }}
+                      >
+                        📝 Danh sách dự thi Giữa kỳ
+                      </button>
+                    </li>
+                    <li>
+                      <button
+                        className="dropdown-item"
+                        type="button"
+                        onClick={() => { setShowExportMenu(false); exportDSCK(); }}
+                      >
+                        📝 Danh sách dự thi Cuối kỳ
                       </button>
                     </li>
                   </ul>

@@ -477,3 +477,81 @@ export async function getThongKeHocPhi() {
     throw err
   }
 }
+
+// ==================== AUTOMATION FUNCTIONS ====================
+
+/**
+ * Tự động tạo học phí cho các đợt đăng ký ĐÃ KẾT THÚC
+ * Logic: Tìm các đợt có ngay_ket_thuc < NOW.
+ * Han nop = ngay_ket_thuc + 7 ngay
+ */
+export async function tuDongTaoHocPhiChoDotDaKetThuc() {
+  try {
+    // 1. Lấy các đợt đã kết thúc nhưng có thể chưa tính phí (quét 30 ngày gần đây cho chắc)
+    // Cột thực tế: thoi_gian_dong
+    const [dotList] = await pool.query(
+      `SELECT id, hoc_ky, nam_hoc, thoi_gian_dong 
+       FROM DotDangKy 
+       WHERE thoi_gian_dong < NOW() 
+         AND thoi_gian_dong > DATE_SUB(NOW(), INTERVAL 30 DAY)
+       ORDER BY thoi_gian_dong DESC`
+    )
+
+    let totalProcessed = 0
+    console.log(`[AUTO-FEE] Tìm thấy ${dotList.length} đợt đã kết thúc gần đây.`)
+
+    for (const dot of dotList) {
+      // Hạn nộp = Ngày kết thúc đợt + 7 ngày
+      const hanNopDate = new Date(dot.thoi_gian_dong)
+      hanNopDate.setDate(hanNopDate.getDate() + 7)
+      const hanNopStr = hanNopDate.toISOString().split('T')[0]
+
+      // Gọi hàm có sẵn để tạo/update học phí cho đợt này
+      const count = await capNhatHanNopTheoDot(dot.id, hanNopStr)
+      totalProcessed += count
+      if (count > 0) {
+         console.log(`[AUTO-FEE] Đợt ${dot.hoc_ky}-${dot.nam_hoc} (ID ${dot.id}): Đã xử lý ${count} khoản phí. Hạn nộp: ${hanNopStr}`)
+      }
+    }
+    return totalProcessed
+  } catch (err) {
+    console.error('❌ Lỗi tự động tạo học phí:', err)
+    return 0
+  }
+}
+
+/**
+ * Tự động cập nhật trạng thái 'Quá hạn'
+ * Logic: han_nop < NOW và trang_thai = 'Chưa nộp'
+ */
+export async function tuDongCapNhatTrangThaiQuaHan() {
+  try {
+    // 1. Chuyển sang Quá hạn nếu hết hạn
+    const [result] = await pool.query(
+      `UPDATE HocPhi 
+       SET tinh_trang = 'Quá hạn' 
+       WHERE (tinh_trang = 'Chưa nộp' OR tinh_trang IS NULL)
+         AND han_nop < CURDATE()`
+    )
+    
+    // 2. (Fix lỗi) Chuyển về Chưa nộp nếu đang Quá hạn mà thực tế chưa hết hạn
+    // (Trường hợp hạn nộp bị dời, hoặc dữ liệu cũ sai)
+    const [fixResult] = await pool.query(
+      `UPDATE HocPhi 
+       SET tinh_trang = 'Chưa nộp' 
+       WHERE tinh_trang = 'Quá hạn'
+         AND han_nop >= CURDATE()`
+    )
+
+    if (result.affectedRows > 0) {
+      console.log(`[AUTO-OVERDUE] Đã cập nhật ${result.affectedRows} khoản phí sang trạng thái 'Quá hạn'.`)
+    }
+    if (fixResult.affectedRows > 0) {
+      console.log(`[AUTO-OVERDUE] Đã sửa lỗi ${fixResult.affectedRows} khoản phí về 'Chưa nộp' (do còn hạn).`)
+    }
+    return result.affectedRows + fixResult.affectedRows
+  } catch (err) {
+    console.error('❌ Lỗi cập nhật quá hạn:', err)
+    return 0
+  }
+}

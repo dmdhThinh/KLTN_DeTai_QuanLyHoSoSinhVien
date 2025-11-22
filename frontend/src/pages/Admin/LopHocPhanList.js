@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import AdminLayout from '../../components/AdminLayout'
 import { apiFetch } from '../../api'
+import DanhSachSinhVienModal from './DanhSachSinhVienModal'
 
 export default function LopHocPhanList() {
   const navigate = useNavigate()
@@ -19,6 +20,9 @@ export default function LopHocPhanList() {
   const [lopId, setLopId] = useState('') // Thêm state cho lớp học phần
   const [lops, setLops] = useState([]) // Thêm state cho danh sách lớp
   const [filteredLops, setFilteredLops] = useState([]) // Thêm state cho danh sách lớp đã lọc
+  
+  const [selectedLop, setSelectedLop] = useState(null) // Lớp đang chọn để xem DS
+  const [showModal, setShowModal] = useState(false) // Modal DS sinh viên
 
   // Phân trang
   const [currentPage, setCurrentPage] = useState(1)
@@ -286,6 +290,16 @@ export default function LopHocPhanList() {
                       <td>{lop.ngayKetThuc ? new Date(lop.ngayKetThuc).toLocaleDateString('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh' }) : '—'}</td>
                       <td>
                         <button
+                          className="btn btn-sm btn-outline-primary me-2"
+                          title="Danh sách sinh viên"
+                          onClick={() => {
+                            setSelectedLop(lop)
+                            setShowModal(true)
+                          }}
+                        >
+                          DS Lớp
+                        </button>
+                        <button
                           className="btn btn-sm btn-outline-secondary me-2"
                           onClick={() => navigate(`/admin/lophocphan/edit/${lop.id}`)}
                         >
@@ -347,6 +361,13 @@ export default function LopHocPhanList() {
           </div>
         )}
       </div>
+
+      {/* Modal danh sách sinh viên */}
+      <DanhSachSinhVienModal
+        show={showModal}
+        onHide={() => setShowModal(false)}
+        lopHocPhan={selectedLop}
+      />
     </AdminLayout>
   )
 }

@@ -6,7 +6,6 @@ import {
   getCongNoTheoHocKy,
   capNhatTrangThaiThanhToan,
   getAllHocPhiAdmin,
-  capNhatHanNopTheoDot,
   getThongKeHocPhi
 } from '../controllers/hocPhiController.js'
 
@@ -28,9 +27,6 @@ router.get('/admin/all', getAllHocPhiAdmin)
 
 // Lấy thống kê học phí (admin)
 router.get('/admin/thong-ke', getThongKeHocPhi)
-
-// Cập nhật hạn nộp theo đợt đăng ký (admin)
-router.post('/admin/han-nop-dot', capNhatHanNopTheoDot)
 
 // Cập nhật trạng thái thanh toán (admin/kế toán)
 router.put('/:dangKyId/trang-thai', capNhatTrangThaiThanhToan)

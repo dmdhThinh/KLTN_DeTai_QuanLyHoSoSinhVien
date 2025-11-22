@@ -184,37 +184,6 @@ export const getAllHocPhiAdmin = async (req, res) => {
 }
 
 /**
- * Cập nhật hạn nộp học phí theo đợt đăng ký (Admin)
- * POST /api/hoc-phi/admin/han-nop-dot
- */
-export const capNhatHanNopTheoDot = async (req, res) => {
-  try {
-    const { dotDangKyId, hanNop } = req.body
-
-    if (!dotDangKyId || !hanNop) {
-      return res.status(400).json({
-        success: false,
-        message: 'Thiếu thông tin dotDangKyId hoặc hanNop'
-      })
-    }
-
-    const count = await HocPhiModel.capNhatHanNopTheoDot(dotDangKyId, hanNop)
-
-    return res.json({
-      success: true,
-      message: `Đã cập nhật hạn nộp cho ${count} bản ghi`,
-      count
-    })
-  } catch (err) {
-    console.error('❌ Lỗi khi cập nhật hạn nộp theo đợt:', err)
-    return res.status(500).json({
-      success: false,
-      message: 'Lỗi server khi cập nhật hạn nộp'
-    })
-  }
-}
-
-/**
  * Lấy thống kê học phí (Admin)
  * GET /api/hoc-phi/admin/thong-ke
  */

@@ -2,7 +2,7 @@
 import dotenv from 'dotenv'
 dotenv.config({ path: './server/.env' })
 
-const GEMINI_API_KEY = process.env.GEMINI_API_KEY
+const GEMINI_API_KEY = process.env.OPENAI_API_KEY
 
 if (!GEMINI_API_KEY) {
   console.error('❌ Không tìm thấy API key trong .env')

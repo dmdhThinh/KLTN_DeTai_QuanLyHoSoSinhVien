@@ -114,6 +114,7 @@ export default function AdminLayout({ children, title = '', activeMenu = '' }) {
           <li><a href="/admin/hocphan" className={`nav-link ${location.pathname.includes('/hocphan') ? 'active bg-info' : 'text-white-50'}`}><i className="bi bi-journal-text me-2"></i> Học phần</a></li>
           <li><a href="/admin/lophocphan" className={`nav-link ${location.pathname.includes('/lophocphan') ? 'active bg-info' : 'text-white-50'}`}><i className="bi bi-collection me-2"></i> Lớp học phần</a></li>
           <li><a href="/admin/lich" className={`nav-link ${location.pathname.includes('/lich') ? 'active bg-info' : 'text-white-50'}`}><i className="bi bi-calendar-event me-2"></i> Lịch học</a></li>
+          <li><a href="/admin/dot-dang-ky" className={`nav-link ${location.pathname.includes('/dot-dang-ky') ? 'active bg-info' : 'text-white-50'}`}><i className="bi bi-calendar-check me-2"></i> Đợt đăng ký HP</a></li>
           <li><a href="/admin/dot-nhap-diem" className={`nav-link ${location.pathname.includes('/dot-nhap-diem') ? 'active bg-info' : 'text-white-50'}`}><i className="bi bi-clipboard-check me-2"></i> Đợt nhập điểm</a></li>
           <li><a href="/admin/hoc-phi" className={`nav-link ${location.pathname.includes('/hoc-phi') ? 'active bg-info' : 'text-white-50'}`}><i className="bi bi-cash-coin me-2"></i> Quản lý học phí</a></li>
         </ul>

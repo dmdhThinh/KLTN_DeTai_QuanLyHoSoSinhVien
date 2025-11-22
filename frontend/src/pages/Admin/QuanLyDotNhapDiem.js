@@ -155,6 +155,16 @@ function QuanLyDotNhapDiem() {
                           <span className={`badge bg-${getTrangThaiBadge(dot.trang_thai)}`}>
                             {getTrangThaiText(dot.trang_thai)}
                           </span>
+                          {dot.trang_thai === 'DOT_1_DANG_MO' && dot.ngay_dong_dot_1 && (
+                            <div className="small text-danger mt-1">
+                              ⏳ Đóng: {new Date(dot.ngay_dong_dot_1).toLocaleDateString('vi-VN')}
+                            </div>
+                          )}
+                          {dot.trang_thai === 'DOT_2_DANG_MO' && dot.ngay_dong_dot_2 && (
+                            <div className="small text-danger mt-1">
+                              ⏳ Đóng: {new Date(dot.ngay_dong_dot_2).toLocaleDateString('vi-VN')}
+                            </div>
+                          )}
                         </td>
                         <td className="text-muted small">{dot.ghi_chu || '-'}</td>
                         <td>

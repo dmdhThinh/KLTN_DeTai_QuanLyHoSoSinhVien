@@ -7,7 +7,6 @@ export async function getCurrentDot() {
   const [rows] = await pool.execute(
     `SELECT * FROM DotDangKy
      WHERE trang_thai = 'DANG_MO'
-       AND NOW() BETWEEN thoi_gian_mo AND thoi_gian_dong
      ORDER BY thoi_gian_mo DESC
      LIMIT 1`
   )
@@ -130,7 +129,6 @@ export async function registerLHP({
       const [r] = await conn.execute(
         `SELECT * FROM DotDangKy
            WHERE trang_thai = 'DANG_MO'
-             AND NOW() BETWEEN thoi_gian_mo AND thoi_gian_dong
          ORDER BY thoi_gian_mo DESC LIMIT 1`
       )
       dot = r[0] || null
@@ -149,18 +147,21 @@ export async function registerLHP({
     if (!lhp) throw bizError('Không tìm thấy lớp học phần')
     if (lhp.trang_thai_dk !== 'MO_DK') throw bizError('Lớp chưa mở đăng ký hoặc đã khóa', { trang_thai_dk: lhp.trang_thai_dk })
     
-    // 3) Kiểm tra đã đăng ký học phần này (bất kỳ lớp nào) trong đợt này chưa
-    // CHỈ kiểm tra nếu là HOC_MOI. HOC_LAI và HOC_CAI_THIEN được phép đăng ký lại
-    if (loai_dang_ky === 'HOC_MOI') {
-      const [existingHP] = await conn.execute(
-        `SELECT 1 FROM DangKyHocPhan d
-         JOIN LopHocPhan lhp2 ON lhp2.id = d.lop_hoc_phan_id
-         WHERE d.sinh_vien_id = ? AND lhp2.hoc_phan_id = ? AND d.dot_dang_ky_id = ?
-         LIMIT 1`,
-        [sinh_vien_id, lhp.hoc_phan_id, dot.id]
-      )
-      if (existingHP.length) throw bizError('Bạn đã đăng ký học phần này rồi')
-    }
+    // 3) Kiểm tra đã đăng ký học phần này (bất kỳ lớp nào) trong CÙNG HỌC KỲ + NĂM HỌC này chưa
+    // (Cho phép học lại môn của các kỳ trước, chỉ chặn trùng trong cùng kỳ hiện tại)
+    const [existingHP] = await conn.execute(
+      `SELECT d.id, d.trang_thai_dk, lhp2.ma_lop_hoc_phan, lhp2.hoc_ky, lhp2.nam_hoc 
+       FROM DangKyHocPhan d
+       JOIN LopHocPhan lhp2 ON lhp2.id = d.lop_hoc_phan_id
+       WHERE d.sinh_vien_id = ? 
+         AND lhp2.hoc_phan_id = ? 
+         AND lhp2.hoc_ky = ? 
+         AND lhp2.nam_hoc = ?
+         AND d.trang_thai_dk <> 'HUY'
+       LIMIT 1`,
+      [sinh_vien_id, lhp.hoc_phan_id, lhp.hoc_ky, lhp.nam_hoc]
+    )
+    if (existingHP.length) throw bizError('Bạn đã đăng ký học phần này trong học kỳ này rồi')
 
     // 3) Sĩ số (đếm bản ghi đăng ký thực sự tồn tại, vì hủy = xóa dòng)
     const [[{ so_dk }]] = await conn.execute(

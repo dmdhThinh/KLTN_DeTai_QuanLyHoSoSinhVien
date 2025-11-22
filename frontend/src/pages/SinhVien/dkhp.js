@@ -98,16 +98,17 @@ export default function DkhpPage() {
   const [loaiDangKy, setLoaiDangKy] = useState('HOC_MOI');
   
   // state mới
-const [selectedClass, setSelectedClass] = useState(null);     // lớp học phần đã chọn ở bảng giữa
-const [classDetail, setClassDetail] = useState({ header: null, lich: [] }); // lịch chi tiết lớp
-const [openMenuId, setOpenMenuId] = useState(null);
-const [confirmCancel, setConfirmCancel] = useState(null); // { dangKyId, lopHocPhanId } cần hủy
-const [errorModal, setErrorModal] = useState(null); // Hiển thị lỗi không thể hủy
-useEffect(() => {
-  const close = () => setOpenMenuId(null);
-  document.addEventListener('click', close);
-  return () => document.removeEventListener('click', close);
-}, []);
+  const [selectedClass, setSelectedClass] = useState(null);     // lớp học phần đã chọn ở bảng giữa
+  const [classDetail, setClassDetail] = useState({ header: null, lich: [] }); // lịch chi tiết lớp
+  const [openMenuId, setOpenMenuId] = useState(null);
+  const [confirmCancel, setConfirmCancel] = useState(null); // { dangKyId, lopHocPhanId } cần hủy
+  const [errorModal, setErrorModal] = useState(null); // Hiển thị lỗi không thể hủy
+  
+  useEffect(() => {
+    const close = () => setOpenMenuId(null);
+    document.addEventListener('click', close);
+    return () => document.removeEventListener('click', close);
+  }, []);
 
 
 // khi đổi môn => reset lớp & chi tiết
@@ -133,16 +134,23 @@ const loadClassDetail = async (lop) => {
 
     const load = async () => {
       try {
-        const d = await apiFetch('/api/dkhp/dot/current');
+        let d = null;
+        try {
+          d = await apiFetch('/api/dkhp/dot/current');
+        } catch (e) {
+          // Không có đợt thì thôi, vẫn load dữ liệu xem chơi
+        }
         setDot(d);
 
         // Sử dụng học kỳ/năm học từ dropdown
-        const [avail, regs] = await Promise.all([
+        const [avail, regs, pend] = await Promise.all([
           apiFetch(`/api/dkhp/available?sinh_vien_id=${sinhVienId}&hoc_ky=${selectedHocKy}&nam_hoc=${selectedNamHoc}&dot_dang_ky_id=${d?.id || ''}`),
-          apiFetch(`/api/dkhp/my?sinh_vien_id=${sinhVienId}&hoc_ky=${selectedHocKy}&nam_hoc=${selectedNamHoc}&dot_dang_ky_id=${d?.id || ''}`)
+          apiFetch(`/api/dkhp/my?sinh_vien_id=${sinhVienId}&hoc_ky=${selectedHocKy}&nam_hoc=${selectedNamHoc}&dot_dang_ky_id=${d?.id || ''}`),
+          apiFetch(`/api/dkhp/hp/pending?sinh_vien_id=${sinhVienId}&hoc_ky=${selectedHocKy}&nam_hoc=${selectedNamHoc}&dot_dang_ky_id=${d?.id || ''}`)
         ]);
         setAvailable(avail);
         setRegistered(regs);
+        setPendingHP(pend);
       } catch (err) {
         console.error(err);
         setMessage('Lỗi tải dữ liệu: ' + (err.message || 'Unknown error'));
@@ -157,7 +165,7 @@ const loadClassDetail = async (lop) => {
 
   // Load danh sách môn theo loại đăng ký
   useEffect(() => {
-    if (!sinhVienId || !dot) return;
+    if (!sinhVienId) return; // Bỏ check dot để cho phép xem trước
 
     const loadPending = async () => {
       try {
@@ -171,7 +179,9 @@ const loadClassDetail = async (lop) => {
           pend = await apiFetch(`/api/dkhp/mon-cai-thien?sinh_vien_id=${sinhVienId}&hoc_ky=${selectedHocKy}&nam_hoc=${selectedNamHoc}`);
         } else {
           // HOC_MOI: Lấy môn chưa học (pending)
-          pend = await apiFetch(`/api/dkhp/hp/pending?sinh_vien_id=${sinhVienId}&hoc_ky=${selectedHocKy}&nam_hoc=${selectedNamHoc}`);
+          // Chú ý: API pending cũ cần dot_dang_ky_id, nhưng nếu xem trước thì có thể không cần hoặc API xử lý null
+          // Tuy nhiên trong dkhpController mới tôi thấy nó vẫn nhận dot_dang_ky_id optional
+          pend = await apiFetch(`/api/dkhp/hp/pending?sinh_vien_id=${sinhVienId}&hoc_ky=${selectedHocKy}&nam_hoc=${selectedNamHoc}&dot_dang_ky_id=${dot?.id || ''}`);
         }
         
         setPendingHP(pend);
@@ -185,139 +195,135 @@ const loadClassDetail = async (lop) => {
 
   // Đăng ký
   const handleRegister = async (lhp) => {
-  // Kiểm tra trùng lịch
-  if (lhp.xung_dot_lich) {
-    setMessage('⚠️ CẢNH BÁO: Lớp học phần này trùng lịch với các môn bạn đã đăng ký! Vui lòng chọn lớp học phần khác.');
-    setMessageType('error');
-    setTimeout(() => setMessage(''), 5000);
-    return;
-  }
-  
-
-  try {
-    // Gọi API đăng ký
-    const res = await apiFetch('/api/dkhp/register', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        sinh_vien_id: sinhVienId,
-        lop_hoc_phan_id: lhp.id,
-        dot_dang_ky_id: dot.id,
-        loai_dang_ky: loaiDangKy  // Gửi loại đăng ký đã chọn
-      })
-    });
-
-    // Thông báo nhẹ
-    setMessage('✅ Đăng ký thành công!');
-    setMessageType('success');
-    setTimeout(() => setMessage(''), 3000);
-
-    // ---- REFRESH dữ liệu để cập nhật "Đã đăng ký" + disable nút nếu hết chỗ ----
-    // available: lớp đang mở trong kỳ
-    const avail = await apiFetch(
-      `/api/dkhp/available?sinh_vien_id=${sinhVienId}&hoc_ky=${selectedHocKy}&nam_hoc=${selectedNamHoc}&dot_dang_ky_id=${dot?.id || ''}`
-    );
-    setAvailable(avail);
-
-    // registered: các lớp SV đã đăng ký trong kỳ này
-    const regs = await apiFetch(
-      `/api/dkhp/my?sinh_vien_id=${sinhVienId}&hoc_ky=${selectedHocKy}&nam_hoc=${selectedNamHoc}&dot_dang_ky_id=${dot?.id || ''}`
-    );
-    setRegistered(regs);
-
-    // Refresh danh sách môn pending (để bỏ môn vừa đăng ký)
-    let pend = [];
-    if (loaiDangKy === 'HOC_LAI') {
-      pend = await apiFetch(`/api/dkhp/mon-rot?sinh_vien_id=${sinhVienId}&hoc_ky=${selectedHocKy}&nam_hoc=${selectedNamHoc}`);
-    } else if (loaiDangKy === 'HOC_CAI_THIEN') {
-      pend = await apiFetch(`/api/dkhp/mon-cai-thien?sinh_vien_id=${sinhVienId}&hoc_ky=${selectedHocKy}&nam_hoc=${selectedNamHoc}`);
-    } else {
-      pend = await apiFetch(`/api/dkhp/hp/pending?sinh_vien_id=${sinhVienId}&hoc_ky=${selectedHocKy}&nam_hoc=${selectedNamHoc}&dot_dang_ky_id=${dot?.id || ''}`);
-    }
-    setPendingHP(pend);
-
-    // Chi tiết lớp đang chọn (để bảng "CHI TIẾT LỚP HỌC PHẦN" cập nhật ngay)
-    if (selectedClass?.id === lhp.id) {
-      const detail = await apiFetch(`/api/dkhp/lich/${lhp.id}`);
-      setClassDetail(detail);
+    // Kiểm tra trùng lịch
+    if (lhp.xung_dot_lich) {
+      setMessage('⚠️ CẢNH BÁO: Lớp học phần này trùng lịch với các môn bạn đã đăng ký! Vui lòng chọn lớp học phần khác.');
+      setMessageType('error');
+      setTimeout(() => setMessage(''), 5000);
+      return;
     }
 
-    // (Tuỳ bạn) nếu bạn đang lưu selectedHP => giữ nguyên; không cần reload toàn trang nữa.
-  } catch (err) {
-    // Lấy message rõ ràng từ backend nếu có
-    let msg = 'Lỗi đăng ký';
     try {
-      const data = await err.response?.json();
-      if (data?.message) msg = data.message;
-    } catch (_) {
-      if (err.message) msg = err.message;
-    }
-    setMessage(msg);
-    setMessageType('error');
-    setTimeout(() => setMessage(''), 5000);
-  }
-};
+      // Gọi API đăng ký
+      const res = await apiFetch('/api/dkhp/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          sinh_vien_id: sinhVienId,
+          lop_hoc_phan_id: lhp.id,
+          dot_dang_ky_id: dot.id,
+          loai_dang_ky: loaiDangKy  // Gửi loại đăng ký đã chọn
+        })
+      });
 
+      // Thông báo nhẹ
+      setMessage('✅ Đăng ký thành công!');
+      setMessageType('success');
+      setTimeout(() => setMessage(''), 3000);
+
+      // ---- REFRESH dữ liệu để cập nhật "Đã đăng ký" + disable nút nếu hết chỗ ----
+      // available: lớp đang mở trong kỳ
+      const avail = await apiFetch(
+        `/api/dkhp/available?sinh_vien_id=${sinhVienId}&hoc_ky=${selectedHocKy}&nam_hoc=${selectedNamHoc}&dot_dang_ky_id=${dot?.id || ''}`
+      );
+      setAvailable(avail);
+
+      // registered: các lớp SV đã đăng ký trong kỳ này
+      const regs = await apiFetch(
+        `/api/dkhp/my?sinh_vien_id=${sinhVienId}&hoc_ky=${selectedHocKy}&nam_hoc=${selectedNamHoc}&dot_dang_ky_id=${dot?.id || ''}`
+      );
+      setRegistered(regs);
+
+      // Refresh danh sách môn pending (để bỏ môn vừa đăng ký)
+      let pend = [];
+      if (loaiDangKy === 'HOC_LAI') {
+        pend = await apiFetch(`/api/dkhp/mon-rot?sinh_vien_id=${sinhVienId}&hoc_ky=${selectedHocKy}&nam_hoc=${selectedNamHoc}`);
+      } else if (loaiDangKy === 'HOC_CAI_THIEN') {
+        pend = await apiFetch(`/api/dkhp/mon-cai-thien?sinh_vien_id=${sinhVienId}&hoc_ky=${selectedHocKy}&nam_hoc=${selectedNamHoc}`);
+      } else {
+        pend = await apiFetch(`/api/dkhp/hp/pending?sinh_vien_id=${sinhVienId}&hoc_ky=${selectedHocKy}&nam_hoc=${selectedNamHoc}&dot_dang_ky_id=${dot?.id || ''}`);
+      }
+      setPendingHP(pend);
+
+      // Chi tiết lớp đang chọn (để bảng "CHI TIẾT LỚP HỌC PHẦN" cập nhật ngay)
+      if (selectedClass?.id === lhp.id) {
+        const detail = await apiFetch(`/api/dkhp/lich/${lhp.id}`);
+        setClassDetail(detail);
+      }
+
+    } catch (err) {
+      // Lấy message rõ ràng từ backend nếu có
+      let msg = 'Lỗi đăng ký';
+      try {
+        const data = await err.response?.json();
+        if (data?.message) msg = data.message;
+      } catch (_) {
+        if (err.message) msg = err.message;
+      }
+      setMessage(msg);
+      setMessageType('error');
+      setTimeout(() => setMessage(''), 5000);
+    }
+  };
 
   // Hủy đăng ký
- // HỦY ĐĂNG KÝ: xoá ngay trên UI + refetch lại dữ liệu
-const handleCancel = async () => {
-  if (!confirmCancel) return;
-  const { dangKyId, lopHocPhanId } = confirmCancel;
-  setConfirmCancel(null);
- 
+  // HỦY ĐĂNG KÝ: xoá ngay trên UI + refetch lại dữ liệu
+  const handleCancel = async () => {
+    if (!confirmCancel) return;
+    const { dangKyId, lopHocPhanId } = confirmCancel;
+    setConfirmCancel(null);
 
-  try {
-    await apiFetch(`/api/dkhp/register/${dangKyId}`, { method: 'DELETE' });
-
-    // 1) Optimistic update: gỡ ngay khỏi bảng "đã đăng ký"
-    setRegistered(prev => prev.filter(x => x.id !== dangKyId));
-
-    // 2) Refetch lại 2 danh sách để đồng bộ số "Đã đăng ký"/slot
-    const [avail, regs] = await Promise.all([
-      apiFetch(`/api/dkhp/available?sinh_vien_id=${sinhVienId}&hoc_ky=${selectedHocKy}&nam_hoc=${selectedNamHoc}&dot_dang_ky_id=${dot?.id || ''}`),
-      apiFetch(`/api/dkhp/my?sinh_vien_id=${sinhVienId}&hoc_ky=${selectedHocKy}&nam_hoc=${selectedNamHoc}&dot_dang_ky_id=${dot?.id || ''}`)
-    ]);
-    setAvailable(avail);
-    setRegistered(regs);
-
-    // Refresh danh sách môn pending (để môn xuất hiện lại sau khi hủy)
-    let pend = [];
-    if (loaiDangKy === 'HOC_LAI') {
-      pend = await apiFetch(`/api/dkhp/mon-rot?sinh_vien_id=${sinhVienId}&hoc_ky=${selectedHocKy}&nam_hoc=${selectedNamHoc}`);
-    } else if (loaiDangKy === 'HOC_CAI_THIEN') {
-      pend = await apiFetch(`/api/dkhp/mon-cai-thien?sinh_vien_id=${sinhVienId}&hoc_ky=${selectedHocKy}&nam_hoc=${selectedNamHoc}`);
-    } else {
-      pend = await apiFetch(`/api/dkhp/hp/pending?sinh_vien_id=${sinhVienId}&hoc_ky=${selectedHocKy}&nam_hoc=${selectedNamHoc}&dot_dang_ky_id=${dot?.id || ''}`);
-    }
-    setPendingHP(pend);
-
-    // 3) Nếu đang mở chi tiết đúng lớp này thì load lại để cập nhật sĩ số
-    if (selectedClass && (!lopHocPhanId || lopHocPhanId === selectedClass.id)) {
-      const detail = await apiFetch(`/api/dkhp/lich/${selectedClass.id}`);
-      setClassDetail(detail);
-    }
-
-    setMessage('✅ Đã hủy đăng ký thành công!');
-    setMessageType('success');
-    setTimeout(() => setMessage(''), 3000);
-  } catch (err) {
-     // Parse message nếu backend trả về JSON string
-    let errorMessage = err.message || 'Lỗi khi hủy đăng ký';
     try {
-      const parsed = JSON.parse(errorMessage);
-      if (parsed.message) errorMessage = parsed.message;
-    } catch (_) {
-      // Nếu không parse được JSON, dùng message gốc
+      await apiFetch(`/api/dkhp/register/${dangKyId}`, { method: 'DELETE' });
+
+      // 1) Optimistic update: gỡ ngay khỏi bảng "đã đăng ký"
+      setRegistered(prev => prev.filter(x => x.id !== dangKyId));
+
+      // 2) Refetch lại 2 danh sách để đồng bộ số "Đã đăng ký"/slot
+      const [avail, regs] = await Promise.all([
+        apiFetch(`/api/dkhp/available?sinh_vien_id=${sinhVienId}&hoc_ky=${selectedHocKy}&nam_hoc=${selectedNamHoc}&dot_dang_ky_id=${dot?.id || ''}`),
+        apiFetch(`/api/dkhp/my?sinh_vien_id=${sinhVienId}&hoc_ky=${selectedHocKy}&nam_hoc=${selectedNamHoc}&dot_dang_ky_id=${dot?.id || ''}`)
+      ]);
+      setAvailable(avail);
+      setRegistered(regs);
+
+      // Refresh danh sách môn pending (để môn xuất hiện lại sau khi hủy)
+      let pend = [];
+      if (loaiDangKy === 'HOC_LAI') {
+        pend = await apiFetch(`/api/dkhp/mon-rot?sinh_vien_id=${sinhVienId}&hoc_ky=${selectedHocKy}&nam_hoc=${selectedNamHoc}`);
+      } else if (loaiDangKy === 'HOC_CAI_THIEN') {
+        pend = await apiFetch(`/api/dkhp/mon-cai-thien?sinh_vien_id=${sinhVienId}&hoc_ky=${selectedHocKy}&nam_hoc=${selectedNamHoc}`);
+      } else {
+        pend = await apiFetch(`/api/dkhp/hp/pending?sinh_vien_id=${sinhVienId}&hoc_ky=${selectedHocKy}&nam_hoc=${selectedNamHoc}&dot_dang_ky_id=${dot?.id || ''}`);
+      }
+      setPendingHP(pend);
+
+      // 3) Nếu đang mở chi tiết đúng lớp này thì load lại để cập nhật sĩ số
+      if (selectedClass && (!lopHocPhanId || lopHocPhanId === selectedClass.id)) {
+        const detail = await apiFetch(`/api/dkhp/lich/${selectedClass.id}`);
+        setClassDetail(detail);
+      }
+
+      setMessage('✅ Đã hủy đăng ký thành công!');
+      setMessageType('success');
+      setTimeout(() => setMessage(''), 3000);
+    } catch (err) {
+      // Parse message nếu backend trả về JSON string
+      let errorMessage = err.message || 'Lỗi khi hủy đăng ký';
+      try {
+        const parsed = JSON.parse(errorMessage);
+        if (parsed.message) errorMessage = parsed.message;
+      } catch (_) {
+        // Nếu không parse được JSON, dùng message gốc
+      }
+      
+      // Hiển thị modal lỗi
+      setErrorModal({
+        title: '⚠️ Không thể hủy đăng ký',
+        message: errorMessage
+      });
     }
-    
-    // Hiển thị modal lỗi
-    setErrorModal({
-      title: '⚠️ Không thể hủy đăng ký',
-      message: errorMessage
-    });
-  }
-};
+  };
 
 
   if (loading) return <div className="text-center p-5">Đang tải...</div>;
@@ -344,6 +350,7 @@ const getDaDangKy = (l) => {
             <button type="button" className="btn-close" onClick={() => setMessage('')}></button>
           </div>
         )}
+        
         
         {/* Header: Dropdown chọn học kỳ, năm học */}
         <div className="row mb-4 align-items-center">
@@ -387,6 +394,7 @@ const getDaDangKy = (l) => {
                   id="hocMoi" 
                   checked={loaiDangKy === 'HOC_MOI'}
                   onChange={() => setLoaiDangKy('HOC_MOI')}
+                  disabled={!dot}
                 />
                 <label className="form-check-label" htmlFor="hocMoi">
                   HỌC MỚI
@@ -400,6 +408,7 @@ const getDaDangKy = (l) => {
                   id="hocLai"
                   checked={loaiDangKy === 'HOC_LAI'}
                   onChange={() => setLoaiDangKy('HOC_LAI')}
+                  disabled={!dot}
                 />
                 <label className="form-check-label" htmlFor="hocLai">
                   HỌC LẠI
@@ -413,6 +422,7 @@ const getDaDangKy = (l) => {
                   id="hocCaiThien"
                   checked={loaiDangKy === 'HOC_CAI_THIEN'}
                   onChange={() => setLoaiDangKy('HOC_CAI_THIEN')}
+                  disabled={!dot}
                 />
                 <label className="form-check-label" htmlFor="hocCaiThien">
                   HỌC CẢI THIỆN
@@ -422,20 +432,21 @@ const getDaDangKy = (l) => {
           </div>
         </div>
 
-        {/* Không có đợt */}
+        {/* Cảnh báo nếu không có đợt */}
         {!dot && (
-          <div className="alert alert-info text-center">
-            Không có đợt đăng ký đang mở
+          <div className="alert alert-warning d-flex align-items-center mb-4" role="alert">
+            <i className="bi bi-exclamation-triangle-fill me-2" style={{ fontSize: '1.2rem' }}></i>
+            <div>
+              <strong>Ngoài thời gian đăng ký!</strong> Bạn chỉ có thể xem danh sách môn học và lịch, không thể thực hiện đăng ký.
+            </div>
           </div>
         )}
 
-        {dot && (
-          <>
-            {/* Bảng 1: MÔN HỌC PHẦN ĐANG CHỜ ĐĂNG KÝ */}
-            <div className="card mb-4">
-              <div className="card-header bg-warning text-dark">
-                <strong>MÔN HỌC PHẦN ĐANG CHỜ ĐĂNG KÝ</strong>
-              </div>
+        {/* Bảng 1: MÔN HỌC PHẦN ĐANG CHỜ ĐĂNG KÝ */}
+        <div className="card mb-4">
+          <div className="card-header bg-warning text-dark">
+            <strong>MÔN HỌC PHẦN ĐANG CHỜ ĐĂNG KÝ</strong>
+          </div>
               <div className="table-responsive">
                 <table className="table table-hover mb-0">
                   <thead className="table-light">
@@ -775,8 +786,6 @@ const getDaDangKy = (l) => {
                 </div>
               </div>
             )}
-          </>
-        )}
       </div>
     </StudentLayout>
   );

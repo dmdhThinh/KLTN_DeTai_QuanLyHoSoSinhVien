@@ -90,3 +90,40 @@ export async function getSinhVienByLopHocPhan(req, res) {
     });
   }
 }
+
+// ✅ Admin: Thêm sinh viên vào lớp
+export async function addStudent(req, res) {
+  const { id } = req.params; // lopHocPhanId
+  const { mssv } = req.body;
+  
+  if (!mssv) {
+    return res.status(400).json({ message: 'Vui lòng cung cấp MSSV' });
+  }
+
+  try {
+    const result = await LopHocPhanModel.addStudentToClass(id, mssv);
+    res.status(200).json(result);
+  } catch (err) {
+    console.error('❌ Lỗi khi thêm sinh viên vào lớp:', err);
+    res.status(400).json({
+      message: err.message || 'Lỗi khi thêm sinh viên',
+      error: err.toString(),
+    });
+  }
+}
+
+// ✅ Admin: Xóa sinh viên khỏi lớp
+export async function removeStudent(req, res) {
+  const { id, sinhVienId } = req.params; // lopHocPhanId, sinhVienId
+
+  try {
+    const result = await LopHocPhanModel.removeStudentFromClass(id, sinhVienId);
+    res.status(200).json({ message: 'Xóa sinh viên khỏi lớp thành công' });
+  } catch (err) {
+    console.error('❌ Lỗi khi xóa sinh viên khỏi lớp:', err);
+    res.status(400).json({
+      message: err.message || 'Lỗi khi xóa sinh viên',
+      error: err.toString(),
+    });
+  }
+}

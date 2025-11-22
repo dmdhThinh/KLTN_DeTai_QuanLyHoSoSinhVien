@@ -102,7 +102,23 @@ app.get('*', (req, res) =>
   res.sendFile(path.resolve('frontend', 'build', 'index.html'))
 )
 
+import { tuDongTaoHocPhiChoDotDaKetThuc, tuDongCapNhatTrangThaiQuaHan } from './models/hocPhi.js'
+
 const PORT = process.env.PORT || 8080
 app.listen(PORT, () => {
   console.log(`Server listening on http://localhost:${PORT}`)
+  
+  // --- AUTOMATION JOB ---
+  const runAutomation = async () => {
+    console.log('🔄 [CRON] Đang chạy tác vụ tự động (Học phí)...')
+    await tuDongTaoHocPhiChoDotDaKetThuc()
+    await tuDongCapNhatTrangThaiQuaHan()
+    console.log('✅ [CRON] Tác vụ tự động hoàn tất.')
+  }
+
+  // Chạy ngay khi khởi động (để test và update ngay)
+  runAutomation()
+
+  // Chạy định kỳ mỗi 24h
+  setInterval(runAutomation, 24 * 60 * 60 * 1000)
 })

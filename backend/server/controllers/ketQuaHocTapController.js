@@ -94,37 +94,6 @@ export async function create(req, res) {
     
     const result = await KetQuaHocTapModel.createKetQuaHocTap(data);
     
-    // 🔄 Kiểm tra xem có phải học lại/cải thiện không
-    try {
-      const [dangKyRows] = await pool.execute(
-        `SELECT dk.loai_dang_ky, lhp.hoc_phan_id
-         FROM DangKyHocPhan dk
-         JOIN LopHocPhan lhp ON lhp.id = dk.lop_hoc_phan_id
-         WHERE dk.sinh_vien_id = ?
-           AND lhp.hoc_phan_id = ?
-           AND lhp.hoc_ky = ?
-           AND lhp.nam_hoc = ?
-           AND dk.loai_dang_ky IN ('HOC_LAI', 'HOC_CAI_THIEN')
-         LIMIT 1`,
-        [sinh_vien_id, hoc_phan_id, hoc_ky, nam_hoc]
-      );
-      
-      if (dangKyRows.length > 0) {
-        // Nếu là học lại/cải thiện => Vô hiệu hóa điểm cũ
-        const idMoi = result.insertId || (await pool.execute(
-          `SELECT id FROM KetQuaHocTap 
-           WHERE sinh_vien_id = ? AND hoc_phan_id = ? AND hoc_ky = ? AND nam_hoc = ?`,
-          [sinh_vien_id, hoc_phan_id, hoc_ky, nam_hoc]
-        ))[0][0]?.id;
-        
-        if (idMoi) {
-          await KetQuaHocTapModel.voHieuHoaDiemCu(sinh_vien_id, hoc_phan_id, idMoi);
-        }
-      }
-    } catch (err) {
-      console.error('⚠️ Lỗi khi kiểm tra học lại/cải thiện:', err.message);
-    }
-    
     // 🔄 Tự động cập nhật bảng DiemTrungBinh
     if (sinh_vien_id && hoc_ky && nam_hoc) {
       try {

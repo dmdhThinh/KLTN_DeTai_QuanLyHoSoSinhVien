@@ -117,6 +117,7 @@ export async function cancelRegistration(req, res) {
     res.status(code).json({ message: err.message, detail: err.detail })
   }
 }
+
 // NEW: server gom “môn học phần đang chờ đăng ký”
 export async function listPendingCourses(req, res) {
   try {

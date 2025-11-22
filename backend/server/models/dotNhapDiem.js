@@ -3,6 +3,24 @@ import { pool } from '../config/db.js';
 // Lấy trạng thái đợt nhập điểm theo học kỳ + năm học
 export async function getTrangThaiDotNhapDiem(hocKy, namHoc) {
   try {
+    // Tự động đóng đợt 1 nếu quá hạn
+    await pool.execute(`
+      UPDATE DotNhapDiem 
+      SET trang_thai = 'DOT_1_DA_DONG', updated_at = NOW()
+      WHERE hoc_ky = ? AND nam_hoc = ? 
+      AND trang_thai = 'DOT_1_DANG_MO' 
+      AND ngay_dong_dot_1 < NOW()
+    `, [hocKy, namHoc]);
+
+    // Tự động khóa nếu đợt 2 quá hạn
+    await pool.execute(`
+      UPDATE DotNhapDiem 
+      SET trang_thai = 'DA_KHOA', updated_at = NOW()
+      WHERE hoc_ky = ? AND nam_hoc = ? 
+      AND trang_thai = 'DOT_2_DANG_MO' 
+      AND ngay_dong_dot_2 < NOW()
+    `, [hocKy, namHoc]);
+
     const [rows] = await pool.execute(
       `SELECT * FROM DotNhapDiem WHERE hoc_ky = ? AND nam_hoc = ?`,
       [hocKy, namHoc]
@@ -17,6 +35,22 @@ export async function getTrangThaiDotNhapDiem(hocKy, namHoc) {
 // Lấy tất cả đợt nhập điểm (cho admin)
 export async function getAllDotNhapDiem() {
   try {
+    // Tự động đóng các đợt 1 đã quá hạn
+    await pool.execute(`
+      UPDATE DotNhapDiem 
+      SET trang_thai = 'DOT_1_DA_DONG', updated_at = NOW()
+      WHERE trang_thai = 'DOT_1_DANG_MO' 
+      AND ngay_dong_dot_1 < NOW()
+    `);
+
+    // Tự động khóa các đợt 2 đã quá hạn
+    await pool.execute(`
+      UPDATE DotNhapDiem 
+      SET trang_thai = 'DA_KHOA', updated_at = NOW()
+      WHERE trang_thai = 'DOT_2_DANG_MO' 
+      AND ngay_dong_dot_2 < NOW()
+    `);
+
     const [rows] = await pool.execute(
       `SELECT * FROM DotNhapDiem ORDER BY nam_hoc DESC, hoc_ky ASC`
     );
@@ -30,12 +64,22 @@ export async function getAllDotNhapDiem() {
 // Cập nhật trạng thái đợt nhập điểm (cho admin)
 export async function updateTrangThaiDot(hocKy, namHoc, trangThai) {
   try {
-    const [result] = await pool.execute(
-      `UPDATE DotNhapDiem 
-       SET trang_thai = ?, updated_at = NOW()
-       WHERE hoc_ky = ? AND nam_hoc = ?`,
-      [trangThai, hocKy, namHoc]
-    );
+    let sql = `UPDATE DotNhapDiem SET trang_thai = ?, updated_at = NOW()`;
+    const params = [trangThai];
+
+    // Nếu mở đợt 1 => Set ngày mở là NOW, ngày đóng là 7 ngày sau
+    if (trangThai === 'DOT_1_DANG_MO') {
+      sql += `, ngay_mo_dot_1 = NOW(), ngay_dong_dot_1 = DATE_ADD(NOW(), INTERVAL 7 DAY)`;
+    }
+    // Nếu mở đợt 2 => Set ngày mở là NOW, ngày đóng là 7 ngày sau
+    else if (trangThai === 'DOT_2_DANG_MO') {
+      sql += `, ngay_mo_dot_2 = NOW(), ngay_dong_dot_2 = DATE_ADD(NOW(), INTERVAL 7 DAY)`;
+    }
+
+    sql += ` WHERE hoc_ky = ? AND nam_hoc = ?`;
+    params.push(hocKy, namHoc);
+
+    const [result] = await pool.execute(sql, params);
     return result;
   } catch (err) {
     console.error('❌ Lỗi cập nhật trạng thái đợt:', err);
