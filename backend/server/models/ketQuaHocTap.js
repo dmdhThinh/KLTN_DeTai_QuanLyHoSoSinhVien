@@ -7,7 +7,7 @@ export async function createKetQuaHocTap(data) {
     diem_ly_thuyet_1, diem_ly_thuyet_2, diem_ly_thuyet_3, diem_ly_thuyet_4,
     diem_thuc_hanh_1, diem_thuc_hanh_2, diem_thuc_hanh_3,
     diem_giua_ky, diem_cuoi_ky,
-    diem_tong_ket, diem_chu, hoc_luc, xep_loai, dat, diem_thang_4
+    diem_tong_ket, diem_chu, hoc_luc, xep_loai, dat, diem_thang_4, tin_chi_no
   } = data;
 
   try {
@@ -17,8 +17,8 @@ export async function createKetQuaHocTap(data) {
         diem_ly_thuyet_1, diem_ly_thuyet_2, diem_ly_thuyet_3, diem_ly_thuyet_4,
         diem_thuc_hanh_1, diem_thuc_hanh_2, diem_thuc_hanh_3,
         diem_giua_ky, diem_cuoi_ky,
-        diem_tong_ket, diem_chu, hoc_luc, xep_loai, dat, diem_thang_4
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        diem_tong_ket, diem_chu, hoc_luc, xep_loai, dat, diem_thang_4, tin_chi_no
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       ON DUPLICATE KEY UPDATE
         diem_ly_thuyet_1 = COALESCE(VALUES(diem_ly_thuyet_1), diem_ly_thuyet_1),
         diem_ly_thuyet_2 = COALESCE(VALUES(diem_ly_thuyet_2), diem_ly_thuyet_2),
@@ -34,13 +34,14 @@ export async function createKetQuaHocTap(data) {
         hoc_luc = VALUES(hoc_luc),
         xep_loai = VALUES(xep_loai),
         dat = VALUES(dat),
-        diem_thang_4 = VALUES(diem_thang_4)`,
+        diem_thang_4 = VALUES(diem_thang_4),
+        tin_chi_no = VALUES(tin_chi_no)`,
       [
         sinh_vien_id, hoc_phan_id, hoc_ky, nam_hoc,
         diem_ly_thuyet_1, diem_ly_thuyet_2, diem_ly_thuyet_3, diem_ly_thuyet_4,
         diem_thuc_hanh_1, diem_thuc_hanh_2, diem_thuc_hanh_3,
         diem_giua_ky, diem_cuoi_ky,
-        diem_tong_ket, diem_chu, hoc_luc, xep_loai, dat, diem_thang_4
+        diem_tong_ket, diem_chu, hoc_luc, xep_loai, dat, diem_thang_4, tin_chi_no ?? 0
       ]
     );
     return result;
@@ -88,7 +89,7 @@ export async function updateKetQuaHocTap(id, data) {
     
     // Các field tính toán (luôn được backend tính lại)
     const calculatedFields = [
-      'diem_tong_ket', 'diem_chu', 'hoc_luc', 'xep_loai', 'dat', 'diem_thang_4'
+      'diem_tong_ket', 'diem_chu', 'hoc_luc', 'xep_loai', 'dat', 'diem_thang_4', 'tin_chi_no'
     ];
     
     // Thêm các field điểm thành phần (chỉ khi được gửi lên)

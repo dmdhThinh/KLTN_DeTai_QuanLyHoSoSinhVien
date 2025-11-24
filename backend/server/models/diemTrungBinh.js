@@ -67,21 +67,49 @@ export async function capNhatDiemTrungBinh(sinhVienId, hocKy, namHoc) {
         AND kq.dat = 'Đạt'
     `, [sinhVienId, hocKy, namHoc]);
 
-    // Tính TC nợ trong học kỳ hiện tại = TC có điểm trong HK - TC đạt trong HK
-    const [tinChiHocKy] = await pool.execute(`
-      SELECT COALESCE(SUM(hp.so_tin_chi), 0) as tong_tin_chi_hoc_ky
+    // Tính tín chỉ nợ tích lũy đến học kỳ hiện tại
+    // Tín chỉ nợ = tổng TC của các môn "Không đạt" mà chưa được học lại và đạt
+    // Bao gồm TẤT CẢ các môn không đạt từ đầu đến học kỳ hiện tại
+    const [tinChiNo] = await pool.execute(`
+      SELECT COALESCE(SUM(hp.so_tin_chi), 0) as tong_tin_chi_no
       FROM KetQuaHocTap kq
       JOIN HocPhan hp ON kq.hoc_phan_id = hp.id
       WHERE kq.sinh_vien_id = ?
-        AND kq.hoc_ky = ?
-        AND kq.nam_hoc = ?
-        AND kq.diem_tong_ket IS NOT NULL
-    `, [sinhVienId, hocKy, namHoc]);
+        AND kq.dat = 'Không đạt'
+        AND (
+          kq.nam_hoc < ? OR 
+          (kq.nam_hoc = ? AND (
+            kq.hoc_ky = ? OR
+            (kq.hoc_ky = 'HK1' AND ? IN ('HK1', 'HK2', 'HK3')) OR
+            (kq.hoc_ky = 'HK2' AND ? IN ('HK2', 'HK3'))
+          ))
+        )
+        AND NOT EXISTS (
+          SELECT 1 FROM KetQuaHocTap kq2
+          WHERE kq2.sinh_vien_id = kq.sinh_vien_id
+            AND kq2.hoc_phan_id = kq.hoc_phan_id
+            AND kq2.dat = 'Đạt'
+            AND (
+              (kq2.nam_hoc > kq.nam_hoc) OR
+              (kq2.nam_hoc = kq.nam_hoc AND (
+                (kq.hoc_ky = 'HK1' AND kq2.hoc_ky IN ('HK2', 'HK3')) OR
+                (kq.hoc_ky = 'HK2' AND kq2.hoc_ky = 'HK3')
+              ))
+            )
+            AND (
+              kq2.nam_hoc < ? OR 
+              (kq2.nam_hoc = ? AND (
+                kq2.hoc_ky = ? OR
+                (kq2.hoc_ky = 'HK1' AND ? IN ('HK1', 'HK2', 'HK3')) OR
+                (kq2.hoc_ky = 'HK2' AND ? IN ('HK2', 'HK3'))
+              ))
+            )
+        )
+    `, [sinhVienId, namHoc, namHoc, hocKy, hocKy, hocKy, namHoc, namHoc, hocKy, hocKy, hocKy]);
 
     const tongTinChiDangKy = tinChiDangKy[0]?.tong_tin_chi_dang_ky || 0;
     const tongTinChiDat = tinChiDat[0]?.tong_tin_chi_dat || 0;
-    const tongTinChiHocKy = tinChiHocKy[0]?.tong_tin_chi_hoc_ky || 0;
-    const tongTinChiNo = tongTinChiHocKy - tongTinChiDat; // Nợ = TC có điểm trong HK - TC đạt trong HK
+    const tongTinChiNo = tinChiNo[0]?.tong_tin_chi_no || 0;
 
     // 5. Xác định xếp loại học kỳ (dựa vào điểm TB học kỳ)
     const dtbHocKy = diemHocKy[0]?.diem_tb_hoc_ky || 0;
@@ -89,9 +117,9 @@ export async function capNhatDiemTrungBinh(sinhVienId, hocKy, namHoc) {
     if (dtbHocKy >= 8.5) xepLoaiHocKy = 'Giỏi';
     else if (dtbHocKy >= 8.0) xepLoaiHocKy = 'Khá giỏi';
     else if (dtbHocKy >= 7.0) xepLoaiHocKy = 'Khá';
-    else if (dtbHocKy >= 6.5) xepLoaiHocKy = 'TB khá';
-    else if (dtbHocKy >= 5.5) xepLoaiHocKy = 'TB';
-    else if (dtbHocKy >= 5.0) xepLoaiHocKy = 'TB yếu';
+    else if (dtbHocKy >= 6.5) xepLoaiHocKy = 'Trung Bình khá';
+    else if (dtbHocKy >= 5.5) xepLoaiHocKy = 'Trung Bình';
+    else if (dtbHocKy >= 5.0) xepLoaiHocKy = 'Trung Bình yếu';
     else if (dtbHocKy >= 4.0) xepLoaiHocKy = 'Yếu';
     else if (dtbHocKy > 0) xepLoaiHocKy = 'Kém';
 
@@ -101,9 +129,9 @@ export async function capNhatDiemTrungBinh(sinhVienId, hocKy, namHoc) {
     if (dtbTichLuy >= 8.5) xepLoaiTichLuy = 'Giỏi';
     else if (dtbTichLuy >= 8.0) xepLoaiTichLuy = 'Khá giỏi';
     else if (dtbTichLuy >= 7.0) xepLoaiTichLuy = 'Khá';
-    else if (dtbTichLuy >= 6.5) xepLoaiTichLuy = 'TB khá';
-    else if (dtbTichLuy >= 5.5) xepLoaiTichLuy = 'TB';
-    else if (dtbTichLuy >= 5.0) xepLoaiTichLuy = 'TB yếu';
+    else if (dtbTichLuy >= 6.5) xepLoaiTichLuy = 'Trung Bình khá';
+    else if (dtbTichLuy >= 5.5) xepLoaiTichLuy = 'Trung Bình';
+    else if (dtbTichLuy >= 5.0) xepLoaiTichLuy = 'Trung Bình yếu';
     else if (dtbTichLuy >= 4.0) xepLoaiTichLuy = 'Yếu';
     else if (dtbTichLuy > 0) xepLoaiTichLuy = 'Kém';
 

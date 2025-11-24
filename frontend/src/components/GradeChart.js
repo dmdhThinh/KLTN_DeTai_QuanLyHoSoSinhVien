@@ -33,7 +33,7 @@ const CustomTooltip = ({ active, payload }) => {
           <strong>{data.diemCuaBan}</strong>
         </p>
         <p style={{ margin: '4px 0', color: '#f39c12' }}>
-          <span style={{ fontSize: '0.9rem' }}>● Điểm TB lớp học phần:</span>{' '}
+          <span style={{ fontSize: '0.9rem' }}>● Điểm Trung Bình lớp học phần:</span>{' '}
           <strong>{data.diemTBLop}</strong>
         </p>
       </div>
@@ -53,7 +53,7 @@ export default function GradeChart({ sinhVienId }) {
     // Lấy danh sách học kỳ từ điểm trung bình (API đã có sẵn)
     apiFetch(`/api/diem-trung-binh/theo-sinh-vien?sinhVienId=${sinhVienId}`)
       .then(data => {
-        console.log('Danh sách điểm TB:', data);
+        console.log('Danh sách điểm Trung Bình:', data);
         if (Array.isArray(data) && data.length > 0) {
           const list = data.map(item => ({
             hocKy: item.hoc_ky,
@@ -179,7 +179,7 @@ export default function GradeChart({ sinhVienId }) {
             <Line 
               type="monotone"
               dataKey="diemTBLop" 
-              name="Điểm TB lớp học phần"
+              name="Điểm Trung Bình lớp học phần"
               stroke="#f39c12"
               strokeWidth={2}
               dot={{ fill: '#f39c12', r: 4 }}
@@ -222,7 +222,7 @@ export default function GradeChart({ sinhVienId }) {
                 borderRadius: '50%'
               }}></span>
             </span>
-            <span>Điểm TB lớp học phần</span>
+            <span>Điểm Trung Bình lớp học phần</span>
           </div>
         </div>
       )}

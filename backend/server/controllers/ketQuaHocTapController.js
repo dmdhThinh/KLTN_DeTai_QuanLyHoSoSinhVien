@@ -39,9 +39,9 @@ function tinhDiemTongKetIUH(data) {
   if (tongKet >= 8.5) { diemChu = 'A'; hocLuc = xepLoai = 'Giỏi'; dat = 'Đạt'; }
   else if (tongKet >= 8.0) { diemChu = 'B+'; hocLuc = xepLoai = 'Khá giỏi'; dat = 'Đạt'; }
   else if (tongKet >= 7.0) { diemChu = 'B'; hocLuc = xepLoai = 'Khá'; dat = 'Đạt'; }
-  else if (tongKet >= 6.5) { diemChu = 'C+'; hocLuc = xepLoai = 'TB khá'; dat = 'Đạt'; }
-  else if (tongKet >= 5.5) { diemChu = 'C'; hocLuc = xepLoai = 'TB'; dat = 'Đạt'; }
-  else if (tongKet >= 5.0) { diemChu = 'D+'; hocLuc = xepLoai = 'TB yếu'; dat = 'Đạt'; }
+  else if (tongKet >= 6.5) { diemChu = 'C+'; hocLuc = xepLoai = 'Trung Bình khá'; dat = 'Đạt'; }
+  else if (tongKet >= 5.5) { diemChu = 'C'; hocLuc = xepLoai = 'Trung Bình'; dat = 'Đạt'; }
+  else if (tongKet >= 5.0) { diemChu = 'D+'; hocLuc = xepLoai = 'Trung Bình yếu'; dat = 'Đạt'; }
   else if (tongKet >= 4.0) { diemChu = 'D'; hocLuc = xepLoai = 'Yếu'; dat = 'Đạt'; }
   else { diemChu = 'F'; hocLuc = 'Kém'; xepLoai = 'Không đạt'; dat = 'Không đạt'; }
     // 🔢 quy đổi thang 4 theo điểm chữ
@@ -62,6 +62,13 @@ function tinhDiemTongKetIUH(data) {
 export async function create(req, res) {
   try {
     const { sinh_vien_id, hoc_phan_id, hoc_ky, nam_hoc } = req.body;
+    
+    // Lấy số tín chỉ của môn học
+    const [hocPhan] = await pool.execute(
+      'SELECT so_tin_chi FROM HocPhan WHERE id = ?',
+      [hoc_phan_id]
+    );
+    const soTinChi = hocPhan[0]?.so_tin_chi || 0;
     
     // Kiểm tra xem đã tồn tại record chưa
     const [existing] = await pool.execute(
@@ -91,6 +98,9 @@ export async function create(req, res) {
     
     const auto = tinhDiemTongKetIUH(data);
     data = { ...data, ...auto };
+    
+    // Tính tin_chi_no: nếu không đạt thì = số tín chỉ, đạt thì = 0
+    data.tin_chi_no = auto.dat === 'Không đạt' ? soTinChi : 0;
     
     const result = await KetQuaHocTapModel.createKetQuaHocTap(data);
     
@@ -156,12 +166,21 @@ export async function update(req, res) {
     if (!current) {
       return res.status(404).json({ message: 'Không tìm thấy điểm số để sửa' });
     }
+    
+    // Lấy số tín chỉ của môn học
+    const [hocPhan] = await pool.execute(
+      'SELECT so_tin_chi FROM HocPhan WHERE id = ?',
+      [current.hoc_phan_id]
+    );
+    const soTinChi = hocPhan[0]?.so_tin_chi || 0;
 
     // 2️⃣ Hợp nhất dữ liệu mới và cũ
     const merged = { ...current, ...req.body };
 
     // 3️⃣ Tính lại theo dữ liệu hợp nhất
     const auto = tinhDiemTongKetIUH(merged);
+    // Tính tin_chi_no: nếu không đạt thì = số tín chỉ, đạt thì = 0
+    auto.tin_chi_no = auto.dat === 'Không đạt' ? soTinChi : 0;
     const payload = { ...req.body, ...auto }; // CHỈ gửi field frontend gửi + auto
 
     // 4️⃣ Update vào DB

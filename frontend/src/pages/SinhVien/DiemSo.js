@@ -205,21 +205,8 @@ export default function DiemSo() {
     const namHoc = items[0]?.namHoc
     const dtb = diemTrungBinh.find(d => d.hoc_ky === hocKy && d.nam_hoc === namHoc)
     
-    // Kiểm tra xem đã nhập đủ điểm chưa
-    const soMonDangKy = dangKyHocPhan.filter(dk => 
-      dk.hoc_ky === hocKy && 
-      dk.nam_hoc === namHoc && 
-      dk.trang_thai_dk === 'THANH_CONG'
-    ).length
-    
-    const soMonCoDiem = items.filter(item =>
-      item.diemTongKet !== null && 
-      item.diemTongKet !== undefined && 
-      item.diemTongKet !== ''
-    ).length
-    
-    // Chỉ in điểm tích lũy khi đã nhập đủ điểm
-    const shouldShowDTB = dtb && soMonDangKy > 0 && soMonCoDiem === soMonDangKy
+    // Hiển thị điểm tích lũy khi có dữ liệu
+    const shouldShowDTB = dtb
     
     if (shouldShowDTB) {
       content.push({
@@ -227,12 +214,12 @@ export default function DiemSo() {
           widths: ['*', '*'],
           body: [
             [
-              { text: 'Điểm trung bình học kỳ hệ 10: ' + (dtb.diem_tb_hoc_ky || '0.00'), fontSize: 9, bold: true },
-              { text: 'Điểm trung bình học kỳ hệ 4: ' + (dtb.diem_tb_hoc_ky_thang4 || '0.00'), fontSize: 9, bold: true }
+              { text: 'Điểm Trung Bình học kỳ hệ 10: ' + (dtb.diem_tb_hoc_ky || '0.00'), fontSize: 9, bold: true },
+              { text: 'Điểm Trung Bình học kỳ hệ 4: ' + (dtb.diem_tb_hoc_ky_thang4 || '0.00'), fontSize: 9, bold: true }
             ],
             [
-              { text: 'Điểm trung bình tích lũy: ' + (dtb.diem_tb_tich_luy || '0.00'), fontSize: 9, color: '#006400' },
-              { text: 'Điểm trung bình tích lũy (hệ 4): ' + (dtb.diem_tb_tich_luy_thang4 || '0.00'), fontSize: 9, color: '#006400' }
+              { text: 'Điểm Trung Bình tích lũy: ' + (dtb.diem_tb_tich_luy || '0.00'), fontSize: 9, color: '#006400' },
+              { text: 'Điểm Trung Bình tích lũy (hệ 4): ' + (dtb.diem_tb_tich_luy_thang4 || '0.00'), fontSize: 9, color: '#006400' }
             ],
             [
               { text: 'Tổng số tín chỉ đã đăng ký: ' + (dtb.tong_tin_chi_dang_ky || 0), fontSize: 9 },
@@ -392,21 +379,8 @@ export default function DiemSo() {
       const namHoc = items[0]?.namHoc
       const dtb = diemTrungBinh.find(d => d.hoc_ky === hocKy && d.nam_hoc === namHoc)
       
-      // Kiểm tra xem đã nhập đủ điểm chưa
-      const soMonDangKy = dangKyHocPhan.filter(dk => 
-        dk.hoc_ky === hocKy && 
-        dk.nam_hoc === namHoc && 
-        dk.trang_thai_dk === 'THANH_CONG'
-      ).length
-      
-      const soMonCoDiem = items.filter(item =>
-        item.diemTongKet !== null && 
-        item.diemTongKet !== undefined && 
-        item.diemTongKet !== ''
-      ).length
-      
-      // Chỉ hiển thị điểm tích lũy khi đã nhập đủ điểm tất cả môn đã đăng ký
-      const showDiemTichLuy = dtb && soMonDangKy > 0 && soMonCoDiem === soMonDangKy
+      // Hiển thị điểm tích lũy khi có dữ liệu
+      const showDiemTichLuy = dtb
       
       return (
         <React.Fragment key={hocKyNam}>
@@ -523,7 +497,7 @@ export default function DiemSo() {
                   <div className="col-md-6">
                     <div style={{ marginBottom: '0.4rem' }}>
                       <i className="bi bi-graph-up text-primary me-2"></i>
-                      <strong>Điểm trung bình học kỳ hệ 10:</strong> 
+                      <strong>Điểm Trung Bình học kỳ hệ 10:</strong> 
                       <span className="fw-bold ms-2" style={{ 
                         color: getScoreColor(dtb.diem_tb_hoc_ky),
                         fontSize: '1.1rem'
@@ -531,7 +505,7 @@ export default function DiemSo() {
                     </div>
                     <div style={{ marginBottom: '0.4rem' }}>
                       <i className="bi bi-trophy text-success me-2"></i>
-                      <strong>Điểm trung bình tích lũy:</strong> 
+                      <strong>Điểm Trung Bình tích lũy:</strong> 
                       <span className="fw-bold ms-2" style={{ 
                         color: getScoreColor(dtb.diem_tb_tich_luy),
                         fontSize: '1.1rem'
@@ -558,7 +532,7 @@ export default function DiemSo() {
                   <div className="col-md-6">
                     <div style={{ marginBottom: '0.4rem' }}>
                       <i className="bi bi-graph-up text-primary me-2"></i>
-                      <strong>Điểm trung bình học kỳ hệ 4:</strong> 
+                      <strong>Điểm Trung Bình học kỳ hệ 4:</strong> 
                       <span className="fw-bold ms-2" style={{ 
                         color: getScoreColor(dtb.diem_tb_hoc_ky_thang4 * 2.5),
                         fontSize: '1.1rem'
@@ -566,7 +540,7 @@ export default function DiemSo() {
                     </div>
                     <div style={{ marginBottom: '0.4rem' }}>
                       <i className="bi bi-trophy text-success me-2"></i>
-                      <strong>Điểm trung bình tích lũy (hệ 4):</strong> 
+                      <strong>Điểm Trung Bình tích lũy (hệ 4):</strong> 
                       <span className="fw-bold ms-2" style={{ 
                         color: getScoreColor(dtb.diem_tb_tich_luy_thang4 * 2.5),
                         fontSize: '1.1rem'

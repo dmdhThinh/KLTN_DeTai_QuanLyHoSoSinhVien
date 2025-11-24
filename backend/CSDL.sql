@@ -1,6 +1,6 @@
 CREATE DATABASE  IF NOT EXISTS `quanlysinhvien` /*!40100 DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci */ /*!80016 DEFAULT ENCRYPTION='N' */;
 USE `quanlysinhvien`;
--- MySQL dump 10.13  Distrib 8.0.43, for Win64 (x86_64)
+-- MySQL dump 10.13  Distrib 8.0.36, for Win64 (x86_64)
 --
 -- Host: quanlysinhvien.chwga2g2s4mx.ap-southeast-1.rds.amazonaws.com    Database: quanlysinhvien
 -- ------------------------------------------------------
@@ -86,7 +86,7 @@ CREATE TABLE `DangKyHocPhan` (
   CONSTRAINT `DangKyHocPhan_ibfk_2` FOREIGN KEY (`hoc_phan_id`) REFERENCES `HocPhan` (`id`),
   CONSTRAINT `fk_dkhp_dot` FOREIGN KEY (`dot_dang_ky_id`) REFERENCES `DotDangKy` (`id`),
   CONSTRAINT `fk_dkhp_lhp` FOREIGN KEY (`lop_hoc_phan_id`) REFERENCES `LopHocPhan` (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=35 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=63 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -95,7 +95,7 @@ CREATE TABLE `DangKyHocPhan` (
 
 LOCK TABLES `DangKyHocPhan` WRITE;
 /*!40000 ALTER TABLE `DangKyHocPhan` DISABLE KEYS */;
-INSERT INTO `DangKyHocPhan` VALUES (4,1,7,4,'HOC_MOI','Thành công','2025-11-05 09:14:46','THANH_CONG',1),(5,1,8,6,'HOC_MOI','Thành công','2025-11-05 09:19:29','THANH_CONG',1),(8,41,8,6,'HOC_MOI','Thành công','2025-11-08 08:32:32','THANH_CONG',1),(10,1,2,1,'HOC_MOI','Thành công','2025-11-08 11:28:35','THANH_CONG',1),(11,1,6,2,'HOC_MOI','Thành công','2025-11-08 11:57:48','THANH_CONG',1),(12,41,2,1,'HOC_MOI','Thành công','2025-11-08 15:27:26','THANH_CONG',1),(14,30,2,1,'HOC_MOI','Thành công','2025-11-08 16:09:00','THANH_CONG',1),(15,26,2,1,'HOC_MOI','Thành công','2025-11-08 16:24:24','THANH_CONG',1),(16,26,6,2,'HOC_MOI','Thành công','2025-11-08 16:38:09','THANH_CONG',1),(18,1,14,30,'HOC_MOI','Thành công','2025-11-09 02:23:28','THANH_CONG',1),(19,1,12,33,'HOC_MOI','Thành công','2025-11-09 02:23:40','THANH_CONG',1),(20,1,13,43,'HOC_MOI','Thành công','2025-11-09 02:24:08','THANH_CONG',1),(21,1,11,42,'HOC_MOI','Thành công','2025-11-09 02:24:27','THANH_CONG',1),(22,1,17,47,'HOC_MOI','Thành công','2025-11-09 02:24:37','THANH_CONG',1),(23,1,16,37,'HOC_MOI','Thành công','2025-11-09 02:24:42','THANH_CONG',1),(24,1,15,45,'HOC_MOI','Thành công','2025-11-09 02:24:54','THANH_CONG',1),(25,1,18,41,'HOC_MOI','Thành công','2025-11-09 02:25:17','THANH_CONG',1),(26,27,2,1,'HOC_MOI','Thành công','2025-11-09 04:50:50','THANH_CONG',1),(34,163,22,54,'HOC_MOI','Thành công','2025-11-11 08:54:26','THANH_CONG',1);
+INSERT INTO `DangKyHocPhan` VALUES (4,1,7,4,'HOC_MOI','Thành công','2025-11-05 09:14:46','THANH_CONG',1),(5,1,8,6,'HOC_MOI','Thành công','2025-11-05 09:19:29','THANH_CONG',1),(8,41,8,6,'HOC_MOI','Thành công','2025-11-08 08:32:32','THANH_CONG',1),(10,1,2,1,'HOC_MOI','Thành công','2025-11-08 11:28:35','THANH_CONG',1),(11,1,6,2,'HOC_MOI','Thành công','2025-11-08 11:57:48','THANH_CONG',1),(12,41,2,1,'HOC_MOI','Thành công','2025-11-08 15:27:26','THANH_CONG',1),(14,30,2,1,'HOC_MOI','Thành công','2025-11-08 16:09:00','THANH_CONG',1),(15,26,2,1,'HOC_MOI','Thành công','2025-11-08 16:24:24','THANH_CONG',1),(16,26,6,2,'HOC_MOI','Thành công','2025-11-08 16:38:09','THANH_CONG',1),(18,1,14,30,'HOC_MOI','Thành công','2025-11-09 02:23:28','THANH_CONG',1),(19,1,12,33,'HOC_MOI','Thành công','2025-11-09 02:23:40','THANH_CONG',1),(20,1,13,43,'HOC_MOI','Thành công','2025-11-09 02:24:08','THANH_CONG',1),(21,1,11,42,'HOC_MOI','Thành công','2025-11-09 02:24:27','THANH_CONG',1),(22,1,17,47,'HOC_MOI','Thành công','2025-11-09 02:24:37','THANH_CONG',1),(23,1,16,37,'HOC_MOI','Thành công','2025-11-09 02:24:42','THANH_CONG',1),(24,1,15,45,'HOC_MOI','Thành công','2025-11-09 02:24:54','THANH_CONG',1),(25,1,18,41,'HOC_MOI','Thành công','2025-11-09 02:25:17','THANH_CONG',1),(26,27,2,1,'HOC_MOI','Thành công','2025-11-09 04:50:50','THANH_CONG',1),(34,163,22,54,'HOC_MOI','Thành công','2025-11-11 08:54:26','THANH_CONG',1),(46,163,20,52,'HOC_MOI','Thành công','2025-11-22 14:57:59','THANH_CONG',1),(54,163,2,1,'HOC_MOI','Thành công','2025-11-22 17:42:29','THANH_CONG',NULL),(62,1,24,33,'HOC_LAI','Thành công','2025-11-24 15:07:14','THANH_CONG',1);
 /*!40000 ALTER TABLE `DangKyHocPhan` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -125,7 +125,7 @@ CREATE TABLE `DiemTrungBinh` (
   PRIMARY KEY (`id`),
   UNIQUE KEY `unique_sv_hk` (`sinh_vien_id`,`hoc_ky`,`nam_hoc`),
   CONSTRAINT `DiemTrungBinh_ibfk_1` FOREIGN KEY (`sinh_vien_id`) REFERENCES `SinhVien` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=479 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=1473 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -134,7 +134,7 @@ CREATE TABLE `DiemTrungBinh` (
 
 LOCK TABLES `DiemTrungBinh` WRITE;
 /*!40000 ALTER TABLE `DiemTrungBinh` DISABLE KEYS */;
-INSERT INTO `DiemTrungBinh` VALUES (1,1,'HK2','2024-2025',6.78,2.63,6.66,2.46,26,23,12,0,'TB khá','TB khá','2025-11-21 09:30:22'),(2,1,'HK1','2025-2026',7.83,3.18,7.10,2.73,40,37,14,0,'Khá','Khá','2025-11-21 09:30:22'),(11,41,'HK2','2024-2025',7.00,3.00,7.00,3.00,4,4,4,0,'Khá','Khá','2025-11-07 16:49:37'),(12,41,'HK1','2025-2026',6.00,2.25,6.00,2.25,8,8,8,0,'TB','TB','2025-11-21 10:27:15'),(61,30,'HK1','2025-2026',5.00,1.50,5.00,1.50,4,4,4,0,'TB yếu','TB yếu','2025-11-20 12:32:54'),(76,1,'HK1','2024-2025',5.35,1.79,6.53,2.27,14,11,11,3,'TB yếu','TB khá','2025-11-21 09:30:21'),(140,26,'HK1','2025-2026',NULL,NULL,NULL,NULL,0,0,0,0,'Chưa xếp loại','Chưa xếp loại','2025-11-21 07:37:03'),(198,27,'HK1','2025-2026',10.00,4.00,10.00,4.00,4,4,4,0,'Giỏi','Giỏi','2025-11-20 12:32:54');
+INSERT INTO `DiemTrungBinh` VALUES (1,1,'HK2','2024-2025',6.98,2.75,7.24,2.84,26,19,12,7,'Trung Bình khá','Khá','2025-11-24 08:27:02'),(2,1,'HK1','2025-2026',7.12,2.76,7.19,2.81,43,36,17,4,'Khá','Khá','2025-11-24 08:27:02'),(11,41,'HK2','2024-2025',7.00,3.00,7.00,3.00,4,4,4,0,'Khá','Khá','2025-11-07 16:49:37'),(12,41,'HK1','2025-2026',6.00,2.25,6.00,2.25,8,8,8,0,'Trung Bình','Trung Bình','2025-11-24 08:25:21'),(61,30,'HK1','2025-2026',5.00,1.50,5.00,1.50,4,4,4,0,'Trung Bình yếu','Trung Bình yếu','2025-11-24 08:25:21'),(76,1,'HK1','2024-2025',4.20,1.50,7.69,3.00,14,7,7,7,'Yếu','Khá','2025-11-24 08:27:02'),(140,26,'HK1','2025-2026',NULL,NULL,NULL,NULL,0,0,0,0,'Chưa xếp loại','Chưa xếp loại','2025-11-21 07:37:03'),(198,27,'HK1','2025-2026',10.00,4.00,10.00,4.00,4,4,4,0,'Giỏi','Giỏi','2025-11-24 04:51:00'),(1042,163,'HK1','2025-2026',9.00,4.00,9.00,4.00,4,4,4,0,'Giỏi','Giỏi','2025-11-22 11:31:39');
 /*!40000 ALTER TABLE `DiemTrungBinh` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -192,7 +192,7 @@ CREATE TABLE `DotDangKy` (
 
 LOCK TABLES `DotDangKy` WRITE;
 /*!40000 ALTER TABLE `DotDangKy` DISABLE KEYS */;
-INSERT INTO `DotDangKy` VALUES (1,'HK1','2025-2026','2025-11-01 00:00:00','2025-11-30 00:00:00','DANG_MO',NULL);
+INSERT INTO `DotDangKy` VALUES (1,'HK1','2025-2026','2025-11-22 00:17:00','2025-12-07 00:17:00','DANG_MO','Học kì 1\n');
 /*!40000 ALTER TABLE `DotDangKy` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -217,7 +217,7 @@ CREATE TABLE `DotNhapDiem` (
   `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
   UNIQUE KEY `uq_hocky_namhoc` (`hoc_ky`,`nam_hoc`)
-) ENGINE=InnoDB AUTO_INCREMENT=8 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Quản lý đợt nhập điểm toàn trường';
+) ENGINE=InnoDB AUTO_INCREMENT=9 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Quản lý đợt nhập điểm toàn trường';
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -226,7 +226,7 @@ CREATE TABLE `DotNhapDiem` (
 
 LOCK TABLES `DotNhapDiem` WRITE;
 /*!40000 ALTER TABLE `DotNhapDiem` DISABLE KEYS */;
-INSERT INTO `DotNhapDiem` VALUES (3,'HK1','2025-2026','DOT_2_DANG_MO',NULL,NULL,NULL,NULL,'Học kỳ 1 năm học 2025-2026','2025-11-08 02:53:33','2025-11-09 07:29:48'),(4,'HK2','2025-2026','DOT_1_DANG_MO',NULL,NULL,NULL,NULL,'Học kỳ HK2 năm học 2025-2026','2025-11-08 03:12:05','2025-11-09 08:12:20'),(7,'HK1','2024-2025','DOT_2_DANG_MO',NULL,NULL,NULL,NULL,'Học kỳ HK1 năm học 2024-2025','2025-11-21 07:39:33','2025-11-21 07:39:40');
+INSERT INTO `DotNhapDiem` VALUES (3,'HK1','2025-2026','DOT_2_DANG_MO','2025-11-22 18:31:06','2025-11-29 18:31:06','2025-11-22 18:31:10','2025-11-29 18:31:10','Học kỳ 1 năm học 2025-2026','2025-11-08 02:53:33','2025-11-22 11:31:10'),(4,'HK2','2025-2026','DOT_2_DANG_MO',NULL,NULL,NULL,NULL,'Học kỳ HK2 năm học 2025-2026','2025-11-08 03:12:05','2025-11-21 15:18:51'),(7,'HK1','2024-2025','DOT_2_DANG_MO','2025-11-24 11:50:02','2025-12-01 11:50:02','2025-11-24 11:50:06','2025-12-01 11:50:06','Học kỳ HK1 năm học 2024-2025','2025-11-21 07:39:33','2025-11-24 04:50:06'),(8,'HK2','2024-2025','DOT_2_DANG_MO','2025-11-24 11:05:57','2025-12-01 11:05:57','2025-11-24 11:06:41','2025-12-01 11:06:41','Học kỳ HK2 năm học 2024-2025','2025-11-21 15:07:31','2025-11-24 04:06:41');
 /*!40000 ALTER TABLE `DotNhapDiem` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -392,7 +392,7 @@ CREATE TABLE `HocPhi` (
   CONSTRAINT `fk_hocphi_lhp` FOREIGN KEY (`lop_hoc_phan_id`) REFERENCES `LopHocPhan` (`id`),
   CONSTRAINT `HocPhi_ibfk_1` FOREIGN KEY (`sinh_vien_id`) REFERENCES `SinhVien` (`id`),
   CONSTRAINT `HocPhi_ibfk_2` FOREIGN KEY (`hoc_phan_id`) REFERENCES `HocPhan` (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=31 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=57 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -401,7 +401,7 @@ CREATE TABLE `HocPhi` (
 
 LOCK TABLES `HocPhi` WRITE;
 /*!40000 ALTER TABLE `HocPhi` DISABLE KEYS */;
-INSERT INTO `HocPhi` VALUES (1,1,1,'HK1','2025-2026',3000000.00,'Chưa nộp',NULL,NULL,NULL,1),(2,1,2,'HK1','2025-2026',4000000.00,'Đã nộp',NULL,NULL,NULL,1),(3,1,4,'HK1','2025-2026',3000000.00,'Chưa nộp',4,7,'2025-11-20',1),(4,1,6,'HK1','2025-2026',4000000.00,'Chưa nộp',5,8,'2025-11-20',1),(5,41,6,'HK1','2025-2026',4000000.00,'Đã nộp',8,8,'2025-11-20',1),(6,1,1,'HK1','2025-2026',4000000.00,'Chưa nộp',10,2,'2025-11-20',1),(7,1,2,'HK1','2025-2026',3000000.00,'Chưa nộp',11,6,'2025-11-20',1),(8,41,1,'HK1','2025-2026',4000000.00,'Chưa nộp',12,2,'2025-11-20',1),(10,30,1,'HK1','2025-2026',4000000.00,'Chưa nộp',14,2,'2025-11-20',1),(11,26,1,'HK1','2025-2026',4000000.00,'Chưa nộp',15,2,'2025-11-20',1),(12,26,2,'HK1','2025-2026',3000000.00,'Chưa nộp',16,6,'2025-11-20',1),(14,1,30,'HK1','2024-2025',4000000.00,'Đã nộp',18,14,'2024-07-20',1),(15,1,33,'HK1','2024-2025',3000000.00,'Đã nộp',19,12,'2024-07-20',1),(16,1,43,'HK1','2024-2025',3000000.00,'Đã nộp',20,13,'2024-07-20',1),(17,1,42,'HK1','2024-2025',4000000.00,'Đã nộp',21,11,'2024-07-20',1),(18,1,47,'HK2','2024-2025',3000000.00,'Đã nộp',22,17,'2024-12-20',1),(19,1,37,'HK2','2024-2025',3000000.00,'Đã nộp',23,16,'2024-12-20',1),(20,1,45,'HK2','2024-2025',3000000.00,'Đã nộp',24,15,'2024-12-20',1),(21,1,41,'HK2','2024-2025',3000000.00,'Đã nộp',25,18,'2024-12-20',1),(22,27,1,'HK1','2025-2026',4000000.00,'Chưa nộp',26,2,'2025-11-20',1),(30,163,54,'HK1','2025-2026',3000000.00,'Đã nộp',34,22,'2025-11-20',1);
+INSERT INTO `HocPhi` VALUES (1,1,1,'HK1','2025-2026',3000000.00,'Chưa nộp',NULL,NULL,NULL,1),(2,1,2,'HK1','2025-2026',4000000.00,'Đã nộp',NULL,NULL,NULL,1),(3,1,4,'HK1','2025-2026',3000000.00,'Đã nộp',4,7,'2025-11-29',1),(4,1,6,'HK1','2025-2026',4000000.00,'Đã nộp',5,8,'2025-11-29',1),(5,41,6,'HK1','2025-2026',4000000.00,'Đã nộp',8,8,'2025-11-29',1),(6,1,1,'HK1','2025-2026',4000000.00,'Đã nộp',10,2,'2025-11-29',1),(7,1,2,'HK1','2025-2026',3000000.00,'Đã nộp',11,6,'2025-11-29',1),(8,41,1,'HK1','2025-2026',4000000.00,'Đã nộp',12,2,'2025-11-29',1),(10,30,1,'HK1','2025-2026',4000000.00,'Đã nộp',14,2,'2025-11-29',1),(11,26,1,'HK1','2025-2026',4000000.00,'Đã nộp',15,2,'2025-11-29',1),(12,26,2,'HK1','2025-2026',3000000.00,'Đã nộp',16,6,'2025-11-29',1),(14,1,30,'HK1','2024-2025',4000000.00,'Đã nộp',18,14,'2025-11-29',1),(15,1,33,'HK1','2024-2025',3000000.00,'Đã nộp',19,12,'2025-11-29',1),(16,1,43,'HK1','2024-2025',3000000.00,'Đã nộp',20,13,'2025-11-29',1),(17,1,42,'HK1','2024-2025',4000000.00,'Đã nộp',21,11,'2025-11-29',1),(18,1,47,'HK2','2024-2025',3000000.00,'Đã nộp',22,17,'2025-11-29',1),(19,1,37,'HK2','2024-2025',3000000.00,'Đã nộp',23,16,'2025-11-29',1),(20,1,45,'HK2','2024-2025',3000000.00,'Đã nộp',24,15,'2025-11-29',1),(21,1,41,'HK2','2024-2025',3000000.00,'Đã nộp',25,18,'2025-11-29',1),(22,27,1,'HK1','2025-2026',4000000.00,'Đã nộp',26,2,'2025-11-29',1),(30,163,54,'HK1','2025-2026',3000000.00,'Đã nộp',34,22,'2025-11-29',1),(42,163,52,'HK1','2025-2026',3000000.00,'Chưa nộp',46,20,'2025-11-29',1),(43,163,1,'HK1','2025-2026',4000000.00,'Chưa nộp',47,2,'2025-11-29',1),(56,1,33,'HK1','2025-2026',3000000.00,'Chưa nộp',62,24,'2025-11-29',1);
 /*!40000 ALTER TABLE `HocPhi` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -462,12 +462,14 @@ CREATE TABLE `KetQuaHocTap` (
   `hoc_luc` varchar(50) DEFAULT NULL,
   `xep_loai` varchar(50) DEFAULT NULL,
   `dat` enum('Đạt','Không đạt') DEFAULT 'Đạt',
+  `tinh_diem` tinyint(1) DEFAULT '1' COMMENT 'Có tính vào ĐTB không? 1=Có, 0=Không',
+  `tin_chi_no` int DEFAULT '0',
   PRIMARY KEY (`id`),
   UNIQUE KEY `uq_ketqua` (`sinh_vien_id`,`hoc_phan_id`,`nam_hoc`,`hoc_ky`),
   KEY `KetQuaHocTap_ibfk_2` (`hoc_phan_id`),
   CONSTRAINT `KetQuaHocTap_ibfk_1` FOREIGN KEY (`sinh_vien_id`) REFERENCES `SinhVien` (`id`),
   CONSTRAINT `KetQuaHocTap_ibfk_2` FOREIGN KEY (`hoc_phan_id`) REFERENCES `HocPhan` (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=195 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=266 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -476,7 +478,7 @@ CREATE TABLE `KetQuaHocTap` (
 
 LOCK TABLES `KetQuaHocTap` WRITE;
 /*!40000 ALTER TABLE `KetQuaHocTap` DISABLE KEYS */;
-INSERT INTO `KetQuaHocTap` VALUES (65,41,6,'HK1','2025-2026',6.00,7.00,8.00,7.00,NULL,8.00,8.00,NULL,7.00,7.00,3.00,'B','Khá','Khá','Đạt'),(123,1,6,'HK1','2025-2026',8.00,7.00,7.00,7.00,5.00,8.00,8.00,8.00,8.00,7.78,3.00,'B','Khá','Khá','Đạt'),(135,1,1,'HK1','2025-2026',9.00,9.00,9.00,9.00,9.00,9.00,9.00,9.00,9.00,9.00,4.00,'A','Giỏi','Giỏi','Đạt'),(136,41,1,'HK1','2025-2026',5.00,5.00,5.00,5.00,5.00,5.00,5.00,5.00,5.00,5.00,1.50,'D+','TB yếu','TB yếu','Đạt'),(137,30,1,'HK1','2025-2026',5.00,5.00,5.00,5.00,5.00,5.00,5.00,5.00,5.00,5.00,1.50,'D+','TB yếu','TB yếu','Đạt'),(146,1,30,'HK1','2024-2025',8.00,7.00,7.00,7.00,8.00,7.00,8.00,8.00,8.00,7.84,3.00,'B','Khá','Khá','Đạt'),(148,1,42,'HK1','2024-2025',4.00,4.00,4.00,4.00,4.00,4.00,4.00,4.00,5.00,4.50,1.00,'D','Yếu','Yếu','Đạt'),(149,1,43,'HK1','2024-2025',6.00,6.00,6.00,6.00,6.00,6.00,6.00,6.00,9.00,7.50,3.00,'B','Khá','Khá','Đạt'),(154,1,37,'HK2','2024-2025',7.00,7.00,7.00,7.00,7.00,7.00,7.00,7.00,7.00,7.00,3.00,'B','Khá','Khá','Đạt'),(155,1,47,'HK2','2024-2025',6.00,6.00,6.00,6.00,6.00,6.00,6.00,6.00,6.00,6.00,2.00,'C','TB','TB','Đạt'),(156,1,41,'HK2','2024-2025',5.00,6.00,5.00,4.00,3.00,3.00,2.00,4.00,9.00,6.63,2.50,'C+','TB khá','TB khá','Đạt'),(157,1,45,'HK2','2024-2025',9.00,9.00,9.00,9.00,9.00,9.00,9.00,9.00,6.00,7.50,3.00,'B','Khá','Khá','Đạt'),(162,1,4,'HK1','2025-2026',7.00,7.00,7.00,7.00,NULL,7.00,7.00,7.00,6.00,6.50,2.50,'C+','TB khá','TB khá','Đạt'),(172,26,2,'HK1','2025-2026',4.00,2.00,3.00,4.00,NULL,9.00,7.00,7.00,NULL,NULL,NULL,NULL,NULL,NULL,NULL),(175,27,1,'HK1','2025-2026',10.00,10.00,10.00,10.00,10.00,10.00,10.00,10.00,10.00,10.00,4.00,'A','Giỏi','Giỏi','Đạt'),(191,1,2,'HK1','2025-2026',7.00,7.00,8.00,7.00,NULL,8.00,8.00,7.00,8.00,7.65,3.00,'B','Khá','Khá','Đạt'),(194,1,33,'HK1','2024-2025',1.00,1.00,1.00,1.00,1.00,1.00,1.00,1.00,1.00,1.00,0.00,'F','Kém','Không đạt','Không đạt');
+INSERT INTO `KetQuaHocTap` VALUES (65,41,6,'HK1','2025-2026',6.00,7.00,8.00,7.00,NULL,8.00,8.00,NULL,7.00,7.00,3.00,'B','Khá','Khá','Đạt',1,0),(123,1,6,'HK1','2025-2026',8.00,7.00,7.00,7.00,5.00,8.00,8.00,8.00,8.00,7.78,3.00,'B','Khá','Khá','Đạt',1,0),(136,41,1,'HK1','2025-2026',5.00,5.00,5.00,5.00,5.00,5.00,5.00,5.00,5.00,5.00,1.50,'D+','Trung Bình yếu','Trung Bình yếu','Đạt',1,0),(137,30,1,'HK1','2025-2026',5.00,5.00,5.00,5.00,5.00,5.00,5.00,5.00,5.00,5.00,1.50,'D+','Trung Bình yếu','Trung Bình yếu','Đạt',1,0),(146,1,30,'HK1','2024-2025',8.00,7.00,7.00,7.00,8.00,7.00,8.00,8.00,8.00,7.84,3.00,'B','Khá','Khá','Đạt',1,0),(149,1,43,'HK1','2024-2025',6.00,6.00,6.00,6.00,6.00,6.00,6.00,6.00,9.00,7.50,3.00,'B','Khá','Khá','Đạt',1,0),(154,1,37,'HK2','2024-2025',7.00,7.00,7.00,7.00,7.00,7.00,7.00,7.00,7.00,7.00,3.00,'B','Khá','Khá','Đạt',1,0),(155,1,47,'HK2','2024-2025',6.00,6.00,6.00,6.00,6.00,6.00,6.00,6.00,6.00,6.00,2.00,'C','Trung Bình','Trung Bình','Đạt',1,0),(162,1,4,'HK1','2025-2026',7.00,7.00,7.00,7.00,NULL,7.00,7.00,7.00,6.00,6.50,2.50,'C+','Trung Bình khá','Trung Bình khá','Đạt',1,0),(172,26,2,'HK1','2025-2026',4.00,2.00,3.00,4.00,NULL,9.00,7.00,7.00,NULL,NULL,NULL,NULL,NULL,NULL,NULL,1,0),(175,27,1,'HK1','2025-2026',10.00,10.00,10.00,10.00,10.00,10.00,10.00,10.00,10.00,10.00,4.00,'A','Giỏi','Giỏi','Đạt',1,0),(191,1,2,'HK1','2025-2026',7.00,7.00,8.00,7.00,NULL,8.00,8.00,7.00,8.00,7.65,3.00,'B','Khá','Khá','Đạt',1,0),(225,1,45,'HK2','2024-2025',7.00,7.00,7.00,7.00,NULL,7.00,7.00,7.00,7.00,7.00,3.00,'B','Khá','Khá','Đạt',1,0),(246,1,1,'HK1','2025-2026',2.00,1.00,2.00,1.00,NULL,1.00,2.00,1.00,10.00,5.87,2.00,'C','Trung Bình','Trung Bình','Đạt',1,0),(250,1,33,'HK1','2024-2025',1.00,1.00,1.00,1.00,1.00,1.00,1.00,1.00,1.00,1.00,0.00,'F','Kém','Không đạt','Không đạt',1,3),(263,1,41,'HK2','2024-2025',8.00,7.00,8.00,9.00,7.00,7.00,8.00,7.00,8.00,7.91,3.00,'B','Khá','Khá','Đạt',1,0),(264,1,42,'HK1','2024-2025',1.00,1.00,1.00,1.00,1.00,1.00,1.00,1.00,0.00,0.50,0.00,'F','Kém','Không đạt','Không đạt',1,4),(265,1,33,'HK1','2025-2026',8.00,10.00,9.00,8.00,7.00,8.00,7.00,8.00,8.00,8.02,3.50,'B+','Khá giỏi','Khá giỏi','Đạt',1,0);
 /*!40000 ALTER TABLE `KetQuaHocTap` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -526,7 +528,7 @@ CREATE TABLE `LichHoc` (
   PRIMARY KEY (`id`),
   KEY `lop_hoc_phan_id` (`lop_hoc_phan_id`),
   CONSTRAINT `LichHoc_ibfk_1` FOREIGN KEY (`lop_hoc_phan_id`) REFERENCES `LopHocPhan` (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=25 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=26 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -535,7 +537,7 @@ CREATE TABLE `LichHoc` (
 
 LOCK TABLES `LichHoc` WRITE;
 /*!40000 ALTER TABLE `LichHoc` DISABLE KEYS */;
-INSERT INTO `LichHoc` VALUES (3,2,2,'sáng',1,3,'V7.02','Cơ sở 1',NULL,'lythuyet',NULL),(4,2,4,'chiều',7,9,'H8.03','Cơ sở 1',NULL,'thuchanh',NULL),(12,6,3,'chiều',10,12,'V5.02','Cơ sở 1',NULL,'lythuyet',NULL),(13,8,3,'chiều',7,9,'H8.01','Cơ sở 1',NULL,'lythuyet',NULL),(15,7,7,'sáng',1,3,'H8.01','Cơ sở 1',NULL,'thuchanh',NULL),(17,2,6,'sáng',4,6,'H8.03','Cơ sở 1','2025-11-14','thi',NULL),(18,6,6,'sáng',1,3,'H4.01','Cơ sở 1','2025-11-14','lythuyet',NULL),(19,18,3,'chiều',10,12,'H8.03','1',NULL,'thuchanh',NULL),(20,19,3,'sáng',4,6,'V7.02','Cơ sở 1',NULL,'thuchanh',NULL),(21,20,6,'chiều',10,12,'A4.04','Cơ sở 1',NULL,'lythuyet',NULL),(22,21,5,'sáng',4,6,'V10.02','Cơ sở 1',NULL,'lythuyet',NULL),(23,22,6,'sáng',1,3,'H1.01','Cơ sở 1',NULL,'thuchanh',NULL),(24,23,6,'chiều',10,13,'V10.07','Cơ sở 1',NULL,'lythuyet',NULL);
+INSERT INTO `LichHoc` VALUES (3,2,2,'sáng',1,3,'V7.02','Cơ sở 1',NULL,'lythuyet',NULL),(4,2,4,'chiều',7,9,'H8.03','Cơ sở 1',NULL,'thuchanh',NULL),(12,6,3,'chiều',10,12,'V5.02','Cơ sở 1',NULL,'lythuyet',NULL),(13,8,3,'chiều',7,9,'H8.01','Cơ sở 1',NULL,'lythuyet',NULL),(15,7,7,'sáng',1,3,'H8.01','Cơ sở 1',NULL,'thuchanh',NULL),(17,2,6,'sáng',4,6,'H8.03','Cơ sở 1','2025-11-14','thi',NULL),(18,6,6,'sáng',1,3,'H4.01','Cơ sở 1','2025-11-14','lythuyet',NULL),(19,18,3,'chiều',10,12,'H8.03','1',NULL,'thuchanh',NULL),(20,19,3,'sáng',4,6,'V7.02','Cơ sở 1',NULL,'thuchanh',NULL),(21,20,6,'chiều',10,12,'A4.04','Cơ sở 1',NULL,'lythuyet',NULL),(22,21,5,'sáng',4,6,'V10.02','Cơ sở 1',NULL,'lythuyet',NULL),(23,22,6,'sáng',1,3,'H1.01','Cơ sở 1',NULL,'thuchanh',NULL),(24,23,6,'chiều',10,13,'V10.07','Cơ sở 1',NULL,'lythuyet',NULL),(25,24,7,'tối',13,15,'H8.03','Cơ sở 1',NULL,'thuchanh',NULL);
 /*!40000 ALTER TABLE `LichHoc` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -554,7 +556,7 @@ CREATE TABLE `LichNghi` (
   PRIMARY KEY (`id`),
   UNIQUE KEY `lich_hoc_id` (`lich_hoc_id`,`ngay_nghi`),
   CONSTRAINT `LichNghi_ibfk_1` FOREIGN KEY (`lich_hoc_id`) REFERENCES `LichHoc` (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=49 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=64 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -583,7 +585,7 @@ CREATE TABLE `LichSuDangKyHP` (
   PRIMARY KEY (`id`),
   KEY `LichSuDangKyHP_ibfk_1` (`dang_ky_id`),
   CONSTRAINT `LichSuDangKyHP_ibfk_1` FOREIGN KEY (`dang_ky_id`) REFERENCES `DangKyHocPhan` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=50 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=99 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -592,7 +594,7 @@ CREATE TABLE `LichSuDangKyHP` (
 
 LOCK TABLES `LichSuDangKyHP` WRITE;
 /*!40000 ALTER TABLE `LichSuDangKyHP` DISABLE KEYS */;
-INSERT INTO `LichSuDangKyHP` VALUES (4,4,'THEM','2025-11-05 09:14:46','Đăng ký qua API'),(5,5,'THEM','2025-11-05 09:19:30','Đăng ký qua API'),(13,8,'THEM','2025-11-08 08:32:32','Đăng ký qua API'),(16,10,'THEM','2025-11-08 11:28:35','Đăng ký qua API'),(18,11,'THEM','2025-11-08 11:57:48','Đăng ký qua API'),(19,12,'THEM','2025-11-08 15:27:27','Đăng ký qua API'),(21,14,'THEM','2025-11-08 16:09:01','Đăng ký qua API'),(22,15,'THEM','2025-11-08 16:24:24','Đăng ký qua API'),(23,16,'THEM','2025-11-08 16:38:09','Đăng ký qua API'),(26,18,'THEM','2025-11-09 02:23:29','Đăng ký qua API'),(27,19,'THEM','2025-11-09 02:23:40','Đăng ký qua API'),(28,20,'THEM','2025-11-09 02:24:08','Đăng ký qua API'),(29,21,'THEM','2025-11-09 02:24:27','Đăng ký qua API'),(30,22,'THEM','2025-11-09 02:24:38','Đăng ký qua API'),(31,23,'THEM','2025-11-09 02:24:43','Đăng ký qua API'),(32,24,'THEM','2025-11-09 02:24:54','Đăng ký qua API'),(33,25,'THEM','2025-11-09 02:25:17','Đăng ký qua API'),(34,26,'THEM','2025-11-09 04:50:50','Đăng ký qua API'),(49,34,'THEM','2025-11-11 08:54:26','Đăng ký qua API');
+INSERT INTO `LichSuDangKyHP` VALUES (4,4,'THEM','2025-11-05 09:14:46','Đăng ký qua API'),(5,5,'THEM','2025-11-05 09:19:30','Đăng ký qua API'),(13,8,'THEM','2025-11-08 08:32:32','Đăng ký qua API'),(16,10,'THEM','2025-11-08 11:28:35','Đăng ký qua API'),(18,11,'THEM','2025-11-08 11:57:48','Đăng ký qua API'),(19,12,'THEM','2025-11-08 15:27:27','Đăng ký qua API'),(21,14,'THEM','2025-11-08 16:09:01','Đăng ký qua API'),(22,15,'THEM','2025-11-08 16:24:24','Đăng ký qua API'),(23,16,'THEM','2025-11-08 16:38:09','Đăng ký qua API'),(26,18,'THEM','2025-11-09 02:23:29','Đăng ký qua API'),(27,19,'THEM','2025-11-09 02:23:40','Đăng ký qua API'),(28,20,'THEM','2025-11-09 02:24:08','Đăng ký qua API'),(29,21,'THEM','2025-11-09 02:24:27','Đăng ký qua API'),(30,22,'THEM','2025-11-09 02:24:38','Đăng ký qua API'),(31,23,'THEM','2025-11-09 02:24:43','Đăng ký qua API'),(32,24,'THEM','2025-11-09 02:24:54','Đăng ký qua API'),(33,25,'THEM','2025-11-09 02:25:17','Đăng ký qua API'),(34,26,'THEM','2025-11-09 04:50:50','Đăng ký qua API'),(49,34,'THEM','2025-11-11 08:54:26','Đăng ký qua API'),(72,46,'THEM','2025-11-22 14:58:00','Đăng ký qua API'),(98,62,'THEM','2025-11-24 15:07:15','Đăng ký qua API');
 /*!40000 ALTER TABLE `LichSuDangKyHP` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -655,7 +657,7 @@ CREATE TABLE `LopHocPhan` (
   CONSTRAINT `LopHocPhan_ibfk_1` FOREIGN KEY (`hoc_phan_id`) REFERENCES `HocPhan` (`id`),
   CONSTRAINT `LopHocPhan_ibfk_2` FOREIGN KEY (`giang_vien_id`) REFERENCES `GiangVien` (`id`),
   CONSTRAINT `LopHocPhan_ibfk_3` FOREIGN KEY (`lop_id`) REFERENCES `Lop` (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=24 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=25 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -664,7 +666,7 @@ CREATE TABLE `LopHocPhan` (
 
 LOCK TABLES `LopHocPhan` WRITE;
 /*!40000 ALTER TABLE `LopHocPhan` DISABLE KEYS */;
-INSERT INTO `LopHocPhan` VALUES (2,'DHKTPM17BTT-HP001',1,1,1,'HK1','2025-2026','Chấp nhận mở lớp','2025-08-11','2025-11-17',15,50,5,'MO_DK'),(6,'DHKTPM17BTT-HP003',2,1,1,'HK1','2025-2026','Chấp nhận mở lớp','2025-08-12','2025-11-19',17,50,3,'MO_DK'),(7,'DHHTTT17DTT-HP011',4,1,2,'HK1','2025-2026','Chấp nhận mở lớp','2025-08-23','2025-11-21',15,50,1,'MO_DK'),(8,'DHKTPM17BTT-HP021',6,51,1,'HK1','2025-2026','Chấp nhận mở lớp','2025-08-08','2025-11-29',15,50,2,'MO_DK'),(11,'DHKTPM17BTT-HP049',42,51,1,'HK1','2024-2025','Chấp nhận mở lớp','2024-08-10','2024-11-22',15,50,1,'MO_DK'),(12,'DHKTPM17BTT-HP040',33,51,1,'HK1','2024-2025','Chấp nhận mở lớp','2024-08-09','2025-11-24',15,50,1,'MO_DK'),(13,'DHKTPM17BTT-HP050',43,51,1,'HK1','2024-2025','Chấp nhận mở lớp','2024-08-22','2025-11-30',15,50,1,'MO_DK'),(14,'DHKTPM17BTT-HP037',30,51,1,'HK1','2024-2025','Chấp nhận mở lớp','2024-08-13','2025-11-20',15,50,1,'MO_DK'),(15,'DHKTPM17BTT-HP052',45,51,1,'HK2','2024-2025','Chấp nhận mở lớp','2024-12-24','2025-04-10',15,50,1,'MO_DK'),(16,'DHKTPM17BTT-HP044',37,51,1,'HK2','2024-2025','Chấp nhận mở lớp','2024-12-17','2025-04-16',15,50,1,'MO_DK'),(17,'DHKTPM17BTT-HP045',47,51,1,'HK2','2024-2025','Chấp nhận mở lớp','2024-12-16','2025-04-21',15,50,1,'MO_DK'),(18,'DHKTPM17BTT-HP048',41,51,1,'HK2','2024-2025','Chấp nhận mở lớp','2024-12-25','2025-04-29',15,50,1,'MO_DK'),(19,'DHKTPM17BTT-HP057',51,51,1,'HK1','2025-2026','Chờ sinh viên đăng ký','2025-08-11','2025-11-26',15,50,0,'MO_DK'),(20,'DHKTPM17BTT-HP058',52,51,1,'HK1','2025-2026','Chờ sinh viên đăng ký','2025-08-11','2025-11-20',15,50,0,'MO_DK'),(21,'DHKTPM17BTT-HP059',53,51,1,'HK1','2025-2026','Chờ sinh viên đăng ký','2025-08-04','2025-12-09',17,50,0,'MO_DK'),(22,'DHKTPM17BTT-HP060',54,51,1,'HK1','2025-2026','Chờ sinh viên đăng ký','2025-08-03','2025-11-26',15,50,1,'MO_DK'),(23,'DHKTPM17CTT -HP060',54,51,11,'HK1','2025-2026','Chờ sinh viên đăng ký','2025-08-03','2025-11-26',17,50,0,'MO_DK');
+INSERT INTO `LopHocPhan` VALUES (2,'DHKTPM17BTT-HP001',1,1,1,'HK1','2025-2026','Chấp nhận mở lớp','2025-08-11','2025-11-17',15,50,6,'MO_DK'),(6,'DHKTPM17BTT-HP003',2,1,1,'HK1','2025-2026','Chấp nhận mở lớp','2025-08-12','2025-11-19',17,50,3,'MO_DK'),(7,'DHHTTT17DTT-HP011',4,1,2,'HK1','2025-2026','Chấp nhận mở lớp','2025-08-23','2025-11-21',15,50,1,'MO_DK'),(8,'DHKTPM17BTT-HP021',6,51,1,'HK1','2025-2026','Chấp nhận mở lớp','2025-08-08','2025-11-29',15,50,2,'MO_DK'),(11,'DHKTPM17BTT-HP049',42,51,1,'HK1','2024-2025','Chấp nhận mở lớp','2024-08-10','2024-11-22',15,50,1,'MO_DK'),(12,'DHKTPM17BTT-HP040',33,51,1,'HK1','2024-2025','Chấp nhận mở lớp','2024-08-09','2025-11-24',15,50,1,'MO_DK'),(13,'DHKTPM17BTT-HP050',43,51,1,'HK1','2024-2025','Chấp nhận mở lớp','2024-08-22','2025-11-30',15,50,1,'MO_DK'),(14,'DHKTPM17BTT-HP037',30,51,1,'HK1','2024-2025','Chấp nhận mở lớp','2024-08-13','2025-11-20',15,50,1,'MO_DK'),(15,'DHKTPM17BTT-HP052',45,51,1,'HK2','2024-2025','Chấp nhận mở lớp','2024-12-24','2025-04-10',15,50,1,'MO_DK'),(16,'DHKTPM17BTT-HP044',37,51,1,'HK2','2024-2025','Chấp nhận mở lớp','2024-12-17','2025-04-16',15,50,1,'MO_DK'),(17,'DHKTPM17BTT-HP045',47,51,1,'HK2','2024-2025','Chấp nhận mở lớp','2024-12-16','2025-04-21',15,50,1,'MO_DK'),(18,'DHKTPM17BTT-HP048',41,51,1,'HK2','2024-2025','Chấp nhận mở lớp','2024-12-25','2025-04-29',15,50,1,'MO_DK'),(19,'DHKTPM17BTT-HP057',51,51,1,'HK1','2025-2026','Chờ sinh viên đăng ký','2025-08-11','2025-11-26',15,50,0,'MO_DK'),(20,'DHKTPM17BTT-HP058',52,51,1,'HK1','2025-2026','Chờ sinh viên đăng ký','2025-08-11','2025-11-20',15,50,1,'MO_DK'),(21,'DHKTPM17BTT-HP059',53,51,1,'HK1','2025-2026','Chờ sinh viên đăng ký','2025-08-04','2025-12-09',17,50,0,'MO_DK'),(22,'DHKTPM17BTT-HP060',54,51,1,'HK1','2025-2026','Chờ sinh viên đăng ký','2025-08-03','2025-11-26',15,50,1,'MO_DK'),(23,'DHKTPM17CTT -HP060',54,51,11,'HK1','2025-2026','Chờ sinh viên đăng ký','2025-08-03','2025-11-26',17,50,0,'MO_DK'),(24,'DHKTPM18BTT-HP040',33,1,6,'HK1','2025-2026','Chờ sinh viên đăng ký','2025-08-03','2025-11-23',15,50,1,'MO_DK');
 /*!40000 ALTER TABLE `LopHocPhan` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -949,7 +951,7 @@ CREATE TABLE `ThongBao_DaDoc` (
   CONSTRAINT `ThongBao_DaDoc_ibfk_2` FOREIGN KEY (`thong_bao_id`) REFERENCES `ThongBao` (`id`),
   CONSTRAINT `ThongBao_DaDoc_ibfk_3` FOREIGN KEY (`giang_vien_id`) REFERENCES `GiangVien` (`id`),
   CONSTRAINT `chk_user_type` CHECK ((((`sinh_vien_id` is not null) and (`giang_vien_id` is null)) or ((`sinh_vien_id` is null) and (`giang_vien_id` is not null))))
-) ENGINE=InnoDB AUTO_INCREMENT=77 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=80 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -958,7 +960,7 @@ CREATE TABLE `ThongBao_DaDoc` (
 
 LOCK TABLES `ThongBao_DaDoc` WRITE;
 /*!40000 ALTER TABLE `ThongBao_DaDoc` DISABLE KEYS */;
-INSERT INTO `ThongBao_DaDoc` VALUES (1,1,NULL,1,'Đã đọc','2025-10-28 06:44:48'),(72,NULL,1,26,'Đã đọc','2025-11-20 15:14:58'),(73,NULL,1,25,'Đã đọc','2025-11-20 11:30:32'),(74,NULL,1,18,'Đã đọc','2025-11-20 11:30:36'),(75,NULL,1,15,'Đã đọc','2025-11-20 11:05:13'),(76,NULL,1,4,'Đã đọc','2025-11-18 12:24:41');
+INSERT INTO `ThongBao_DaDoc` VALUES (1,1,NULL,1,'Đã đọc','2025-10-28 06:44:48'),(72,NULL,1,26,'Đã đọc','2025-11-20 15:14:58'),(73,NULL,1,25,'Đã đọc','2025-11-20 11:30:32'),(74,NULL,1,18,'Đã đọc','2025-11-20 11:30:36'),(75,NULL,1,15,'Đã đọc','2025-11-20 11:05:13'),(76,NULL,1,4,'Đã đọc','2025-11-18 12:24:41'),(77,1,NULL,26,'Đã đọc','2025-11-22 08:00:30'),(78,1,NULL,18,'Đã đọc','2025-11-22 08:00:37'),(79,163,NULL,26,'Đã đọc','2025-11-22 08:17:12');
 /*!40000 ALTER TABLE `ThongBao_DaDoc` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -984,7 +986,7 @@ CREATE TABLE `TinNhanTuVan` (
   KEY `idx_yeu_cau_nguoi_gui` (`yeu_cau_id`,`nguoi_gui`),
   KEY `idx_yeu_cau_da_xem` (`yeu_cau_id`,`da_xem`),
   CONSTRAINT `fk_tin_nhan_yeu_cau` FOREIGN KEY (`yeu_cau_id`) REFERENCES `YeuCauTuVan` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=35 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Tin nhắn trao đổi trong yêu cầu tư vấn';
+) ENGINE=InnoDB AUTO_INCREMENT=36 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Tin nhắn trao đổi trong yêu cầu tư vấn';
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -993,7 +995,7 @@ CREATE TABLE `TinNhanTuVan` (
 
 LOCK TABLES `TinNhanTuVan` WRITE;
 /*!40000 ALTER TABLE `TinNhanTuVan` DISABLE KEYS */;
-INSERT INTO `TinNhanTuVan` VALUES (1,1,'SINH_VIEN','Tài liệu học tập môn này gồm những gì ạ','2025-11-08 18:34:43',1),(2,2,'SINH_VIEN','Tài liệu học tập môn này gồm những gì ạ','2025-11-08 18:50:53',1),(3,2,'GIANG_VIEN','Sách và slide bài giảng, nếu mua được sách thì em qua văn phòng đoàn mua nhé, còn slide cô sẽ gửi cho sau','2025-11-08 18:52:04',1),(4,2,'SINH_VIEN','em cảm ơn!','2025-11-08 18:52:21',1),(5,2,'GIANG_VIEN','không có gì','2025-11-08 18:56:16',1),(6,2,'SINH_VIEN','dạ','2025-11-08 19:01:25',1),(7,2,'GIANG_VIEN','ok','2025-11-08 19:04:09',1),(8,2,'SINH_VIEN','dạ','2025-11-08 19:07:37',1),(10,4,'SINH_VIEN','Điều kiện để đạt môn','2025-11-08 19:59:56',1),(11,4,'GIANG_VIEN','Em phải thi cuối kìa và đạt điểm thi cuối kì trên 3','2025-11-08 20:01:21',1),(12,4,'SINH_VIEN','em cảm ơn','2025-11-08 20:01:57',1),(13,5,'SINH_VIEN','Điều kiện để đạt môn','2025-11-08 20:02:53',1),(15,4,'GIANG_VIEN','ok','2025-11-08 20:18:31',1),(16,7,'SINH_VIEN','Em cần hỏi về việc hỗ trợ học phí','2025-11-08 20:58:42',1),(17,7,'ADMIN','Em cần chuẩn bị giấy tờ để nhà trường hỗ trợ. Giấy tờ lấy ở phòng Cộng tác sinh viên','2025-11-08 21:19:10',0),(18,7,'SINH_VIEN','em cảm ơn','2025-11-08 21:23:02',1),(19,7,'SINH_VIEN','em cảm ơn','2025-11-08 21:26:58',1),(20,8,'SINH_VIEN','sdfasda','2025-11-08 22:58:20',1),(21,9,'SINH_VIEN','Em muốn hỏi về nội dung thi cuối kỳ của môn','2025-11-09 04:56:28',1),(22,9,'GIANG_VIEN','Nội dung nằm trong chương 7 đến 9','2025-11-09 04:57:02',1),(23,10,'SINH_VIEN','Em muon hoi noi dung thi cuoi ky','2025-11-09 08:00:29',1),(24,10,'GIANG_VIEN','Noi dung se ra trong cac chuong 7 8 9','2025-11-09 08:01:17',1),(25,10,'GIANG_VIEN','chao em','2025-11-09 08:02:31',1),(26,11,'SINH_VIEN','giup em tu van lich hoc','2025-11-16 09:41:34',1),(27,11,'GIANG_VIEN','giup gi em ?','2025-11-16 09:42:12',1),(28,12,'SINH_VIEN','em muốn test','2025-11-20 15:05:58',1),(29,12,'GIANG_VIEN','test gì em','2025-11-20 15:06:10',1),(30,12,'SINH_VIEN','234','2025-11-20 15:06:55',1),(31,12,'GIANG_VIEN','432','2025-11-20 15:07:06',1),(32,12,'SINH_VIEN','432123213','2025-11-20 15:07:25',1),(33,12,'GIANG_VIEN','77777','2025-11-20 15:09:24',1),(34,12,'SINH_VIEN','erwer','2025-11-20 15:11:53',1);
+INSERT INTO `TinNhanTuVan` VALUES (1,1,'SINH_VIEN','Tài liệu học tập môn này gồm những gì ạ','2025-11-08 18:34:43',1),(2,2,'SINH_VIEN','Tài liệu học tập môn này gồm những gì ạ','2025-11-08 18:50:53',1),(3,2,'GIANG_VIEN','Sách và slide bài giảng, nếu mua được sách thì em qua văn phòng đoàn mua nhé, còn slide cô sẽ gửi cho sau','2025-11-08 18:52:04',1),(4,2,'SINH_VIEN','em cảm ơn!','2025-11-08 18:52:21',1),(5,2,'GIANG_VIEN','không có gì','2025-11-08 18:56:16',1),(6,2,'SINH_VIEN','dạ','2025-11-08 19:01:25',1),(7,2,'GIANG_VIEN','ok','2025-11-08 19:04:09',1),(8,2,'SINH_VIEN','dạ','2025-11-08 19:07:37',1),(10,4,'SINH_VIEN','Điều kiện để đạt môn','2025-11-08 19:59:56',1),(11,4,'GIANG_VIEN','Em phải thi cuối kìa và đạt điểm thi cuối kì trên 3','2025-11-08 20:01:21',1),(12,4,'SINH_VIEN','em cảm ơn','2025-11-08 20:01:57',1),(13,5,'SINH_VIEN','Điều kiện để đạt môn','2025-11-08 20:02:53',1),(15,4,'GIANG_VIEN','ok','2025-11-08 20:18:31',1),(16,7,'SINH_VIEN','Em cần hỏi về việc hỗ trợ học phí','2025-11-08 20:58:42',1),(17,7,'ADMIN','Em cần chuẩn bị giấy tờ để nhà trường hỗ trợ. Giấy tờ lấy ở phòng Cộng tác sinh viên','2025-11-08 21:19:10',0),(18,7,'SINH_VIEN','em cảm ơn','2025-11-08 21:23:02',1),(19,7,'SINH_VIEN','em cảm ơn','2025-11-08 21:26:58',1),(20,8,'SINH_VIEN','sdfasda','2025-11-08 22:58:20',1),(21,9,'SINH_VIEN','Em muốn hỏi về nội dung thi cuối kỳ của môn','2025-11-09 04:56:28',1),(22,9,'GIANG_VIEN','Nội dung nằm trong chương 7 đến 9','2025-11-09 04:57:02',1),(23,10,'SINH_VIEN','Em muon hoi noi dung thi cuoi ky','2025-11-09 08:00:29',1),(24,10,'GIANG_VIEN','Noi dung se ra trong cac chuong 7 8 9','2025-11-09 08:01:17',1),(25,10,'GIANG_VIEN','chao em','2025-11-09 08:02:31',1),(26,11,'SINH_VIEN','giup em tu van lich hoc','2025-11-16 09:41:34',1),(27,11,'GIANG_VIEN','giup gi em ?','2025-11-16 09:42:12',1),(28,12,'SINH_VIEN','em muốn test','2025-11-20 15:05:58',1),(29,12,'GIANG_VIEN','test gì em','2025-11-20 15:06:10',1),(30,12,'SINH_VIEN','234','2025-11-20 15:06:55',1),(31,12,'GIANG_VIEN','432','2025-11-20 15:07:06',1),(32,12,'SINH_VIEN','432123213','2025-11-20 15:07:25',1),(33,12,'GIANG_VIEN','77777','2025-11-20 15:09:24',1),(34,12,'SINH_VIEN','erwer','2025-11-20 15:11:53',1),(35,13,'SINH_VIEN','abc','2025-11-22 17:51:35',1);
 /*!40000 ALTER TABLE `TinNhanTuVan` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -1033,7 +1035,7 @@ CREATE TABLE `YeuCauTuVan` (
   CONSTRAINT `fk_yeu_cau_giang_vien` FOREIGN KEY (`giang_vien_id`) REFERENCES `GiangVien` (`id`) ON DELETE CASCADE,
   CONSTRAINT `fk_yeu_cau_lop_hoc_phan` FOREIGN KEY (`lop_hoc_phan_id`) REFERENCES `LopHocPhan` (`id`) ON DELETE CASCADE,
   CONSTRAINT `fk_yeu_cau_sinh_vien` FOREIGN KEY (`sinh_vien_id`) REFERENCES `SinhVien` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=13 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Yêu cầu tư vấn từ sinh viên đến giảng viên';
+) ENGINE=InnoDB AUTO_INCREMENT=14 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Yêu cầu tư vấn từ sinh viên đến giảng viên';
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -1042,7 +1044,7 @@ CREATE TABLE `YeuCauTuVan` (
 
 LOCK TABLES `YeuCauTuVan` WRITE;
 /*!40000 ALTER TABLE `YeuCauTuVan` DISABLE KEYS */;
-INSERT INTO `YeuCauTuVan` VALUES (1,1,1,'GIANG_VIEN',6,'Tài liệu học tập','Tài liệu học tập môn này gồm những gì ạ','DA_HUY',NULL,'2025-11-08 18:34:43',NULL,0,0,'Tài liệu học tập môn này gồm những gì ạ','2025-11-08 18:34:43'),(2,1,1,'GIANG_VIEN',6,'Tài liệu học tập','Tài liệu học tập môn này gồm những gì ạ','DA_HUY','Sách và slide bài giảng, nếu mua được sách thì em qua văn phòng đoàn mua nhé, còn slide cô sẽ gửi cho sau','2025-11-08 18:50:53','2025-11-08 18:52:04',0,0,'dạ','2025-11-08 19:07:37'),(4,1,1,'GIANG_VIEN',6,'Tư vấn cuối kì','Điều kiện để đạt môn','DA_TRA_LOI',NULL,'2025-11-08 19:59:56',NULL,0,0,'ok','2025-11-08 20:18:31'),(5,1,1,'GIANG_VIEN',2,'Tư vấn cuối kì','Điều kiện để đạt môn','DA_HUY',NULL,'2025-11-08 20:02:53',NULL,0,0,'Điều kiện để đạt môn','2025-11-08 20:02:53'),(7,1,NULL,'ADMIN',NULL,'Học phí','Em cần hỏi về việc hỗ trợ học phí','DANG_XU_LY',NULL,'2025-11-08 20:58:41',NULL,0,0,'em cảm ơn','2025-11-08 21:26:58'),(8,1,1,'GIANG_VIEN',2,'svs','sdfasda','DA_HUY',NULL,'2025-11-08 22:58:20',NULL,0,0,'sdfasda','2025-11-08 22:58:20'),(9,27,1,'GIANG_VIEN',2,'Thi cuối kỳ','Em muốn hỏi về nội dung thi cuối kỳ của môn','DA_TRA_LOI',NULL,'2025-11-09 04:56:28',NULL,0,0,'Nội dung nằm trong chương 7 đến 9','2025-11-09 04:57:02'),(10,1,1,'GIANG_VIEN',2,'Thi cuoi ky','Em muon hoi noi dung thi cuoi ky','DA_TRA_LOI',NULL,'2025-11-09 08:00:28',NULL,0,0,'chao em','2025-11-09 08:02:31'),(11,1,1,'GIANG_VIEN',2,'Tu van lich hoc ','giup em tu van lich hoc','DA_TRA_LOI',NULL,'2025-11-16 09:41:34',NULL,0,0,'giup gi em ?','2025-11-16 09:42:12'),(12,1,1,'GIANG_VIEN',2,'test lần 4','em muốn test','CHO_XU_LY',NULL,'2025-11-20 15:05:57',NULL,0,0,'erwer','2025-11-20 15:11:53');
+INSERT INTO `YeuCauTuVan` VALUES (1,1,1,'GIANG_VIEN',6,'Tài liệu học tập','Tài liệu học tập môn này gồm những gì ạ','DA_HUY',NULL,'2025-11-08 18:34:43',NULL,0,0,'Tài liệu học tập môn này gồm những gì ạ','2025-11-08 18:34:43'),(2,1,1,'GIANG_VIEN',6,'Tài liệu học tập','Tài liệu học tập môn này gồm những gì ạ','DA_HUY','Sách và slide bài giảng, nếu mua được sách thì em qua văn phòng đoàn mua nhé, còn slide cô sẽ gửi cho sau','2025-11-08 18:50:53','2025-11-08 18:52:04',0,0,'dạ','2025-11-08 19:07:37'),(4,1,1,'GIANG_VIEN',6,'Tư vấn cuối kì','Điều kiện để đạt môn','DA_TRA_LOI',NULL,'2025-11-08 19:59:56',NULL,0,0,'ok','2025-11-08 20:18:31'),(5,1,1,'GIANG_VIEN',2,'Tư vấn cuối kì','Điều kiện để đạt môn','DA_HUY',NULL,'2025-11-08 20:02:53',NULL,0,0,'Điều kiện để đạt môn','2025-11-08 20:02:53'),(7,1,NULL,'ADMIN',NULL,'Học phí','Em cần hỏi về việc hỗ trợ học phí','DANG_XU_LY',NULL,'2025-11-08 20:58:41',NULL,0,0,'em cảm ơn','2025-11-08 21:26:58'),(8,1,1,'GIANG_VIEN',2,'svs','sdfasda','DA_HUY',NULL,'2025-11-08 22:58:20',NULL,0,0,'sdfasda','2025-11-08 22:58:20'),(9,27,1,'GIANG_VIEN',2,'Thi cuối kỳ','Em muốn hỏi về nội dung thi cuối kỳ của môn','DA_TRA_LOI',NULL,'2025-11-09 04:56:28',NULL,0,0,'Nội dung nằm trong chương 7 đến 9','2025-11-09 04:57:02'),(10,1,1,'GIANG_VIEN',2,'Thi cuoi ky','Em muon hoi noi dung thi cuoi ky','DA_TRA_LOI',NULL,'2025-11-09 08:00:28',NULL,0,0,'chao em','2025-11-09 08:02:31'),(11,1,1,'GIANG_VIEN',2,'Tu van lich hoc ','giup em tu van lich hoc','DA_TRA_LOI',NULL,'2025-11-16 09:41:34',NULL,0,0,'giup gi em ?','2025-11-16 09:42:12'),(12,1,1,'GIANG_VIEN',2,'test lần 4','em muốn test','CHO_XU_LY',NULL,'2025-11-20 15:05:57',NULL,0,0,'erwer','2025-11-20 15:11:53'),(13,1,1,'GIANG_VIEN',7,'abc','abc','CHO_XU_LY',NULL,'2025-11-22 17:51:34',NULL,0,0,'abc','2025-11-22 17:51:35');
 /*!40000 ALTER TABLE `YeuCauTuVan` ENABLE KEYS */;
 UNLOCK TABLES;
 SET @@SESSION.SQL_LOG_BIN = @MYSQLDUMP_TEMP_LOG_BIN;
@@ -1056,4 +1058,4 @@ SET @@SESSION.SQL_LOG_BIN = @MYSQLDUMP_TEMP_LOG_BIN;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2025-11-21 17:57:00
+-- Dump completed on 2025-11-24 16:14:09

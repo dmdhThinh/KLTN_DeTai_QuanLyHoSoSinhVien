@@ -8,43 +8,63 @@ export async function getChuongTrinhKhung({ hoc_ky, nganh_id, sinh_vien_id = nul
         hp.ma_hoc_phan AS ma_mon_hoc,
         hp.ten_hoc_phan AS ten_mon_hoc,
         hp.ma_hoc_phan AS ma_hoc_phan,
-        CASE ctk.loai_hoc_phan
+        CASE MAX(ctk.loai_hoc_phan)
           WHEN 'a' THEN 'học trước (a)'
           WHEN 'b' THEN 'tiền quyết (b)'
           WHEN 'c' THEN 'song hành (c)'
         END AS hoc_phan_loai,
         hp.so_tin_chi AS so_tc_dvht,
-        ctk.so_tiet_lt,
-        ctk.so_tiet_th,
-        COALESCE(kq.dat, 'Chưa đạt') AS dat,
+        MAX(ctk.so_tiet_lt) AS so_tiet_lt,
+        MAX(ctk.so_tiet_th) AS so_tiet_th,
+        COALESCE(MAX(kq.dat), 'Chưa đạt') AS dat,
         -- Thêm: Check đã ĐKHP chưa
-        CASE WHEN dkhp.id IS NOT NULL THEN 1 ELSE 0 END AS da_dkhp,
+        CASE WHEN MAX(dkhp.id) IS NOT NULL THEN 1 ELSE 0 END AS da_dkhp,
         -- Thêm: Điểm tổng kết
-        kq.diem_tong_ket,
-        -- Thêm: Loại môn (bắt buộc/tự chọn)
-        ctk.loai_mon
+        MAX(kq.diem_tong_ket) AS diem_tong_ket,
+        -- Thêm: Loại môn (bắt buộc/tự chọn) - Ưu tiên BAT_BUOC nếu có cả 2
+        CASE WHEN MAX(ctk.loai_mon) = 'BAT_BUOC' OR MIN(ctk.loai_mon) = 'BAT_BUOC' 
+             THEN 'BAT_BUOC' 
+             ELSE MAX(ctk.loai_mon) 
+        END AS loai_mon
       FROM ChuongTrinhKhung ctk
       JOIN HocPhan hp ON ctk.hoc_phan_id = hp.id
-      -- LEFT JOIN để check sinh viên đã ĐKHP chưa
-      LEFT JOIN DangKyHocPhan dkhp 
+      -- LEFT JOIN để check sinh viên đã ĐKHP chưa (lấy bất kỳ)
+      LEFT JOIN (
+        SELECT DISTINCT hoc_phan_id, sinh_vien_id, id
+        FROM DangKyHocPhan
+        WHERE trang_thai_dk = 'THANH_CONG'
+      ) dkhp 
         ON dkhp.hoc_phan_id = hp.id 
         AND dkhp.sinh_vien_id = ?
-        AND dkhp.trang_thai_dk = 'THANH_CONG'
-      -- LEFT JOIN để lấy điểm
-      LEFT JOIN KetQuaHocTap kq 
+      -- LEFT JOIN để lấy điểm MỚI NHẤT (theo nam_hoc, hoc_ky, id giảm dần)
+      LEFT JOIN (
+        SELECT kq1.*
+        FROM KetQuaHocTap kq1
+        INNER JOIN (
+          SELECT hoc_phan_id, sinh_vien_id, MAX(id) as max_id
+          FROM KetQuaHocTap
+          GROUP BY hoc_phan_id, sinh_vien_id
+        ) kq2 ON kq1.hoc_phan_id = kq2.hoc_phan_id 
+             AND kq1.sinh_vien_id = kq2.sinh_vien_id 
+             AND kq1.id = kq2.max_id
+      ) kq 
         ON kq.hoc_phan_id = hp.id 
         AND kq.sinh_vien_id = ?
       WHERE ctk.hoc_ky = ? 
         AND (ctk.nganh_id = ? OR ctk.nganh_id IS NULL)
-      ORDER BY ctk.id
+      GROUP BY hp.id, hp.ma_hoc_phan, hp.ten_hoc_phan, hp.so_tin_chi
+      ORDER BY MIN(ctk.id)
     `, [sinh_vien_id, sinh_vien_id, hoc_ky, nganh_id])
 
     const [total] = await pool.execute(`
   SELECT SUM(hp.so_tin_chi) AS tong_tc
-  FROM ChuongTrinhKhung ctk
-  JOIN HocPhan hp ON ctk.hoc_phan_id = hp.id
-  WHERE ctk.hoc_ky = ? 
-    AND (ctk.nganh_id = ? OR ctk.nganh_id IS NULL)
+  FROM (
+    SELECT DISTINCT hp.id, hp.so_tin_chi
+    FROM ChuongTrinhKhung ctk
+    JOIN HocPhan hp ON ctk.hoc_phan_id = hp.id
+    WHERE ctk.hoc_ky = ? 
+      AND (ctk.nganh_id = ? OR ctk.nganh_id IS NULL)
+  ) AS hp
 `, [hoc_ky, nganh_id])
 
     return {

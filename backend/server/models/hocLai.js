@@ -2,6 +2,7 @@ import { pool } from '../config/db.js'
 
 // Lấy danh sách môn KHÔNG ĐẠT (để học lại)
 // Loại bỏ các môn đã đăng ký trong HỌC KỲ + NĂM HỌC đang xem
+// CHỈ LẤY CÁC MÔN CÙNG HỌC KỲ VỚI HỌC KỲ ĐANG ĐĂNG KÝ
 export async function getMonKhongDat(sinhVienId, hocKy, namHoc) {
   let query = `
     SELECT DISTINCT
@@ -20,6 +21,12 @@ export async function getMonKhongDat(sinhVienId, hocKy, namHoc) {
       AND kq.diem_tong_ket < 4.0`
   
   const params = [sinhVienId]
+  
+  // Lọc theo học kỲ tương ứng (nếu đang đăng ký HK1 thì chỉ lấy môn rớp ở HK1)
+  if (hocKy) {
+    query += ` AND kq.hoc_ky = ?`
+    params.push(hocKy)
+  }
   
   // Loại bỏ các môn đã đăng ký trong cùng HỌC KỲ + NĂM HỌC
   if (hocKy && namHoc) {
@@ -45,6 +52,7 @@ export async function getMonKhongDat(sinhVienId, hocKy, namHoc) {
 
 // Lấy danh sách môn ĐÃ ĐẠT (để học cải thiện)
 // Loại bỏ các môn đã đăng ký trong HỌC KỲ + NĂM HỌC đang xem
+// CHỈ LẤY CÁC MÔN CÙNG HỌC KỲ VỚI HỌC KỲ ĐANG ĐĂNG KÝ
 export async function getMonDaDat(sinhVienId, hocKy, namHoc) {
   let query = `
     SELECT DISTINCT
@@ -64,6 +72,12 @@ export async function getMonDaDat(sinhVienId, hocKy, namHoc) {
       AND kq.diem_tong_ket < 8.5`
   
   const params = [sinhVienId]
+  
+  // Lọc theo học kỲ tương ứng (nếu đang đăng ký HK1 thì chỉ lấy môn cải thiện ở HK1)
+  if (hocKy) {
+    query += ` AND kq.hoc_ky = ?`
+    params.push(hocKy)
+  }
   
   // Loại bỏ các môn đã đăng ký trong cùng HỌC KỲ + NĂM HỌC
   if (hocKy && namHoc) {
