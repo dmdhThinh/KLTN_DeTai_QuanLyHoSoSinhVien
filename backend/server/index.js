@@ -41,6 +41,7 @@ import tinNhanTuVanRoutes from './routes/tinNhanTuVan.js'
 import statisticsRoutes from './routes/statistics.js'
 import hocTapRoutes from './routes/hocTap.js'
 import chatbotRoutes from './routes/chatbot.js'
+import totNghiepRoutes from './routes/totNghiep.js'
 dotenv.config()
 const app = express()
 const __filename = fileURLToPath(import.meta.url)
@@ -89,6 +90,7 @@ app.use('/api/tin-nhan-tu-van', tinNhanTuVanRoutes)
 app.use('/api/statistics', statisticsRoutes)
 app.use('/api/hoc-tap', hocTapRoutes)
 app.use('/api/chatbot', chatbotRoutes)
+app.use('/api/tot-nghiep', totNghiepRoutes)
 
 // ✅ Public folder cho ảnh thẻ
 app.use('/uploads', express.static(path.resolve('uploads')))

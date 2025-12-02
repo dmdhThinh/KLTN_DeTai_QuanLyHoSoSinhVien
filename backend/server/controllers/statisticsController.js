@@ -26,6 +26,43 @@ export const getStatistics = async (req, res) => {
       ORDER BY total DESC
     `)
     
+    // Thống kê tỷ lệ tốt nghiệp theo khóa
+    const [totNghiepTheoKhoa] = await pool.query(`
+      SELECT 
+        sv.khoa_hoc as khoaHoc,
+        COUNT(DISTINCT sv.id) as tongSo,
+        COUNT(DISTINCT CASE WHEN hstn.trang_thai = 'DA_TOT_NGHIEP' THEN sv.id END) as daTotNghiep,
+        CASE 
+          WHEN COUNT(DISTINCT sv.id) > 0 
+          THEN ROUND((COUNT(DISTINCT CASE WHEN hstn.trang_thai = 'DA_TOT_NGHIEP' THEN sv.id END) * 100.0 / COUNT(DISTINCT sv.id)), 2)
+          ELSE 0 
+        END as tyLe
+      FROM SinhVien sv
+      LEFT JOIN HoSoTotNghiep hstn ON sv.id = hstn.sinh_vien_id
+      WHERE sv.khoa_hoc IS NOT NULL AND sv.khoa_hoc != ''
+      GROUP BY sv.khoa_hoc
+      ORDER BY sv.khoa_hoc DESC
+    `)
+    
+    // Thống kê tỷ lệ tốt nghiệp theo ngành
+    const [totNghiepTheoNganh] = await pool.query(`
+      SELECT 
+        n.ten_nganh as tenNganh,
+        COUNT(DISTINCT sv.id) as tongSo,
+        COUNT(DISTINCT CASE WHEN hstn.trang_thai = 'DA_TOT_NGHIEP' THEN sv.id END) as daTotNghiep,
+        CASE 
+          WHEN COUNT(DISTINCT sv.id) > 0 
+          THEN ROUND((COUNT(DISTINCT CASE WHEN hstn.trang_thai = 'DA_TOT_NGHIEP' THEN sv.id END) * 100.0 / COUNT(DISTINCT sv.id)), 2)
+          ELSE 0 
+        END as tyLe
+      FROM SinhVien sv
+      LEFT JOIN Nganh n ON sv.nganh_id = n.id
+      LEFT JOIN HoSoTotNghiep hstn ON sv.id = hstn.sinh_vien_id
+      WHERE n.ten_nganh IS NOT NULL
+      GROUP BY n.id, n.ten_nganh
+      ORDER BY tyLe DESC, tongSo DESC
+    `)
+    
     // Thống kê số sinh viên theo lớp học phần (chỉ lớp có SV > 0)
     const [studentsByClass] = await pool.query(`
       SELECT 
@@ -51,7 +88,9 @@ export const getStatistics = async (req, res) => {
         totalCourses: totalCourses[0].count,
         totalClasses: totalClasses[0].count,
         studentsByFaculty: studentsByFaculty,
-        studentsByClass: studentsByClass
+        studentsByClass: studentsByClass,
+        totNghiepTheoKhoa: totNghiepTheoKhoa,
+        totNghiepTheoNganh: totNghiepTheoNganh
       }
     })
   } catch (error) {

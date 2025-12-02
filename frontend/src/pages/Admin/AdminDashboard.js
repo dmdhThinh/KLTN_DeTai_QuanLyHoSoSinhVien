@@ -56,6 +56,7 @@ export default function AdminDashboard() {
   const [loading, setLoading] = useState(true)
   const [selectedSemester, setSelectedSemester] = useState(currentSemester)
   const [selectedYear, setSelectedYear] = useState(currentYear)
+  const [viewMode, setViewMode] = useState('khoa') // 'khoa' hoặc 'nganh'
 
   useEffect(() => {
     fetchStatistics()
@@ -215,47 +216,96 @@ export default function AdminDashboard() {
             </div>
           </div>
 
-          {/* Biểu đồ tròn - Phân bổ theo khoa */}
+          {/* Biểu đồ - Tỷ lệ tốt nghiệp theo khóa/ngành */}
           <div className="col-lg-5">
             <div className="card shadow-sm">
-              <div className="card-header bg-white">
-                <h6 className="mb-0">Phân bổ sinh viên theo khoa</h6>
+              <div className="card-header bg-white d-flex justify-content-between align-items-center">
+                <h6 className="mb-0">Tỷ lệ tốt nghiệp</h6>
+                <div className="btn-group btn-group-sm" role="group">
+                  <button
+                    type="button"
+                    className={`btn ${viewMode === 'khoa' ? 'btn-primary' : 'btn-outline-primary'}`}
+                    onClick={() => setViewMode('khoa')}
+                  >
+                    Theo khóa
+                  </button>
+                  <button
+                    type="button"
+                    className={`btn ${viewMode === 'nganh' ? 'btn-primary' : 'btn-outline-primary'}`}
+                    onClick={() => setViewMode('nganh')}
+                  >
+                    Theo ngành
+                  </button>
+                </div>
               </div>
               <div className="card-body">
-                {stats?.studentsByFaculty?.length > 0 ? (
-                  <ResponsiveContainer width="100%" height={300}>
-                    <PieChart>
-                      <Pie
-                        data={stats.studentsByFaculty}
-                        dataKey="total"
-                        nameKey="TenKhoa"
-                        cx="50%"
-                        cy="50%"
-                        outerRadius={80}
-                        label={(entry) => {
-                          const total = stats.studentsByFaculty.reduce((sum, item) => sum + item.total, 0);
-                          const percent = ((entry.total / total) * 100).toFixed(1);
-                          return `${entry.TenKhoa}: ${percent}%`;
-                        }}
+                {viewMode === 'khoa' ? (
+                  stats?.totNghiepTheoKhoa?.length > 0 ? (
+                    <ResponsiveContainer width="100%" height={300}>
+                      <BarChart 
+                        data={stats.totNghiepTheoKhoa}
+                        layout="vertical"
                       >
-                        {stats.studentsByFaculty.map((entry, index) => (
-                          <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                        ))}
-                      </Pie>
-                      <Tooltip 
-                        formatter={(value, name, props) => {
-                          const total = stats.studentsByFaculty.reduce((sum, item) => sum + item.total, 0);
-                          const percent = ((value / total) * 100).toFixed(1);
-                          return [`${value} (${percent}%)`, 'Số sinh viên'];
-                        }}
-                      />
-                    </PieChart>
-                  </ResponsiveContainer>
+                        <CartesianGrid strokeDasharray="3 3" />
+                        <XAxis type="number" domain={[0, 100]} unit="%" />
+                        <YAxis dataKey="khoaHoc" type="category" width={80} />
+                        <Tooltip 
+                          formatter={(value, name, props) => {
+                            return [
+                              `${value}% (${props.payload.daTotNghiep}/${props.payload.tongSo} SV)`,
+                              'Tỷ lệ tốt nghiệp'
+                            ];
+                          }}
+                        />
+                        <Bar dataKey="tyLe" fill="#0088FE">
+                          {stats.totNghiepTheoKhoa.map((entry, index) => (
+                            <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                          ))}
+                        </Bar>
+                      </BarChart>
+                    </ResponsiveContainer>
+                  ) : (
+                    <div className="text-center text-muted py-5">
+                      <i className="bi bi-bar-chart fs-1"></i>
+                      <p className="mt-2">Chưa có dữ liệu tốt nghiệp theo khóa</p>
+                    </div>
+                  )
                 ) : (
-                  <div className="text-center text-muted py-5">
-                    <i className="bi bi-pie-chart fs-1"></i>
-                    <p className="mt-2">Chưa có dữ liệu phân bổ</p>
-                  </div>
+                  stats?.totNghiepTheoNganh?.length > 0 ? (
+                    <ResponsiveContainer width="100%" height={300}>
+                      <BarChart 
+                        data={stats.totNghiepTheoNganh}
+                        layout="vertical"
+                      >
+                        <CartesianGrid strokeDasharray="3 3" />
+                        <XAxis type="number" domain={[0, 100]} unit="%" />
+                        <YAxis 
+                          dataKey="tenNganh" 
+                          type="category" 
+                          width={120}
+                          style={{ fontSize: '11px' }}
+                        />
+                        <Tooltip 
+                          formatter={(value, name, props) => {
+                            return [
+                              `${value}% (${props.payload.daTotNghiep}/${props.payload.tongSo} SV)`,
+                              'Tỷ lệ tốt nghiệp'
+                            ];
+                          }}
+                        />
+                        <Bar dataKey="tyLe" fill="#00C49F">
+                          {stats.totNghiepTheoNganh.map((entry, index) => (
+                            <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                          ))}
+                        </Bar>
+                      </BarChart>
+                    </ResponsiveContainer>
+                  ) : (
+                    <div className="text-center text-muted py-5">
+                      <i className="bi bi-bar-chart fs-1"></i>
+                      <p className="mt-2">Chưa có dữ liệu tốt nghiệp theo ngành</p>
+                    </div>
+                  )
                 )}
               </div>
             </div>
