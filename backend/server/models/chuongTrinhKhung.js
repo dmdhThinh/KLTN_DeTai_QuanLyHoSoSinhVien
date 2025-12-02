@@ -1,6 +1,18 @@
 // models/chuongTrinhKhung.js
 import { pool } from '../config/db.js'
 
+function getTenHocKy(hocKy) {
+  if (!hocKy) return ''
+  const match = hocKy.match(/HK(\d+)/i)
+  if (match) {
+    const num = parseInt(match[1])
+    const nam = Math.ceil(num / 2)
+    const ky = num % 2 === 0 ? 2 : 1
+    return `Năm ${nam} - Học kỳ ${ky}`
+  }
+  return hocKy
+}
+
 export async function getChuongTrinhKhung({ hoc_ky, nganh_id, sinh_vien_id = null }) {
   try {
     const [rows] = await pool.execute(`
@@ -69,6 +81,7 @@ export async function getChuongTrinhKhung({ hoc_ky, nganh_id, sinh_vien_id = nul
 
     return {
       hoc_ky,
+      ten_hoc_ky_mo_ta: getTenHocKy(hoc_ky),
       tong_tc: total[0].tong_tc || 0,
       danh_sach: rows
     }

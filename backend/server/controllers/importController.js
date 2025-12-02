@@ -38,6 +38,7 @@ export async function importStudents(req, res) {
       const line = index + 2
       const ma_sv = String(row['Mã SV'] || '').trim()
       const ho_ten = String(row['Họ tên'] || '').trim()
+      const cccd = String(row['CCCD'] || '').trim() || null
       const ngay_sinh = row['Ngày sinh']
       const gioi_tinh = row['Giới tính'] || null
       const email = row['Email'] || null
@@ -124,10 +125,10 @@ export async function importStudents(req, res) {
         // 🧑‍🎓 Thêm sinh viên
         const [rs] = await conn.query(
           `INSERT INTO SinhVien
-            (ma_sv, ho_ten, ngay_sinh, gioi_tinh, email, so_dien_thoai, dia_chi, khoa_hoc,
+            (ma_sv, ho_ten, can_cuoc_cong_dan, ngay_sinh, gioi_tinh, email, so_dien_thoai, dia_chi, khoa_hoc,
              khoa_id, nganh_id, lop_id, tai_khoan_id)
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-          [ma_sv, ho_ten, ngaySinhISO, gioiTinhEnum, email, so_dien_thoai, dia_chi, khoa_hoc,
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          [ma_sv, ho_ten, cccd, ngaySinhISO, gioiTinhEnum, email, so_dien_thoai, dia_chi, khoa_hoc,
            khoa_id, nganh_id, lop_id, tai_khoan_id]
         )
         const sinh_vien_id = rs.insertId
@@ -173,6 +174,7 @@ export async function downloadTemplate(req, res) {
       {
         'Mã SV': 'SV001',
         'Họ tên': 'Nguyễn Văn A',
+        'CCCD': '012345678900',
         'Ngày sinh': '2003-05-12',
         'Giới tính': 'Nam',
         'Email': 'example@gmail.com',

@@ -22,12 +22,14 @@ import lophocphanRoutes from './routes/lopHocPhan.js'
 import hocphanRoutes from './routes/hocphan.js'
 
 import importGiangVienRoutes from './routes/importGiangVien.js'
+import importDiemRenLuyenRoutes from './routes/importDiemRenLuyen.js'
 import taiKhoanRoutes from './routes/taiKhoan.js'
 import ketQuaHocTapRoutes from './routes/ketQuaHocTap.js';
 import diemTrungBinhRoutes from './routes/diemTrungBinh.js';
 
 import thongBaoRoutes from './routes/thongBao.js'
 import thongBaoDaDocRoutes from './routes/thongBaoDaDoc.js'
+import hocBongRoutes from './routes/hocBong.js'
 
 import chuongtrinhkhungRoutes from './routes/chuongtrinhkhung.js'
 import dkhpRouter from './routes/dkhp.js'
@@ -58,6 +60,7 @@ app.use('/api/auth', authRoutes)
 app.use('/api/sinhviens', sinhvienRoutes)
 app.use('/api/giangviens', giangvienRoutes)
 app.use('/api/import', importGiangVienRoutes)
+app.use('/api/import', importDiemRenLuyenRoutes)
 app.use('/api/taikhoan', taiKhoanRoutes)
 app.use('/api/lich', lichRoutes)
 app.use('/api/lich-nghi', lichNghiRoutes)
@@ -74,6 +77,7 @@ app.use('/api/ket-qua-hoc-tap', ketQuaHocTapRoutes);
 app.use('/api/diem-trung-binh', diemTrungBinhRoutes);
 app.use('/api/thongbao', thongBaoRoutes)
 app.use('/api/thongbao-dadoc', thongBaoDaDocRoutes)
+app.use('/api/hoc-bong', hocBongRoutes)
 
 app.use('/api/chuongtrinhkhung', chuongtrinhkhungRoutes)
 app.use('/api/dkhp', dkhpRouter)
@@ -103,6 +107,7 @@ app.get('*', (req, res) =>
 )
 
 import { tuDongTaoHocPhiChoDotDaKetThuc, tuDongCapNhatTrangThaiQuaHan } from './models/hocPhi.js'
+import { autoCloseClasses } from './cron/classScheduler.js'
 
 const PORT = process.env.PORT || 8080
 app.listen(PORT, () => {
@@ -110,9 +115,10 @@ app.listen(PORT, () => {
   
   // --- AUTOMATION JOB ---
   const runAutomation = async () => {
-    console.log('🔄 [CRON] Đang chạy tác vụ tự động (Học phí)...')
+    console.log('🔄 [CRON] Đang chạy tác vụ tự động...')
     await tuDongTaoHocPhiChoDotDaKetThuc()
     await tuDongCapNhatTrangThaiQuaHan()
+    await autoCloseClasses()
     console.log('✅ [CRON] Tác vụ tự động hoàn tất.')
   }
 

@@ -15,14 +15,14 @@ const upload = multer({ dest: 'uploads/' })
 router.get('/teachers/template', (req, res) => {
   const wsData = [
     [
-      'ma_gv', 'ho_ten', 'email', 'so_dien_thoai',
-      'gioi_tinh', 'ngay_sinh', 'dia_chi',
-      'ten_khoa', 'ten_nganh', 'ten_lop', 'chuc_vu'
+      'Mã giảng viên', 'Họ tên', 'Email', 'Số điện thoại',
+      'Giới tính', 'Ngày sinh', 'Địa chỉ',
+      'Khoa', 'Ngành', 'Lớp', 'Học vị'
     ],
     [
       'GV001', 'Nguyễn Văn A', 'nva@iuh.edu.vn', '0901234567',
       'Nam', '1980-01-01', '123 Lê Lợi',
-      'Công nghệ thông tin', 'Kỹ thuật phần mềm', 'DHKTPM16A', 'Giảng viên chính'
+      'Công nghệ thông tin', 'Kỹ thuật phần mềm', 'DHKTPM18BTT', 'Thạc sĩ'
     ],
   ]
 
@@ -56,10 +56,17 @@ router.post('/teachers', upload.single('file'), async (req, res) => {
     const [lopList] = await pool.query('SELECT id, ten_lop, nganh_id FROM Lop')
 
     for (let i = 0; i < sheet.length; i++) {
-      const {
-        ma_gv, ho_ten, email, so_dien_thoai, gioi_tinh,
-        ngay_sinh, dia_chi, ten_khoa, ten_nganh, ten_lop, chuc_vu
-      } = sheet[i]
+      const ma_gv = sheet[i]['Mã giảng viên']
+      const ho_ten = sheet[i]['Họ tên']
+      const email = sheet[i]['Email']
+      const so_dien_thoai = sheet[i]['Số điện thoại']
+      const gioi_tinh = sheet[i]['Giới tính']
+      const ngay_sinh = sheet[i]['Ngày sinh']
+      const dia_chi = sheet[i]['Địa chỉ']
+      const ten_khoa = sheet[i]['Khoa']
+      const ten_nganh = sheet[i]['Ngành']
+      const ten_lop = sheet[i]['Lớp']
+      const hoc_vi = sheet[i]['Học vị']
 
       // 🧩 Kiểm tra dữ liệu bắt buộc
       if (!ma_gv || !ho_ten || !ten_khoa) {
@@ -107,12 +114,12 @@ router.post('/teachers', upload.single('file'), async (req, res) => {
         const [rs] = await pool.execute(
           `INSERT INTO GiangVien 
            (ma_gv, ho_ten, email, so_dien_thoai, gioi_tinh, ngay_sinh, dia_chi,
-            khoa_id, nganh_id, lop_id, chuc_vu)
+            khoa_id, nganh_id, lop_id, hoc_vi)
            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
           [
             ma_gv, ho_ten, email || null, so_dien_thoai || null, gioi_tinh || null,
             ngay_sinh || null, dia_chi || null,
-            khoa.id, nganhId, lopId, chuc_vu || null
+            khoa.id, nganhId, lopId, hoc_vi || null
           ]
         )
         successCount++
@@ -121,6 +128,7 @@ router.post('/teachers', upload.single('file'), async (req, res) => {
         try {
           const acc = await createAccount({
             username: ma_gv,
+            ho_ten: ho_ten, // ✅ Đã thêm họ tên vào tài khoản
             password: '123456',
             role: 'Giảng viên',
             trang_thai: 'Hoạt động'

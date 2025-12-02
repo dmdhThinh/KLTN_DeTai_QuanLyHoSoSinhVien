@@ -117,6 +117,8 @@ export default function AdminLayout({ children, title = '', activeMenu = '' }) {
           <li><a href="/admin/dot-dang-ky" className={`nav-link ${location.pathname.includes('/dot-dang-ky') ? 'active bg-info' : 'text-white-50'}`}><i className="bi bi-calendar-check me-2"></i> Đợt đăng ký HP</a></li>
           <li><a href="/admin/dot-nhap-diem" className={`nav-link ${location.pathname.includes('/dot-nhap-diem') ? 'active bg-info' : 'text-white-50'}`}><i className="bi bi-clipboard-check me-2"></i> Đợt nhập điểm</a></li>
           <li><a href="/admin/hoc-phi" className={`nav-link ${location.pathname.includes('/hoc-phi') ? 'active bg-info' : 'text-white-50'}`}><i className="bi bi-cash-coin me-2"></i> Quản lý học phí</a></li>
+          <li><a href="/admin/diem-ren-luyen" className={`nav-link ${location.pathname.includes('/diem-ren-luyen') ? 'active bg-info' : 'text-white-50'}`}><i className="bi bi-award me-2"></i> Điểm rèn luyện</a></li>
+          <li><a href="/admin/xet-hoc-bong" className={`nav-link ${location.pathname.includes('/xet-hoc-bong') ? 'active bg-info' : 'text-white-50'}`}><i className="bi bi-trophy me-2"></i> Xét học bổng</a></li>
         </ul>
 
         <div className="border-top pt-3 mt-3">

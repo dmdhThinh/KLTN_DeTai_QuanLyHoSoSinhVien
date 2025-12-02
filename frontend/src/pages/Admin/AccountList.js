@@ -42,7 +42,6 @@ export default function AccountList() {
   }
 
   const handleResetPassword = async (id) => {
-    if (!window.confirm('Đặt lại mật khẩu về 123456?')) return
     try {
       await apiFetch(`/api/taikhoan/${id}/reset`, { method: 'PUT' })
       setMessage('✅ Đã reset mật khẩu về 123456')
@@ -62,9 +61,10 @@ export default function AccountList() {
   }
 
   const handleDelete = async (id) => {
-    if (!window.confirm('Bạn có chắc muốn xoá tài khoản này?')) return
     try {
       await apiFetch(`/api/taikhoan/${id}`, { method: 'DELETE' })
+      setMessage('✅ Đã xoá tài khoản thành công')
+      setTimeout(() => setMessage(''), 2500)
       loadAccounts()
     } catch {
       setMessage('❌ Lỗi khi xoá tài khoản')

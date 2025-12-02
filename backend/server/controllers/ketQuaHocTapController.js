@@ -35,6 +35,7 @@ function tinhDiemTongKetIUH(data) {
 
   const tongKet = (qt ?? 0) * 0.2 + (gk ?? 0) * 0.3 + ck * 0.5;
 
+  // ✅ Quy tắc cũ: xếp loại theo điểm tổng kết
   let diemChu, hocLuc, xepLoai, dat;
   if (tongKet >= 8.5) { diemChu = 'A'; hocLuc = xepLoai = 'Giỏi'; dat = 'Đạt'; }
   else if (tongKet >= 8.0) { diemChu = 'B+'; hocLuc = xepLoai = 'Khá giỏi'; dat = 'Đạt'; }
@@ -44,6 +45,17 @@ function tinhDiemTongKetIUH(data) {
   else if (tongKet >= 5.0) { diemChu = 'D+'; hocLuc = xepLoai = 'Trung Bình yếu'; dat = 'Đạt'; }
   else if (tongKet >= 4.0) { diemChu = 'D'; hocLuc = xepLoai = 'Yếu'; dat = 'Đạt'; }
   else { diemChu = 'F'; hocLuc = 'Kém'; xepLoai = 'Không đạt'; dat = 'Không đạt'; }
+
+  // ✅ BỔ SUNG quy tắc rớt bắt buộc:
+  //    - Điểm giữa kỳ < 1  -> rớt
+  //    - Điểm cuối kỳ  < 3 -> rớt
+  const rotBatBuoc = (gk !== null && gk < 1) || (ck !== null && ck < 3);
+  if (rotBatBuoc) {
+    diemChu = 'F';
+    hocLuc = 'Kém';
+    xepLoai = 'Không đạt';
+    dat = 'Không đạt';
+  }
     // 🔢 quy đổi thang 4 theo điểm chữ
   const diemThang4Map = { 'A': 4.0, 'B+': 3.5, 'B': 3.0, 'C+': 2.5, 'C': 2.0, 'D+': 1.5, 'D': 1.0, 'F': 0.0 };
   const diem_thang_4 = diemThang4Map[diemChu];

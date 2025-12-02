@@ -320,3 +320,41 @@ export async function exportDiemToExcel(sinhVienList, lopHocPhan, loaiBang) {
   link.click();
   window.URL.revokeObjectURL(url);
 }
+
+/**
+ * Xuất dữ liệu mảng ra Excel (Chung)
+ * @param {Array} data - Dữ liệu cần xuất (Mảng các Object)
+ * @param {String} fileName - Tên file
+ */
+export async function exportToExcel(data, fileName) {
+  if (!data || !data.length) return
+
+  const workbook = new ExcelJS.Workbook()
+  const worksheet = workbook.addWorksheet('Sheet1')
+
+  // Lấy headers từ key của object đầu tiên
+  const columns = Object.keys(data[0]).map(key => ({
+    header: key,
+    key: key,
+    width: 20
+  }))
+  
+  worksheet.columns = columns
+
+  // Add rows
+  data.forEach(row => {
+    worksheet.addRow(row)
+  })
+
+  // Style header
+  worksheet.getRow(1).font = { bold: true }
+
+  const buffer = await workbook.xlsx.writeBuffer()
+  const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' })
+  const url = window.URL.createObjectURL(blob)
+  const link = document.createElement('a')
+  link.href = url
+  link.download = `${fileName}.xlsx`
+  link.click()
+  window.URL.revokeObjectURL(url)
+}

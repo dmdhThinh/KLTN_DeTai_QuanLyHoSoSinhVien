@@ -26,7 +26,7 @@ export async function createLopHocPhan(data) {
                 lopId || null,
                 hocKy || null,
                 namHoc || null,
-                trangThai || 'Đang học',
+                trangThai || 'Chờ sinh viên đăng ký',
                 ngayBatDau || null,
                 ngayKetThuc || null,
                 soTuanHoc || null
@@ -183,7 +183,7 @@ export async function getLopHocPhanByGiangVien(giangVienId) {
       LEFT JOIN DangKyHocPhan dk ON dk.lop_hoc_phan_id = lhp.id 
         AND dk.trang_thai_dk = 'THANH_CONG'
       WHERE lhp.giang_vien_id = ?
-      GROUP BY lhp.id
+      GROUP BY lhp.id, lhp.ma_lop_hoc_phan, hp.ten_hoc_phan, hp.so_tin_chi, l.ten_lop, lhp.hoc_ky, lhp.nam_hoc
       ORDER BY lhp.nam_hoc DESC, lhp.hoc_ky DESC, lhp.ma_lop_hoc_phan ASC
     `, [giangVienId]);
     return rows;

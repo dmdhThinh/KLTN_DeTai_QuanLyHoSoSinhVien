@@ -27,6 +27,7 @@ export default function LopHocPhanList() {
   const [filteredList, setFilteredList] = useState([])
   const [selectedSemester, setSelectedSemester] = useState(currentSemester)
   const [selectedYear, setSelectedYear] = useState(currentYear)
+  const [searchCode, setSearchCode] = useState('') // Tìm theo mã lớp học phần
   const [loading, setLoading] = useState(true)
   const navigate = useNavigate()
 
@@ -35,7 +36,10 @@ export default function LopHocPhanList() {
 
   useEffect(() => {
     const loadData = async () => {
-      if (!giangVienId) return
+      if (!giangVienId) {
+        setLoading(false)
+        return
+      }
       setLoading(true)
       try {
         // ✅ dùng apiFetch để backend tự nhận base URL
@@ -54,12 +58,19 @@ export default function LopHocPhanList() {
 
   // Lọc danh sách theo học kỳ và năm học
   useEffect(() => {
-    const filtered = list.filter(lop => 
-      (!selectedSemester || lop.hocKy === selectedSemester) &&
-      (!selectedYear || lop.namHoc === selectedYear)
-    )
+    const normalizedSearch = searchCode.trim().toLowerCase()
+
+    const filtered = list.filter(lop => {
+      const matchSemester = !selectedSemester || lop.hocKy === selectedSemester
+      const matchYear = !selectedYear || lop.namHoc === selectedYear
+      const matchCode =
+        !normalizedSearch ||
+        (lop.maLopHocPhan || '').toLowerCase().includes(normalizedSearch)
+
+      return matchSemester && matchYear && matchCode
+    })
     setFilteredList(filtered)
-  }, [list, selectedSemester, selectedYear])
+  }, [list, selectedSemester, selectedYear, searchCode])
 
   return (
     <TeacherLayout title="Danh sách lớp học phần giảng dạy" activeMenu="lophocphan">
@@ -96,6 +107,17 @@ export default function LopHocPhanList() {
                     <option key={year} value={year}>{year}</option>
                   ))}
                 </select>
+              </div>
+              {/* Ô tìm kiếm theo mã lớp học phần */}
+              <div className="col-auto">
+                <input
+                  type="text"
+                  className="form-control"
+                  style={{ width: '220px' }}
+                  placeholder="Tìm theo mã lớp học phần..."
+                  value={searchCode}
+                  onChange={(e) => setSearchCode(e.target.value)}
+                />
               </div>
               <div className="col-auto ms-auto">
                 <span className="badge bg-primary">Tổng: {filteredList.length} lớp</span>

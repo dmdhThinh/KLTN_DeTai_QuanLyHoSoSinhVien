@@ -2,17 +2,34 @@ import { pool } from '../config/db.js'
 
 // 🧱 CREATE
 export async function createHocPhan(data) {
-  const { maHocPhan, tenHocPhan, soTinChi, moTa, khoaId, nganhId } = data
+  const { maHocPhan, tenHocPhan, soTinChi, moTa, khoaId, nganhId, hocKy } = data
+  const conn = await pool.getConnection()
   try {
-    const [result] = await pool.execute(
+    await conn.beginTransaction()
+
+    const [result] = await conn.execute(
       `INSERT INTO HocPhan (ma_hoc_phan, ten_hoc_phan, so_tin_chi, mo_ta, khoa_id, nganh_id)
        VALUES (?, ?, ?, ?, ?, ?)`,
       [maHocPhan, tenHocPhan, soTinChi || 3, moTa || null, khoaId, nganhId]
     )
+    
+    // Nếu có học kỳ -> thêm vào chương trình khung
+    if (hocKy) {
+      await conn.execute(
+        `INSERT INTO ChuongTrinhKhung (hoc_ky, nganh_id, hoc_phan_id, loai_mon)
+         VALUES (?, ?, ?, ?)`,
+        [hocKy, nganhId || null, result.insertId, 'BAT_BUOC']
+      )
+    }
+
+    await conn.commit()
     return result
   } catch (err) {
+    await conn.rollback()
     console.error('❌ Error creating HocPhan:', err)
     throw err
+  } finally {
+    conn.release()
   }
 }
 

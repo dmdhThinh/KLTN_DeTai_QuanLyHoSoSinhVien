@@ -28,6 +28,8 @@ export default function TeacherDashboard() {
 
       // Lấy danh sách lớp học phần
       loadLopHocPhan(id)
+    } else {
+      setLoading(false)
     }
   }, [])
 

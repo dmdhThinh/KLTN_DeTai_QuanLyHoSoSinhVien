@@ -25,7 +25,6 @@ export async function getAll({ q = '', page = 1, limit = 10 } = {}) {
       gv.khoa_id      AS khoaId,
       gv.nganh_id     AS nganhId,
       gv.lop_id       AS lopId,
-      gv.chuc_vu      AS chucVu,
       gv.anh_the      AS anhThe,
       k.ten_khoa      AS tenKhoa,
       n.ten_nganh     AS tenNganh,
@@ -78,16 +77,16 @@ export async function create(data) {
   const {
     ma_gv, ho_ten, email, so_dien_thoai,
     gioi_tinh, ngay_sinh, dia_chi,
-    khoa_id, nganh_id, lop_id, chuc_vu,
+    khoa_id, nganh_id, lop_id,
     hoc_vi, // 🆕 thêm học vị
     anh_the
   } = data
 
   const [result] = await pool.query(
     `INSERT INTO GiangVien 
-      (ma_gv, ho_ten, email, so_dien_thoai, gioi_tinh, ngay_sinh, dia_chi, khoa_id, nganh_id, lop_id, chuc_vu, hoc_vi, anh_the)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-    [ma_gv, ho_ten, email, so_dien_thoai, gioi_tinh, ngay_sinh, dia_chi, khoa_id, nganh_id, lop_id, chuc_vu, hoc_vi, anh_the]
+      (ma_gv, ho_ten, email, so_dien_thoai, gioi_tinh, ngay_sinh, dia_chi, khoa_id, nganh_id, lop_id, hoc_vi, anh_the)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    [ma_gv, ho_ten, email, so_dien_thoai, gioi_tinh, ngay_sinh, dia_chi, khoa_id, nganh_id, lop_id, hoc_vi, anh_the]
   )
   return { id: result.insertId }
 }
@@ -97,7 +96,7 @@ export async function update(id, data) {
   const {
     ma_gv, ho_ten, email, so_dien_thoai,
     gioi_tinh, ngay_sinh, dia_chi,
-    khoa_id, nganh_id, lop_id, chuc_vu,
+    khoa_id, nganh_id, lop_id,
     hoc_vi, // 🆕
     anh_the
   } = data
@@ -105,9 +104,9 @@ export async function update(id, data) {
   await pool.query(
     `UPDATE GiangVien SET 
       ma_gv=?, ho_ten=?, email=?, so_dien_thoai=?, gioi_tinh=?, ngay_sinh=?, 
-      dia_chi=?, khoa_id=?, nganh_id=?, lop_id=?, chuc_vu=?, hoc_vi=?, anh_the=?
+      dia_chi=?, khoa_id=?, nganh_id=?, lop_id=?, hoc_vi=?, anh_the=?
      WHERE id=?`,
-    [ma_gv, ho_ten, email, so_dien_thoai, gioi_tinh, ngay_sinh, dia_chi, khoa_id, nganh_id, lop_id, chuc_vu, hoc_vi, anh_the, id]
+    [ma_gv, ho_ten, email, so_dien_thoai, gioi_tinh, ngay_sinh, dia_chi, khoa_id, nganh_id, lop_id, hoc_vi, anh_the, id]
   )
 }
 

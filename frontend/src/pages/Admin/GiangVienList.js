@@ -17,11 +17,16 @@ export default function GiangVienList() {
   const [nganhs, setNganhs] = useState([])
   const [selectedKhoa, setSelectedKhoa] = useState('')
   const [selectedNganh, setSelectedNganh] = useState('')
+  const [selectedIds, setSelectedIds] = useState([])
   const limit = 10
 
   useEffect(() => {
     loadGiangViens()
   }, [page])
+
+  useEffect(() => {
+    setSelectedIds([])
+  }, [list])
 
   useEffect(() => {
     const fetchFilters = async () => {
@@ -68,6 +73,36 @@ export default function GiangVienList() {
       khoaId: selectedKhoa,
       nganhId: selectedNganh
     })
+  }
+
+  const handleSelectAll = (e) => {
+    if (e.target.checked) {
+      setSelectedIds(list.map((item) => item.id))
+    } else {
+      setSelectedIds([])
+    }
+  }
+
+  const handleSelectOne = (id) => {
+    if (selectedIds.includes(id)) {
+      setSelectedIds(selectedIds.filter((item) => item !== id))
+    } else {
+      setSelectedIds([...selectedIds, id])
+    }
+  }
+
+  const handleDeleteMultiple = async () => {
+    if (!window.confirm(`Bạn có chắc muốn xoá ${selectedIds.length} giảng viên đã chọn?`)) return
+    try {
+      await Promise.all(selectedIds.map((id) => apiFetch(`/api/giangviens/${id}`, { method: 'DELETE' })))
+      setMessage(`✅ Đã xoá ${selectedIds.length} giảng viên thành công!`)
+      setSelectedIds([])
+      loadGiangViens()
+      setTimeout(() => setMessage(''), 3000)
+    } catch (err) {
+      setMessage('❌ Xoá thất bại: ' + err.message)
+      setTimeout(() => setMessage(''), 3000)
+    }
   }
 
   const handleDelete = async (id) => {
@@ -200,6 +235,11 @@ export default function GiangVienList() {
 
       {/* Nút thao tác */}
       <div className="d-flex justify-content-end mb-3 flex-wrap gap-2">
+        {selectedIds.length > 0 && (
+          <button className="btn btn-danger" onClick={handleDeleteMultiple}>
+            🗑 Xoá ({selectedIds.length})
+          </button>
+        )}
         <button className="btn btn-outline-secondary" onClick={handleDownloadTemplate}>
           📄 Tải file mẫu
         </button>
@@ -233,6 +273,14 @@ export default function GiangVienList() {
               <table className="table table-striped align-middle mb-0">
                 <thead className="table-light">
                   <tr>
+                    <th style={{ width: 40 }}>
+                      <input
+                        type="checkbox"
+                        className="form-check-input"
+                        onChange={handleSelectAll}
+                        checked={list.length > 0 && selectedIds.length === list.length}
+                      />
+                    </th>
                     <th>#</th>
                     <th>Mã GV</th>
                     <th>Họ tên</th>
@@ -246,6 +294,14 @@ export default function GiangVienList() {
                 <tbody>
                   {list.map((gv, i) => (
                     <tr key={gv.id}>
+                      <td>
+                        <input
+                          type="checkbox"
+                          className="form-check-input"
+                          checked={selectedIds.includes(gv.id)}
+                          onChange={() => handleSelectOne(gv.id)}
+                        />
+                      </td>
                       <td>{(page - 1) * limit + i + 1}</td>
                       <td>{gv.maGv}</td>
                       <td>{gv.hoTen}</td>

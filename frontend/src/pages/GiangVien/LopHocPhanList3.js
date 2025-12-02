@@ -34,7 +34,10 @@ export default function LopHocPhanList3() {
 
   useEffect(() => {
     const loadData = async () => {
-      if (!giangVienId) return
+      if (!giangVienId) {
+        setLoading(false)
+        return
+      }
       setLoading(true)
       try {
         const data = await apiFetch(`/api/lophocphan/by-giangvien/${giangVienId}`);

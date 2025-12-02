@@ -75,6 +75,12 @@ function ChiTietLopHocPhan({ lhp, onClose, onRegister }) {
   );
 }
 
+const normalizePendingList = (data) => {
+  if (Array.isArray(data)) return data;
+  if (Array.isArray(data?.items)) return data.items;
+  return [];
+};
+
 export default function DkhpPage() {
   const [dot, setDot] = useState(null);
   const [available, setAvailable] = useState([]);
@@ -103,6 +109,12 @@ export default function DkhpPage() {
   const [openMenuId, setOpenMenuId] = useState(null);
   const [confirmCancel, setConfirmCancel] = useState(null); // { dangKyId, lopHocPhanId } cần hủy
   const [errorModal, setErrorModal] = useState(null); // Hiển thị lỗi không thể hủy
+  // Tổng số tín chỉ theo chương trình khung cho học kỳ đang chọn
+  const [hpTotals, setHpTotals] = useState({
+    tongTc: 0,
+    tongTcBatBuoc: 0,
+    tongTcTuChon: 0
+  });
   
   useEffect(() => {
     const close = () => setOpenMenuId(null);
@@ -143,14 +155,27 @@ const loadClassDetail = async (lop) => {
         setDot(d);
 
         // Sử dụng học kỳ/năm học từ dropdown
-        const [avail, regs, pend] = await Promise.all([
+        const [avail, regs, pendResRaw] = await Promise.all([
           apiFetch(`/api/dkhp/available?sinh_vien_id=${sinhVienId}&hoc_ky=${selectedHocKy}&nam_hoc=${selectedNamHoc}&dot_dang_ky_id=${d?.id || ''}`),
           apiFetch(`/api/dkhp/my?sinh_vien_id=${sinhVienId}&hoc_ky=${selectedHocKy}&nam_hoc=${selectedNamHoc}&dot_dang_ky_id=${d?.id || ''}`),
           apiFetch(`/api/dkhp/hp/pending?sinh_vien_id=${sinhVienId}&hoc_ky=${selectedHocKy}&nam_hoc=${selectedNamHoc}&dot_dang_ky_id=${d?.id || ''}`)
         ]);
         setAvailable(avail);
         setRegistered(regs);
-        setPendingHP(pend);
+        const items = normalizePendingList(pendResRaw);
+        setPendingHP(items);
+        if (pendResRaw.tong_tc !== undefined) {
+          setHpTotals({
+            tongTc: pendResRaw.tong_tc,
+            tongTcBatBuoc: pendResRaw.tong_tc_bat_buoc,
+            tongTcTuChon: pendResRaw.tong_tc_tu_chon
+          });
+        } else {
+          // fallback nếu backend cũ: tự tính từ danh sách đang có
+          const bb = items.filter(hp => hp.bat_buoc).reduce((s, hp) => s + (hp.tc || 0), 0);
+          const tc = items.filter(hp => !hp.bat_buoc).reduce((s, hp) => s + (hp.tc || 0), 0);
+          setHpTotals({ tongTc: bb + tc, tongTcBatBuoc: bb, tongTcTuChon: tc });
+        }
       } catch (err) {
         console.error(err);
         setMessage('Lỗi tải dữ liệu: ' + (err.message || 'Unknown error'));
@@ -169,22 +194,38 @@ const loadClassDetail = async (lop) => {
 
     const loadPending = async () => {
       try {
-        let pend = [];
+        let pendRes = [];
         
         if (loaiDangKy === 'HOC_LAI') {
           // Lấy danh sách môn rớt
-          pend = await apiFetch(`/api/dkhp/mon-rot?sinh_vien_id=${sinhVienId}&hoc_ky=${selectedHocKy}&nam_hoc=${selectedNamHoc}`);
+          pendRes = await apiFetch(`/api/dkhp/mon-rot?sinh_vien_id=${sinhVienId}&hoc_ky=${selectedHocKy}&nam_hoc=${selectedNamHoc}`);
         } else if (loaiDangKy === 'HOC_CAI_THIEN') {
           // Lấy danh sách môn cải thiện
-          pend = await apiFetch(`/api/dkhp/mon-cai-thien?sinh_vien_id=${sinhVienId}&hoc_ky=${selectedHocKy}&nam_hoc=${selectedNamHoc}`);
+          pendRes = await apiFetch(`/api/dkhp/mon-cai-thien?sinh_vien_id=${sinhVienId}&hoc_ky=${selectedHocKy}&nam_hoc=${selectedNamHoc}`);
         } else {
           // HOC_MOI: Lấy môn chưa học (pending)
           // Chú ý: API pending cũ cần dot_dang_ky_id, nhưng nếu xem trước thì có thể không cần hoặc API xử lý null
           // Tuy nhiên trong dkhpController mới tôi thấy nó vẫn nhận dot_dang_ky_id optional
-          pend = await apiFetch(`/api/dkhp/hp/pending?sinh_vien_id=${sinhVienId}&hoc_ky=${selectedHocKy}&nam_hoc=${selectedNamHoc}&dot_dang_ky_id=${dot?.id || ''}`);
+          pendRes = await apiFetch(`/api/dkhp/hp/pending?sinh_vien_id=${sinhVienId}&hoc_ky=${selectedHocKy}&nam_hoc=${selectedNamHoc}&dot_dang_ky_id=${dot?.id || ''}`);
         }
-        
-        setPendingHP(pend);
+        const items = normalizePendingList(pendRes);
+        setPendingHP(items);
+        if (loaiDangKy === 'HOC_MOI') {
+          if (pendRes.tong_tc !== undefined) {
+            setHpTotals({
+              tongTc: pendRes.tong_tc,
+              tongTcBatBuoc: pendRes.tong_tc_bat_buoc,
+              tongTcTuChon: pendRes.tong_tc_tu_chon
+            });
+          } else {
+            const bb = items.filter(hp => hp.bat_buoc).reduce((s, hp) => s + (hp.tc || 0), 0);
+            const tc = items.filter(hp => !hp.bat_buoc).reduce((s, hp) => s + (hp.tc || 0), 0);
+            setHpTotals({ tongTc: bb + tc, tongTcBatBuoc: bb, tongTcTuChon: tc });
+          }
+        } else {
+          // Học lại / cải thiện: không áp tổng TC CTK
+          setHpTotals({ tongTc: 0, tongTcBatBuoc: 0, tongTcTuChon: 0 });
+        }
       } catch (err) {
         console.error('Lỗi load danh sách môn:', err);
       }
@@ -243,7 +284,7 @@ const loadClassDetail = async (lop) => {
       } else {
         pend = await apiFetch(`/api/dkhp/hp/pending?sinh_vien_id=${sinhVienId}&hoc_ky=${selectedHocKy}&nam_hoc=${selectedNamHoc}&dot_dang_ky_id=${dot?.id || ''}`);
       }
-      setPendingHP(pend);
+      setPendingHP(normalizePendingList(pend));
 
       // Chi tiết lớp đang chọn (để bảng "CHI TIẾT LỚP HỌC PHẦN" cập nhật ngay)
       if (selectedClass?.id === lhp.id) {
@@ -296,7 +337,7 @@ const loadClassDetail = async (lop) => {
       } else {
         pend = await apiFetch(`/api/dkhp/hp/pending?sinh_vien_id=${sinhVienId}&hoc_ky=${selectedHocKy}&nam_hoc=${selectedNamHoc}&dot_dang_ky_id=${dot?.id || ''}`);
       }
-      setPendingHP(pend);
+      setPendingHP(normalizePendingList(pend));
 
       // 3) Nếu đang mở chi tiết đúng lớp này thì load lại để cập nhật sĩ số
       if (selectedClass && (!lopHocPhanId || lopHocPhanId === selectedClass.id)) {
@@ -327,16 +368,49 @@ const loadClassDetail = async (lop) => {
 
 
   if (loading) return <div className="text-center p-5">Đang tải...</div>;
-// đặt trước phần return:
-const getDaDangKy = (l) => {
-  if (l.da_dang_ky != null) return l.da_dang_ky;           // API trả về trực tiếp
-  if (l.so_da_dk != null) return l.so_da_dk;               // tên khác
-  if (l.si_so_da_dk != null) return l.si_so_da_dk;         // cột đếm trong bảng LHP
-  if (l.si_so_toi_da != null && l.slot_con != null) {      // chỉ có slot_con
-    return l.si_so_toi_da - l.slot_con;
-  }
-  return '';
-};
+  // đặt trước phần return:
+  const getDaDangKy = (l) => {
+    if (l.da_dang_ky != null) return l.da_dang_ky;           // API trả về trực tiếp
+    if (l.so_da_dk != null) return l.so_da_dk;               // tên khác
+    if (l.si_so_da_dk != null) return l.si_so_da_dk;         // cột đếm trong bảng LHP
+    if (l.si_so_toi_da != null && l.slot_con != null) {      // chỉ có slot_con
+      return l.si_so_toi_da - l.slot_con;
+    }
+    return '';
+  };
+
+  // Nhóm môn chờ đăng ký thành 2 loại: Bắt buộc / Tự chọn (giống trang Chương trình khung)
+  const monChoDangKyBatBuoc = pendingHP.filter((hp) => hp.bat_buoc);
+  const monChoDangKyTuChon = pendingHP.filter((hp) => !hp.bat_buoc);
+
+  // Hàm render 1 dòng môn chờ đăng ký
+  const renderPendingRow = (hp, idx) => (
+    <tr
+      key={hp.hoc_phan_id}
+      className={selectedHP?.hoc_phan_id === hp.hoc_phan_id ? 'table-info' : ''}
+      onClick={() => setSelectedHP(hp)}
+      style={{ cursor: 'pointer' }}
+    >
+      <td>
+        <input
+          type="radio"
+          checked={selectedHP?.hoc_phan_id === hp.hoc_phan_id}
+          readOnly
+        />
+      </td>
+      <td>{idx + 1}</td>
+      <td>{hp.ma_hoc_phan}</td>
+      <td>{hp.ten_hoc_phan}</td>
+      <td>{hp.tc}</td>
+      <td>
+        {hp.bat_buoc ? (
+          <span className="badge bg-danger">Bắt buộc</span>
+        ) : (
+          <span className="badge bg-secondary">Tự chọn</span>
+        )}
+      </td>
+    </tr>
+  );
 
   return (
     
@@ -445,7 +519,17 @@ const getDaDangKy = (l) => {
         {/* Bảng 1: MÔN HỌC PHẦN ĐANG CHỜ ĐĂNG KÝ */}
         <div className="card mb-4">
           <div className="card-header bg-warning text-dark">
-            <strong>MÔN HỌC PHẦN ĐANG CHỜ ĐĂNG KÝ</strong>
+            <div className="d-flex justify-content-between align-items-center">
+              <strong>MÔN HỌC PHẦN ĐANG CHỜ ĐĂNG KÝ</strong>
+              <small className="fw-semibold">
+                Số TC phải đăng ký trong học kỳ này:&nbsp;
+                <span className="text-primary">{hpTotals.tongTc}</span>
+                &nbsp;(
+                Bắt buộc:&nbsp;<span className="text-danger">{hpTotals.tongTcBatBuoc}</span>,
+                &nbsp;Tự chọn:&nbsp;<span className="text-success">{hpTotals.tongTcTuChon}</span>
+                )
+              </small>
+            </div>
           </div>
               <div className="table-responsive">
                 <table className="table table-hover mb-0">
@@ -457,37 +541,37 @@ const getDaDangKy = (l) => {
                       <th>Tên môn học</th>
                       <th>TC</th>
                       <th>Bắt buộc</th>
-                      <th>HP tiên quyết</th>
-                      <th>HP tương đương</th>
                     </tr>
                   </thead>
                   <tbody>
                     {pendingHP.length === 0 ? (
-                      <tr><td colSpan="8" className="text-center text-muted">Không có môn chờ đăng ký</td></tr>
+                      <tr><td colSpan="6" className="text-center text-muted">Không có môn chờ đăng ký</td></tr>
                     ) : (
-                      pendingHP.map((hp, idx) => (
-                        <tr
-                          key={hp.hoc_phan_id}
-                          className={selectedHP?.hoc_phan_id === hp.hoc_phan_id ? 'table-info' : ''}
-                          onClick={() => setSelectedHP(hp)}
-                          style={{ cursor: 'pointer' }}
-                        >
-                          <td>
-                            <input
-                              type="radio"
-                              checked={selectedHP?.hoc_phan_id === hp.hoc_phan_id}
-                              readOnly
-                            />
-                          </td>
-                          <td>{idx + 1}</td>
-                          <td>{hp.ma_hoc_phan}</td>
-                          <td>{hp.ten_hoc_phan}</td>
-                          <td>{hp.tc}</td>
-                          <td>{hp.bat_buoc ? 'Có' : 'Không'}</td>
-                          <td>{hp.hoc_phan_tien_quyet || '-'}</td>
-                          <td>{hp.hoc_phan_tuong_duong || '-'}</td>
-                        </tr>
-                      ))
+                      <>
+                        {monChoDangKyBatBuoc.length > 0 && (
+                          <>
+                            <tr className="table-secondary">
+                              <td colSpan="6">
+                                <strong>HỌC PHẦN BẮT BUỘC</strong>
+                              </td>
+                            </tr>
+                            {monChoDangKyBatBuoc.map((hp, idx) => renderPendingRow(hp, idx))}
+                          </>
+                        )}
+
+                        {monChoDangKyTuChon.length > 0 && (
+                          <>
+                            <tr className="table-secondary">
+                              <td colSpan="6">
+                                <strong>HỌC PHẦN TỰ CHỌN</strong>
+                              </td>
+                            </tr>
+                            {monChoDangKyTuChon.map((hp, idx) =>
+                              renderPendingRow(hp, idx + monChoDangKyBatBuoc.length)
+                            )}
+                          </>
+                        )}
+                      </>
                     )}
                   </tbody>
                 </table>

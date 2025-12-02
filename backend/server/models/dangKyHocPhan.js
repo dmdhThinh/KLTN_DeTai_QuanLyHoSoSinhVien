@@ -363,16 +363,58 @@ async function checkPrereq({ conn, sinh_vien_id, hoc_phan_id, dot_dang_ky_id }) 
   }
   return true
 }
+
+function getTenHocKy(hocKy) {
+  if (!hocKy) return ''
+  const match = hocKy.match(/HK(\d+)/i)
+  if (match) {
+    const num = parseInt(match[1])
+    const nam = Math.ceil(num / 2)
+    const ky = num % 2 === 0 ? 2 : 1
+    return `Năm ${nam} - Học kỳ ${ky}`
+  }
+  return hocKy
+}
+
 // NEW: Gom “môn học phần đang chờ đăng ký” (group by hoc_phan_id)
 // === MÔN HỌC PHẦN ĐANG CHỜ ĐĂNG KÝ (gom theo hoc_phan_id) ===
 export async function listPendingCourses({ sinh_vien_id, hoc_ky, nam_hoc, dot_dang_ky_id }) {
    // Lấy thông tin ngành/khoa của sinh viên
   const [svRows] = await pool.execute(
-    `SELECT nganh_id, khoa_id FROM SinhVien WHERE id = ?`,
+    `SELECT nganh_id, khoa_id, khoa_hoc FROM SinhVien WHERE id = ?`,
     [sinh_vien_id]
   )
   const sv = svRows[0]
   if (!sv) return []
+  
+  // --- LOGIC TÍNH HỌC KỲ THEO TIẾN ĐỘ (giống ý tưởng cũ): 
+  // với khóa K21 -> năm bắt đầu ~ 2021, từ đó suy ra SV đang ở HK mấy trong CTK
+  let targetHocKy = null
+  if (sv.khoa_hoc && nam_hoc && hoc_ky) {
+    const kNum = parseInt(sv.khoa_hoc.replace(/\D/g, ''), 10) || 0
+    if (kNum > 0) {
+      const startYear = 2000 + kNum
+      const currentYear = parseInt(nam_hoc.split('-')[0], 10) || 0
+
+      if (currentYear >= startYear) {
+        const yearDiff = currentYear - startYear // Năm 1 = 0, Năm 2 = 1...
+
+        let semesterIndex = 0
+        if (hoc_ky === 'HK1') semesterIndex = yearDiff * 2 + 1
+        else if (hoc_ky === 'HK2') semesterIndex = yearDiff * 2 + 2
+        else if (hoc_ky === 'HK3') semesterIndex = yearDiff * 2 + 3
+
+        if (semesterIndex > 0) {
+          targetHocKy = `HK${semesterIndex}`
+          console.log(
+            `[PendingCourses] ${sinh_vien_id} - khoa ${sv.khoa_hoc} (${startYear}), nam_hoc=${nam_hoc}, hoc_ky=${hoc_ky} -> CTK hoc_ky=${targetHocKy}`
+          )
+        }
+      }
+    }
+  }
+
+  const hocKyCtdt = targetHocKy || hoc_ky
   
   // Lấy danh sách học phần đã đăng ký THÀNH CÔNG (để loại ra)
   // Filter: chỉ lấy HP thuộc ngành của SV HOẶC HP chung (nganh_id IS NULL)
@@ -385,22 +427,55 @@ export async function listPendingCourses({ sinh_vien_id, hoc_ky, nam_hoc, dot_da
   )
   const registeredHPIds = registered.map(r => r.hoc_phan_id)
   
-  // Lấy các HP có mở lớp trong kỳ + tổng số lớp/đã mở đăng ký
-  const [rows] = await pool.execute(
-    `SELECT hp.id AS hoc_phan_id, hp.ma_hoc_phan, hp.ten_hoc_phan, hp.so_tin_chi AS tc,
+  // Xây dựng query động: dùng cùng logic loại môn với Chương trình khung (theo đúng học kỳ đang chọn)
+  let sql = `SELECT hp.id AS hoc_phan_id, hp.ma_hoc_phan, hp.ten_hoc_phan, hp.so_tin_chi AS tc,
             COUNT(lhp.id)                   AS tong_so_lop,
-            SUM(lhp.trang_thai_dk='MO_DK')  AS so_lop_mo_dk
+            SUM(lhp.trang_thai_dk='MO_DK')  AS so_lop_mo_dk,
+            ctk.hoc_ky                      AS hoc_ky_ctdt,
+            -- Loại môn trong CTK: BAT_BUOC / TU_CHON (ưu tiên BAT_BUOC nếu có nhiều dòng)
+            CASE WHEN MAX(ctk.loai_mon) = 'BAT_BUOC' OR MIN(ctk.loai_mon) = 'BAT_BUOC'
+                 THEN 'BAT_BUOC'
+                 ELSE MAX(ctk.loai_mon)
+            END                             AS loai_mon
      FROM LopHocPhan lhp
      JOIN HocPhan hp ON hp.id = lhp.hoc_phan_id
+     JOIN ChuongTrinhKhung ctk ON ctk.hoc_phan_id = hp.id 
+          AND (ctk.nganh_id = ? OR ctk.nganh_id IS NULL)
+          AND ctk.hoc_ky = ?
     WHERE lhp.hoc_ky = ? AND lhp.nam_hoc = ?
-      AND (hp.nganh_id = ? OR hp.nganh_id IS NULL)
-    GROUP BY hp.id, hp.ma_hoc_phan, hp.ten_hoc_phan, hp.so_tin_chi
-    ORDER BY hp.ten_hoc_phan`,
-    [hoc_ky, nam_hoc, sv.nganh_id]
-  )
-    
-  // Loại bỏ những học phần đã đăng ký thành công
-  return rows.filter(hp => !registeredHPIds.includes(hp.hoc_phan_id))
+      AND (hp.nganh_id = ? OR hp.nganh_id IS NULL)`
+      
+  const params = [sv.nganh_id, hocKyCtdt, hoc_ky, nam_hoc, sv.nganh_id]
+
+  sql += ` GROUP BY hp.id, hp.ma_hoc_phan, hp.ten_hoc_phan, hp.so_tin_chi, ctk.hoc_ky
+           ORDER BY hp.ten_hoc_phan`
+
+  const [rows] = await pool.execute(sql, params)
+
+  // Tổng TC theo chương trình khung (KHÔNG loại các môn đã đăng ký/đạt)
+  const tongTcBatBuoc = rows
+    .filter(r => r.loai_mon === 'BAT_BUOC')
+    .reduce((sum, r) => sum + (r.tc || 0), 0)
+  const tongTcTuChon = rows
+    .filter(r => r.loai_mon === 'TU_CHON')
+    .reduce((sum, r) => sum + (r.tc || 0), 0)
+  const tongTc = tongTcBatBuoc + tongTcTuChon
+
+  // Danh sách "môn đang chờ đăng ký": loại bỏ học phần SV đã đăng ký thành công
+  const items = rows
+    .filter(hp => !registeredHPIds.includes(hp.hoc_phan_id))
+    .map(row => ({
+      ...row,
+      ten_hoc_ky_ctdt: getTenHocKy(row.hoc_ky_ctdt),
+      bat_buoc: row.loai_mon === 'BAT_BUOC'
+    }))
+
+  return {
+    items,
+    tong_tc: tongTc,
+    tong_tc_bat_buoc: tongTcBatBuoc,
+    tong_tc_tu_chon: tongTcTuChon
+  }
 }
 
 // === CHI TIẾT LỊCH CỦA 1 LỚP HỌC PHẦN (cho modal “Xem”) ===

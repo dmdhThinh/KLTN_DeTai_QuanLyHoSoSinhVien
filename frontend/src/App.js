@@ -69,6 +69,8 @@ import QuanLyHocPhi from './pages/Admin/QuanLyHocPhi.js'
 import YeuCauTuVanSinhVien from './pages/SinhVien/YeuCauTuVan.js'
 import YeuCauTuVanGiangVien from './pages/GiangVien/YeuCauTuVan.js'
 import YeuCauTuVanAdmin from './pages/Admin/YeuCauTuVan.js'
+import ImportDiemRenLuyen from './pages/Admin/ImportDiemRenLuyen.js'
+import XetHocBong from './pages/Admin/XetHocBong.js'
 import ThongBaoGiangVien from './pages/GiangVien/ThongBaoGiangVien.js'
 import ThongBaoChiTietGiangVien from './pages/GiangVien/ThongBaoChiTietGiangVien.js'
 
@@ -236,7 +238,8 @@ function App() {
         <Route path="/admin/thongbao/edit/:id" element={<PrivateRoute allowRoles={['Quản trị']}><EditThongBao /></PrivateRoute>}/>
         <Route path="/admin/dot-nhap-diem" element={<PrivateRoute allowRoles={['Quản trị']}><QuanLyDotNhapDiem /></PrivateRoute>} />
         <Route path="/admin/dot-dang-ky" element={<PrivateRoute allowRoles={['Quản trị']}><QuanLyDotDangKy /></PrivateRoute>} />
-         <Route path="/admin/hoc-phi" element={<PrivateRoute allowRoles={['Quản trị']}><QuanLyHocPhi /></PrivateRoute>} />
+         <Route path="/admin/diem-ren-luyen" element={<PrivateRoute allowRoles={['Quản trị']}><ImportDiemRenLuyen /></PrivateRoute>} />
+        <Route path="/admin/xet-hoc-bong" element={<PrivateRoute allowRoles={['Quản trị']}><XetHocBong /></PrivateRoute>} />
         <Route path="/admin/tu-van" element={<PrivateRoute allowRoles={['Quản trị']}><YeuCauTuVanAdmin /></PrivateRoute>} />
         <Route path="/student/thongbao" element={<PrivateRoute allowRoles={['Sinh viên']}><ThongBaoSinhVien /></PrivateRoute>}/>
         <Route path="/student/thongbao/:id" element={<PrivateRoute allowRoles={['Sinh viên']}><ThongBaoChiTiet /></PrivateRoute>}/>
