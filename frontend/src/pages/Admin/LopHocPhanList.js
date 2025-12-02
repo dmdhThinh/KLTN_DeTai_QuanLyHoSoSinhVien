@@ -116,10 +116,18 @@ export default function LopHocPhanList() {
   useEffect(() => {
     let result = [...list]
 
-    // Lọc theo tên lớp học phần
+    // Lọc theo tìm kiếm: mã lớp học phần, tên học phần, hoặc tên lớp
     if (search.trim()) {
       const keyword = search.toLowerCase()
-      result = result.filter(lop => lop.maLopHocPhan.toLowerCase().includes(keyword))
+      result = result.filter(lop => {
+        const maLopHocPhan = (lop.maLopHocPhan || '').toLowerCase()
+        const tenHocPhan = (lop.tenHocPhan || '').toLowerCase()
+        const tenLop = (lop.tenLop || '').toLowerCase()
+        
+        return maLopHocPhan.includes(keyword) || 
+               tenHocPhan.includes(keyword) || 
+               tenLop.includes(keyword)
+      })
     }
 
     // Lọc theo khoa
@@ -194,10 +202,10 @@ export default function LopHocPhanList() {
           <input
             type="text"
             className="form-control"
-            placeholder="Tìm theo mã lớp học phần..."
+            placeholder="Tìm theo mã lớp, tên học phần, tên lớp..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            style={{ width: 220 }}
+            style={{ width: 280 }}
           />
 
           {/* 🏫 Chọn khoa */}

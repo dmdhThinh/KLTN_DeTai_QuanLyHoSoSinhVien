@@ -8,6 +8,8 @@ function SuaDiem() {
   const navigate = useNavigate();
   const [lopHocPhan, setLopHocPhan] = useState(null);
   const [sinhVienList, setSinhVienList] = useState([]);
+  const [filteredSinhVienList, setFilteredSinhVienList] = useState([]);
+  const [searchStudent, setSearchStudent] = useState('');
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState('');
@@ -88,6 +90,7 @@ function SuaDiem() {
         );
         
         setSinhVienList(sinhVienWithScores);
+        setFilteredSinhVienList(sinhVienWithScores);
       }
     } catch (err) {
       console.error('Error loading data:', err);
@@ -102,11 +105,43 @@ function SuaDiem() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [lopHocPhanId]);
 
+  // Lọc danh sách sinh viên theo mã số sinh viên hoặc họ tên
+  useEffect(() => {
+    if (!searchStudent.trim()) {
+      setFilteredSinhVienList(sinhVienList);
+    } else {
+      const keyword = searchStudent.toLowerCase();
+      const filtered = sinhVienList.filter(sv => {
+        const maSV = (sv.ma_sv || '').toLowerCase();
+        const hoTen = (sv.ho_ten || '').toLowerCase();
+        return maSV.includes(keyword) || hoTen.includes(keyword);
+      });
+      setFilteredSinhVienList(filtered);
+    }
+  }, [searchStudent, sinhVienList]);
+
   // Cập nhật điểm cho một sinh viên
-  const handleScoreChange = (svIndex, field, value) => {
-    const newList = [...sinhVienList];
-    newList[svIndex][field] = value;
+  const handleScoreChange = (svId, field, value) => {
+    const newList = sinhVienList.map(sv => {
+      if (sv.sinh_vien_id === svId) {
+        return { ...sv, [field]: value };
+      }
+      return sv;
+    });
     setSinhVienList(newList);
+    
+    // Cập nhật filtered list nếu cần
+    if (!searchStudent.trim()) {
+      setFilteredSinhVienList(newList);
+    } else {
+      const keyword = searchStudent.toLowerCase();
+      const filtered = newList.filter(sv => {
+        const maSV = (sv.ma_sv || '').toLowerCase();
+        const hoTen = (sv.ho_ten || '').toLowerCase();
+        return maSV.includes(keyword) || hoTen.includes(keyword);
+      });
+      setFilteredSinhVienList(filtered);
+    }
   };
 
   // Lưu điểm cho một sinh viên (admin có thể sửa bất kỳ lúc nào)
@@ -228,6 +263,36 @@ function SuaDiem() {
         </div>
 
         <div className="card shadow-sm p-3">
+          {/* Thanh tìm kiếm sinh viên */}
+          {!loading && sinhVienList.length > 0 && (
+            <div className="mb-3">
+              <div className="d-flex align-items-center gap-2">
+                <label className="form-label mb-0 fw-bold">🔍 Tìm kiếm sinh viên:</label>
+                <input
+                  type="text"
+                  className="form-control"
+                  placeholder="Nhập mã số sinh viên hoặc họ tên..."
+                  value={searchStudent}
+                  onChange={(e) => setSearchStudent(e.target.value)}
+                  style={{ maxWidth: '300px' }}
+                />
+                {searchStudent && (
+                  <button
+                    className="btn btn-sm btn-outline-secondary"
+                    onClick={() => setSearchStudent('')}
+                    title="Xóa tìm kiếm"
+                  >
+                    ✕
+                  </button>
+                )}
+                {searchStudent && (
+                  <span className="text-muted small">
+                    Tìm thấy {filteredSinhVienList.length} / {sinhVienList.length} sinh viên
+                  </span>
+                )}
+              </div>
+            </div>
+          )}
           {message && (
             <div className={`alert ${message.startsWith('✅') ? 'alert-success' : 'alert-danger'}`}>
               {message}
@@ -240,159 +305,175 @@ function SuaDiem() {
 
           {!loading && sinhVienList.length > 0 && (
             <>
-              <div className="table-responsive" style={{ maxHeight: '500px', overflowY: 'auto' }}>
-                <table className="table table-bordered table-hover table-sm">
-                  <thead className="table-primary" style={{ position: 'sticky', top: 0, zIndex: 1 }}>
-                    <tr>
-                      <th style={{ minWidth: '50px' }}>STT</th>
-                      <th style={{ minWidth: '100px' }}>Mã SV</th>
-                      <th style={{ minWidth: '150px' }}>Họ và tên</th>
-                      <th style={{ minWidth: '70px' }}>TX1</th>
-                      <th style={{ minWidth: '70px' }}>TX2</th>
-                      <th style={{ minWidth: '70px' }}>TX3</th>
-                      <th style={{ minWidth: '70px' }}>TX4</th>
-                      <th style={{ minWidth: '70px' }}>TH1</th>
-                      <th style={{ minWidth: '70px' }}>TH2</th>
-                      <th style={{ minWidth: '70px' }}>TH3</th>
-                      <th style={{ minWidth: '80px' }}>Giữa kỳ</th>
-                      <th style={{ minWidth: '80px' }}>Cuối kỳ</th>
-                      <th style={{ minWidth: '90px' }}>Tổng kết</th>
-                      <th style={{ minWidth: '70px' }}>Chữ</th>
-                      <th style={{ minWidth: '100px' }}>Hành động</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {sinhVienList.map((sv, index) => (
-                      <tr key={sv.sinh_vien_id}>
-                        <td className="text-center">{index + 1}</td>
-                        <td>{sv.ma_sv}</td>
-                        <td>{sv.ho_ten}</td>
-                        <td>
-                          <input
-                            type="number"
-                            step="0.1"
-                            min="0"
-                            max="10"
-                            className="form-control form-control-sm"
-                            value={sv.diem_ly_thuyet_1}
-                            onChange={(e) => handleScoreChange(index, 'diem_ly_thuyet_1', e.target.value)}
-                            disabled={!sv.ketQuaId}
-                            title={!sv.ketQuaId ? 'Sinh viên chưa có điểm' : ''}
-                          />
-                        </td>
-                        <td>
-                          <input
-                            type="number"
-                            step="0.1"
-                            min="0"
-                            max="10"
-                            className="form-control form-control-sm"
-                            value={sv.diem_ly_thuyet_2}
-                            onChange={(e) => handleScoreChange(index, 'diem_ly_thuyet_2', e.target.value)}
-                            disabled={!sv.ketQuaId}
-                          />
-                        </td>
-                        <td>
-                          <input
-                            type="number"
-                            step="0.1"
-                            min="0"
-                            max="10"
-                            className="form-control form-control-sm"
-                            value={sv.diem_ly_thuyet_3}
-                            onChange={(e) => handleScoreChange(index, 'diem_ly_thuyet_3', e.target.value)}
-                            disabled={!sv.ketQuaId}
-                          />
-                        </td>
-                        <td>
-                          <input
-                            type="number"
-                            step="0.1"
-                            min="0"
-                            max="10"
-                            className="form-control form-control-sm"
-                            value={sv.diem_ly_thuyet_4}
-                            onChange={(e) => handleScoreChange(index, 'diem_ly_thuyet_4', e.target.value)}
-                            disabled={!sv.ketQuaId}
-                          />
-                        </td>
-                        <td>
-                          <input
-                            type="number"
-                            step="0.1"
-                            min="0"
-                            max="10"
-                            className="form-control form-control-sm"
-                            value={sv.diem_thuc_hanh_1}
-                            onChange={(e) => handleScoreChange(index, 'diem_thuc_hanh_1', e.target.value)}
-                            disabled={!sv.ketQuaId}
-                          />
-                        </td>
-                        <td>
-                          <input
-                            type="number"
-                            step="0.1"
-                            min="0"
-                            max="10"
-                            className="form-control form-control-sm"
-                            value={sv.diem_thuc_hanh_2}
-                            onChange={(e) => handleScoreChange(index, 'diem_thuc_hanh_2', e.target.value)}
-                            disabled={!sv.ketQuaId}
-                          />
-                        </td>
-                        <td>
-                          <input
-                            type="number"
-                            step="0.1"
-                            min="0"
-                            max="10"
-                            className="form-control form-control-sm"
-                            value={sv.diem_thuc_hanh_3}
-                            onChange={(e) => handleScoreChange(index, 'diem_thuc_hanh_3', e.target.value)}
-                            disabled={!sv.ketQuaId}
-                          />
-                        </td>
-                        <td>
-                          <input
-                            type="number"
-                            step="0.1"
-                            min="0"
-                            max="10"
-                            className="form-control form-control-sm"
-                            value={sv.diem_giua_ky}
-                            onChange={(e) => handleScoreChange(index, 'diem_giua_ky', e.target.value)}
-                            disabled={!sv.ketQuaId}
-                          />
-                        </td>
-                        <td>
-                          <input
-                            type="number"
-                            step="0.1"
-                            min="0"
-                            max="10"
-                            className="form-control form-control-sm"
-                            value={sv.diem_cuoi_ky}
-                            onChange={(e) => handleScoreChange(index, 'diem_cuoi_ky', e.target.value)}
-                            disabled={!sv.ketQuaId}
-                          />
-                        </td>
-                        <td className="text-center fw-bold">{sv.diem_tong_ket || '-'}</td>
-                        <td className="text-center fw-bold">{sv.diem_chu || '-'}</td>
-                        <td>
-                          <button
-                            className="btn btn-sm btn-primary"
-                            onClick={() => handleSaveStudent(sv)}
-                            disabled={!sv.ketQuaId || saving}
-                            title={!sv.ketQuaId ? 'Sinh viên chưa có điểm' : 'Lưu điểm cho sinh viên này'}
-                          >
-                            💾 Lưu
-                          </button>
-                        </td>
+              {filteredSinhVienList.length === 0 && searchStudent ? (
+                <div className="alert alert-info text-center py-4">
+                  <p className="mb-0">🔍 Không tìm thấy sinh viên nào phù hợp với từ khóa "<strong>{searchStudent}</strong>"</p>
+                  <button 
+                    className="btn btn-sm btn-outline-primary mt-2"
+                    onClick={() => setSearchStudent('')}
+                  >
+                    Xóa bộ lọc
+                  </button>
+                </div>
+              ) : (
+                <div className="table-responsive" style={{ maxHeight: '500px', overflowY: 'auto' }}>
+                  <table className="table table-bordered table-hover table-sm">
+                    <thead className="table-primary" style={{ position: 'sticky', top: 0, zIndex: 1 }}>
+                      <tr>
+                        <th style={{ minWidth: '50px' }}>STT</th>
+                        <th style={{ minWidth: '100px' }}>Mã SV</th>
+                        <th style={{ minWidth: '150px' }}>Họ và tên</th>
+                        <th style={{ minWidth: '70px' }}>TX1</th>
+                        <th style={{ minWidth: '70px' }}>TX2</th>
+                        <th style={{ minWidth: '70px' }}>TX3</th>
+                        <th style={{ minWidth: '70px' }}>TX4</th>
+                        <th style={{ minWidth: '70px' }}>TH1</th>
+                        <th style={{ minWidth: '70px' }}>TH2</th>
+                        <th style={{ minWidth: '70px' }}>TH3</th>
+                        <th style={{ minWidth: '80px' }}>Giữa kỳ</th>
+                        <th style={{ minWidth: '80px' }}>Cuối kỳ</th>
+                        <th style={{ minWidth: '90px' }}>Tổng kết</th>
+                        <th style={{ minWidth: '70px' }}>Chữ</th>
+                        <th style={{ minWidth: '100px' }}>Hành động</th>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+                    </thead>
+                    <tbody>
+                      {filteredSinhVienList.map((sv, index) => {
+                        // Tìm index trong danh sách gốc để hiển thị STT chính xác
+                        const originalIndex = sinhVienList.findIndex(s => s.sinh_vien_id === sv.sinh_vien_id);
+                        return (
+                          <tr key={sv.sinh_vien_id}>
+                            <td className="text-center">{originalIndex + 1}</td>
+                            <td><strong>{sv.ma_sv}</strong></td>
+                            <td>{sv.ho_ten}</td>
+                            <td>
+                              <input
+                                type="number"
+                                step="0.1"
+                                min="0"
+                                max="10"
+                                className="form-control form-control-sm"
+                                value={sv.diem_ly_thuyet_1}
+                                onChange={(e) => handleScoreChange(sv.sinh_vien_id, 'diem_ly_thuyet_1', e.target.value)}
+                                disabled={!sv.ketQuaId}
+                                title={!sv.ketQuaId ? 'Sinh viên chưa có điểm' : ''}
+                              />
+                            </td>
+                            <td>
+                              <input
+                                type="number"
+                                step="0.1"
+                                min="0"
+                                max="10"
+                                className="form-control form-control-sm"
+                                value={sv.diem_ly_thuyet_2}
+                                onChange={(e) => handleScoreChange(sv.sinh_vien_id, 'diem_ly_thuyet_2', e.target.value)}
+                                disabled={!sv.ketQuaId}
+                              />
+                            </td>
+                            <td>
+                              <input
+                                type="number"
+                                step="0.1"
+                                min="0"
+                                max="10"
+                                className="form-control form-control-sm"
+                                value={sv.diem_ly_thuyet_3}
+                                onChange={(e) => handleScoreChange(sv.sinh_vien_id, 'diem_ly_thuyet_3', e.target.value)}
+                                disabled={!sv.ketQuaId}
+                              />
+                            </td>
+                            <td>
+                              <input
+                                type="number"
+                                step="0.1"
+                                min="0"
+                                max="10"
+                                className="form-control form-control-sm"
+                                value={sv.diem_ly_thuyet_4}
+                                onChange={(e) => handleScoreChange(sv.sinh_vien_id, 'diem_ly_thuyet_4', e.target.value)}
+                                disabled={!sv.ketQuaId}
+                              />
+                            </td>
+                            <td>
+                              <input
+                                type="number"
+                                step="0.1"
+                                min="0"
+                                max="10"
+                                className="form-control form-control-sm"
+                                value={sv.diem_thuc_hanh_1}
+                                onChange={(e) => handleScoreChange(sv.sinh_vien_id, 'diem_thuc_hanh_1', e.target.value)}
+                                disabled={!sv.ketQuaId}
+                              />
+                            </td>
+                            <td>
+                              <input
+                                type="number"
+                                step="0.1"
+                                min="0"
+                                max="10"
+                                className="form-control form-control-sm"
+                                value={sv.diem_thuc_hanh_2}
+                                onChange={(e) => handleScoreChange(sv.sinh_vien_id, 'diem_thuc_hanh_2', e.target.value)}
+                                disabled={!sv.ketQuaId}
+                              />
+                            </td>
+                            <td>
+                              <input
+                                type="number"
+                                step="0.1"
+                                min="0"
+                                max="10"
+                                className="form-control form-control-sm"
+                                value={sv.diem_thuc_hanh_3}
+                                onChange={(e) => handleScoreChange(sv.sinh_vien_id, 'diem_thuc_hanh_3', e.target.value)}
+                                disabled={!sv.ketQuaId}
+                              />
+                            </td>
+                            <td>
+                              <input
+                                type="number"
+                                step="0.1"
+                                min="0"
+                                max="10"
+                                className="form-control form-control-sm"
+                                value={sv.diem_giua_ky}
+                                onChange={(e) => handleScoreChange(sv.sinh_vien_id, 'diem_giua_ky', e.target.value)}
+                                disabled={!sv.ketQuaId}
+                              />
+                            </td>
+                            <td>
+                              <input
+                                type="number"
+                                step="0.1"
+                                min="0"
+                                max="10"
+                                className="form-control form-control-sm"
+                                value={sv.diem_cuoi_ky}
+                                onChange={(e) => handleScoreChange(sv.sinh_vien_id, 'diem_cuoi_ky', e.target.value)}
+                                disabled={!sv.ketQuaId}
+                              />
+                            </td>
+                            <td className="text-center fw-bold">{sv.diem_tong_ket || '-'}</td>
+                            <td className="text-center fw-bold">{sv.diem_chu || '-'}</td>
+                            <td>
+                              <button
+                                className="btn btn-sm btn-primary"
+                                onClick={() => handleSaveStudent(sv)}
+                                disabled={!sv.ketQuaId || saving}
+                                title={!sv.ketQuaId ? 'Sinh viên chưa có điểm' : 'Lưu điểm cho sinh viên này'}
+                              >
+                                💾 Lưu
+                              </button>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              )}
 
               <div className="mt-3 d-flex justify-content-end">
                 <button 
