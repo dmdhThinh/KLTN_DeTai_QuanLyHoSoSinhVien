@@ -300,6 +300,13 @@ export default function LopHocPhanList() {
                           DS Lớp
                         </button>
                         <button
+                          className="btn btn-sm btn-outline-warning me-2"
+                          onClick={() => navigate(`/admin/sua-diem/${lop.id}`)}
+                          title="Admin sửa điểm"
+                        >
+                          🔧 Sửa điểm
+                        </button>
+                        <button
                           className="btn btn-sm btn-outline-secondary me-2"
                           onClick={() => navigate(`/admin/lophocphan/edit/${lop.id}`)}
                         >

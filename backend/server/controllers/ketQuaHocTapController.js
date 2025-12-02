@@ -179,6 +179,38 @@ export async function update(req, res) {
       return res.status(404).json({ message: 'Không tìm thấy điểm số để sửa' });
     }
     
+    // 2️⃣ Kiểm tra quyền sửa điểm
+    const user = req.user; // Từ middleware authenticateToken
+    const isAdmin = user && user.role === 'Quản trị';
+    
+    // Nếu không phải admin, kiểm tra trạng thái đợt nhập điểm
+    if (!isAdmin) {
+      const { hoc_ky, nam_hoc } = current;
+      const [dotNhapDiem] = await pool.execute(
+        'SELECT trang_thai FROM DotNhapDiem WHERE hoc_ky = ? AND nam_hoc = ?',
+        [hoc_ky, nam_hoc]
+      );
+      
+      const trangThai = dotNhapDiem[0]?.trang_thai || 'CHUA_MO';
+      
+      // Nếu đã khóa thì không cho sửa (trừ admin)
+      if (trangThai === 'DA_KHOA') {
+        return res.status(403).json({ 
+          message: 'Điểm đã bị khóa. Chỉ admin mới có quyền sửa điểm đã khóa.' 
+        });
+      }
+    }
+    
+    // 3️⃣ Nếu là admin, kiểm tra học kỳ tương ứng (nếu có trong request body)
+    if (isAdmin && req.body.hoc_ky && req.body.nam_hoc) {
+      // Admin chỉ được sửa điểm trong cùng học kỳ
+      if (req.body.hoc_ky !== current.hoc_ky || req.body.nam_hoc !== current.nam_hoc) {
+        return res.status(400).json({ 
+          message: 'Admin chỉ được sửa điểm trong cùng học kỳ và năm học' 
+        });
+      }
+    }
+    
     // Lấy số tín chỉ của môn học
     const [hocPhan] = await pool.execute(
       'SELECT so_tin_chi FROM HocPhan WHERE id = ?',
@@ -186,16 +218,16 @@ export async function update(req, res) {
     );
     const soTinChi = hocPhan[0]?.so_tin_chi || 0;
 
-    // 2️⃣ Hợp nhất dữ liệu mới và cũ
+    // 4️⃣ Hợp nhất dữ liệu mới và cũ
     const merged = { ...current, ...req.body };
 
-    // 3️⃣ Tính lại theo dữ liệu hợp nhất
+    // 5️⃣ Tính lại theo dữ liệu hợp nhất
     const auto = tinhDiemTongKetIUH(merged);
     // Tính tin_chi_no: nếu không đạt thì = số tín chỉ, đạt thì = 0
     auto.tin_chi_no = auto.dat === 'Không đạt' ? soTinChi : 0;
     const payload = { ...req.body, ...auto }; // CHỈ gửi field frontend gửi + auto
 
-    // 4️⃣ Update vào DB
+    // 6️⃣ Update vào DB
     const result = await KetQuaHocTapModel.updateKetQuaHocTap(id, payload);
     
     if (result.affectedRows === 0)
@@ -212,7 +244,7 @@ export async function update(req, res) {
     }
 
     res.status(200).json({
-      message: 'Điểm số đã được cập nhật và tính tự động thành công',
+      message: isAdmin ? 'Admin đã cập nhật điểm thành công' : 'Điểm số đã được cập nhật và tính tự động thành công',
       data: auto
     });
   } catch (err) {

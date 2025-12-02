@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import * as KetQuaHocTapController from '../controllers/ketQuaHocTapController.js';
+import { authenticateToken } from '../middleware/auth.js';
 
 const router = Router();
 
@@ -10,7 +11,8 @@ router.get('/by-sinhvien', KetQuaHocTapController.getBySinhVien);
 router.post('/', KetQuaHocTapController.create);
 router.get('/', KetQuaHocTapController.getAll);
 router.get('/:id', KetQuaHocTapController.getById);
-router.put('/:id', KetQuaHocTapController.update);
+// Thêm middleware authenticateToken cho route update để lấy thông tin user
+router.put('/:id', authenticateToken, KetQuaHocTapController.update);
 router.delete('/:id', KetQuaHocTapController.deleteGrade);
 
 export default router;

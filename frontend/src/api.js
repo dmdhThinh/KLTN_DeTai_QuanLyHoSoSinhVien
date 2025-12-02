@@ -83,7 +83,12 @@ export function getGiangVienId() {
 
 // 🧠 Fetch API — luôn dùng token tương ứng role hiện tại
 export async function apiFetch(path, options = {}) {
-  const headers = { 'Content-Type': 'application/json', ...(options.headers || {}) }
+  const token = getToken()
+  const headers = { 
+    'Content-Type': 'application/json',
+    ...(token && !options.headers?.Authorization ? { 'Authorization': `Bearer ${token}` } : {}),
+    ...(options.headers || {})
+  }
   const res = await fetch(path, { ...options, headers })
   if (!res.ok) {
     const text = await res.text()
