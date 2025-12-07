@@ -4,6 +4,7 @@ import { apiFetch } from '../../api';
 import TeacherLayout from '../../components/TeacherLayout';
 import * as XLSX from 'xlsx';
 import ExcelJS from 'exceljs';
+import { AlertModal } from '../../components/Modal';
 
 function SinhVienTrongLop() {
   const { lopHocPhanId } = useParams();
@@ -13,6 +14,7 @@ function SinhVienTrongLop() {
   const [lichHoc, setLichHoc] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showExportMenu, setShowExportMenu] = useState(false);
+  const [alertModal, setAlertModal] = useState({ show: false, message: '', type: 'info' });
 
   // Load thông tin lớp và sinh viên
   useEffect(() => {
@@ -44,12 +46,12 @@ function SinhVienTrongLop() {
 
 const exportDiemDanh = async (loaiDiemDanh) => {
   if (!lopHocPhan || !sinhVienList.length) {
-    alert('Không có dữ liệu để xuất!');
+    setAlertModal({ show: true, message: 'Không có dữ liệu để xuất!', type: 'warning' });
     return;
   }
 
   if (!loaiDiemDanh) {
-    alert('Vui lòng chọn loại buổi (lý thuyết / thực hành / trực tuyến) để xuất điểm danh.');
+    setAlertModal({ show: true, message: 'Vui lòng chọn loại buổi (lý thuyết / thực hành / trực tuyến) để xuất điểm danh.', type: 'warning' });
     return;
   }
 
@@ -91,7 +93,7 @@ const exportDiemDanh = async (loaiDiemDanh) => {
   }
 
   if (cacNgayHoc.length === 0) {
-    alert('Lỗi: Không tìm thấy buổi học nào!');
+    setAlertModal({ show: true, message: 'Lỗi: Không tìm thấy buổi học nào!', type: 'danger' });
     return;
   }
 

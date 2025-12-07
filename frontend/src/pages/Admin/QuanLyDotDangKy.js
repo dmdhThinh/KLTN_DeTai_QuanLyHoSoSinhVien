@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { apiFetch } from '../../api';
 import AdminLayout from '../../components/AdminLayout';
 import dayjs from 'dayjs';
+import { ConfirmModal, AlertModal } from '../../components/Modal';
 
 function QuanLyDotDangKy() {
   const [dotList, setDotList] = useState([]);
@@ -11,6 +12,8 @@ function QuanLyDotDangKy() {
   const [showAutoModal, setShowAutoModal] = useState(false); // New state for Auto Modal
   const [autoNamHoc, setAutoNamHoc] = useState(new Date().getFullYear() + '-' + (new Date().getFullYear() + 1)); // Default year
   const [isEditing, setIsEditing] = useState(false);
+  const [confirmModal, setConfirmModal] = useState({ show: false, message: '', onConfirm: null });
+  const [alertModal, setAlertModal] = useState({ show: false, message: '', type: 'info' });
   
   const [formData, setFormData] = useState({
     id: null,
@@ -75,19 +78,23 @@ function QuanLyDotDangKy() {
     }
   };
 
-  const handleDelete = async (id) => {
-    if (!window.confirm('⚠️ Xác nhận XÓA đợt đăng ký này?')) return;
-
-    try {
-      await apiFetch(`/api/dot-dang-ky/${id}`, {
-        method: 'DELETE'
-      });
-      setMessage('✅ Đã xóa đợt đăng ký!');
-      loadDotDangKy();
-    } catch (err) {
-      console.error('Lỗi xóa:', err);
-      setMessage('❌ Lỗi xóa đợt đăng ký');
-    }
+  const handleDelete = (id) => {
+    setConfirmModal({
+      show: true,
+      message: '⚠️ Xác nhận XÓA đợt đăng ký này?',
+      onConfirm: async () => {
+        try {
+          await apiFetch(`/api/dot-dang-ky/${id}`, {
+            method: 'DELETE'
+          });
+          setMessage('✅ Đã xóa đợt đăng ký!');
+          loadDotDangKy();
+        } catch (err) {
+          console.error('Lỗi xóa:', err);
+          setMessage('❌ Lỗi xóa đợt đăng ký');
+        }
+      }
+    });
   };
 
   const handleAutoGenerate = () => {
@@ -117,7 +124,7 @@ function QuanLyDotDangKy() {
     
     // Validate format đơn giản
     if (!/^\d{4}-\d{4}$/.test(autoNamHoc)) {
-      alert('Định dạng năm học không đúng! Vui lòng nhập YYYY-YYYY (VD: 2025-2026)');
+      setAlertModal({ show: true, message: 'Định dạng năm học không đúng! Vui lòng nhập YYYY-YYYY (VD: 2025-2026)', type: 'warning' });
       return;
     }
 
@@ -183,20 +190,25 @@ function QuanLyDotDangKy() {
   };
 
   // Hàm cưỡng chế Đóng/Mở nhanh
-  const handleQuickToggle = async (dot, currentStatus) => {
+  const handleQuickToggle = (dot, currentStatus) => {
     const newStatus = currentStatus === 'DANG_MO' ? 'DA_DONG' : 'DANG_MO';
-    if (!window.confirm(`Xác nhận chuyển sang trạng thái: ${newStatus}?`)) return;
-
-    try {
-      await apiFetch(`/api/dot-dang-ky/${dot.id}`, {
-        method: 'PUT',
-        body: JSON.stringify({ trangThai: newStatus })
-      });
-      setMessage(`✅ Đã chuyển trạng thái sang ${newStatus}`);
-      loadDotDangKy();
-    } catch (err) {
-      setMessage('❌ Lỗi cập nhật trạng thái');
-    }
+    setConfirmModal({
+      show: true,
+      message: `Xác nhận chuyển sang trạng thái: ${newStatus}?`,
+      onConfirm: async () => {
+        try {
+          await apiFetch(`/api/dot-dang-ky/${dot.id}`, {
+            method: 'PUT',
+            body: JSON.stringify({ trangThai: newStatus })
+          });
+          setMessage(`✅ Đã chuyển trạng thái sang ${newStatus}`);
+          loadDotDangKy();
+        } catch (err) {
+          console.error('Lỗi:', err);
+          setMessage('❌ Lỗi cập nhật trạng thái');
+        }
+      }
+    });
   };
 
   return (
@@ -440,6 +452,23 @@ function QuanLyDotDangKy() {
           </div>
         )}
       </div>
+
+      <ConfirmModal
+        show={confirmModal.show}
+        message={confirmModal.message}
+        onConfirm={() => {
+          if (confirmModal.onConfirm) confirmModal.onConfirm();
+          setConfirmModal({ show: false, message: '', onConfirm: null });
+        }}
+        onCancel={() => setConfirmModal({ show: false, message: '', onConfirm: null })}
+      />
+
+      <AlertModal
+        show={alertModal.show}
+        message={alertModal.message}
+        type={alertModal.type}
+        onClose={() => setAlertModal({ show: false, message: '', type: 'info' })}
+      />
     </AdminLayout>
   );
 }

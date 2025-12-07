@@ -1,4 +1,5 @@
 import { pool } from '../config/db.js';
+import { hasChungChiTiengAnh } from './chungChiTiengAnh.js';
 
 /**
  * Kiểm tra điều kiện tốt nghiệp của sinh viên
@@ -82,11 +83,16 @@ export async function kiemTraDieuKienTotNghiep(sinhVienId) {
 
     const soMonKhoaLuan = khoaLuanRows[0]?.soMonKhoaLuan || 0;
 
-    // 7. Điều kiện tốt nghiệp:
+    // 7. Kiểm tra chứng chỉ tiếng Anh
+    const chungChiTiengAnh = await hasChungChiTiengAnh(sinhVienId);
+    const coChungChiTiengAnh = chungChiTiengAnh !== null;
+
+    // 8. Điều kiện tốt nghiệp:
     // - Đã hoàn thành >= 90% tổng tín chỉ bắt buộc (hoặc >= tổng tín chỉ bắt buộc)
     // - Điểm TB tích lũy >= 5.0
     // - Không còn môn nợ (hoặc chỉ còn <= 10% tổng tín chỉ nợ)
     // - Đã hoàn thành khóa luận/thực tập (nếu có trong chương trình)
+    // - Đã có chứng chỉ tiếng Anh
 
     const tyLeHoanThanh = tongTinChiBatBuoc > 0 
       ? (tinChiHoanThanh / tongTinChiBatBuoc) * 100 
@@ -95,7 +101,21 @@ export async function kiemTraDieuKienTotNghiep(sinhVienId) {
     const duDieuKien = 
       tyLeHoanThanh >= 90 && // Hoàn thành >= 90% tín chỉ bắt buộc
       diemTBTichLuy >= 5.0 && // Điểm TB tích lũy >= 5.0
-      tongTinChiNoFromDTB <= (tongTinChiBatBuoc * 0.1); // Nợ <= 10% tổng tín chỉ
+      tongTinChiNoFromDTB <= (tongTinChiBatBuoc * 0.1) && // Nợ <= 10% tổng tín chỉ
+      coChungChiTiengAnh; // Đã có chứng chỉ tiếng Anh
+
+    // Tạo lý do chi tiết
+    let lyDo = ''
+    if (duDieuKien) {
+      lyDo = 'Đủ điều kiện tốt nghiệp'
+    } else {
+      const reasons = []
+      if (tyLeHoanThanh < 90) reasons.push(`Hoàn thành ${tyLeHoanThanh.toFixed(2)}% (cần >= 90%)`)
+      if (diemTBTichLuy < 5.0) reasons.push(`Điểm TB: ${diemTBTichLuy} (cần >= 5.0)`)
+      if (tongTinChiNoFromDTB > (tongTinChiBatBuoc * 0.1)) reasons.push(`Còn nợ ${tongTinChiNoFromDTB} tín chỉ`)
+      if (!coChungChiTiengAnh) reasons.push('Chưa có chứng chỉ tiếng Anh')
+      lyDo = `Chưa đủ điều kiện: ${reasons.join(', ')}`
+    }
 
     return {
       sinh_vien_id: sinhVienId,
@@ -106,10 +126,10 @@ export async function kiemTraDieuKienTotNghiep(sinhVienId) {
       diemTBTichLuy: Number(diemTBTichLuy),
       tongTinChiDat: Number(tongTinChiDat),
       soMonKhoaLuan: Number(soMonKhoaLuan),
+      coChungChiTiengAnh: coChungChiTiengAnh,
+      chungChiTiengAnh: chungChiTiengAnh,
       duDieuKien: duDieuKien,
-      lyDo: duDieuKien 
-        ? 'Đủ điều kiện tốt nghiệp'
-        : `Chưa đủ điều kiện: ${tyLeHoanThanh < 90 ? `Hoàn thành ${tyLeHoanThanh.toFixed(2)}% (cần >= 90%)` : ''} ${diemTBTichLuy < 5.0 ? `Điểm TB: ${diemTBTichLuy} (cần >= 5.0)` : ''} ${tongTinChiNoFromDTB > (tongTinChiBatBuoc * 0.1) ? `Còn nợ ${tongTinChiNoFromDTB} tín chỉ` : ''}`.trim()
+      lyDo: lyDo
     };
   } catch (err) {
     console.error('❌ Lỗi khi kiểm tra điều kiện tốt nghiệp:', err);
@@ -192,12 +212,106 @@ export async function xetTotNghiep(hoSoId) {
 }
 
 /**
+ * Cập nhật lại trạng thái tất cả hồ sơ trong một đợt xét
+ * @param {number} dotXetId - ID đợt xét
+ * @returns {Object} Kết quả cập nhật
+ */
+export async function capNhatLaiTrangThaiHoSo(dotXetId) {
+  try {
+    // Lấy tất cả hồ sơ trong đợt xét
+    const [hoSoRows] = await pool.execute(
+      `SELECT sinh_vien_id FROM HoSoTotNghiep WHERE dot_xet_id = ?`,
+      [dotXetId]
+    );
+
+    let updatedCount = 0;
+    let duDieuKienCount = 0;
+    let khongDuDieuKienCount = 0;
+
+    // Cập nhật từng hồ sơ
+    for (const hoSo of hoSoRows) {
+      try {
+        const dieuKien = await kiemTraDieuKienTotNghiep(hoSo.sinh_vien_id);
+        
+        let trangThai = 'CHO_DUYET';
+        if (dieuKien.duDieuKien) {
+          trangThai = 'DU_DIEU_KIEN';
+          duDieuKienCount++;
+        } else {
+          trangThai = 'KHONG_DU_DIEU_KIEN';
+          khongDuDieuKienCount++;
+        }
+
+        await pool.execute(
+          `UPDATE HoSoTotNghiep 
+           SET trang_thai = ?, 
+               ly_do_tu_choi = ?,
+               ket_qua_xet_duyet = ?,
+               updated_at = CURRENT_TIMESTAMP
+           WHERE sinh_vien_id = ? AND dot_xet_id = ?`,
+          [
+            trangThai,
+            dieuKien.duDieuKien ? null : dieuKien.lyDo,
+            JSON.stringify(dieuKien),
+            hoSo.sinh_vien_id,
+            dotXetId
+          ]
+        );
+
+        updatedCount++;
+      } catch (err) {
+        console.error(`❌ Lỗi cập nhật hồ sơ SV ${hoSo.sinh_vien_id}:`, err);
+      }
+    }
+
+    return {
+      success: true,
+      updatedCount,
+      duDieuKienCount,
+      khongDuDieuKienCount
+    };
+  } catch (err) {
+    console.error('❌ Lỗi khi cập nhật lại trạng thái hồ sơ:', err);
+    throw err;
+  }
+}
+
+/**
  * Lấy danh sách hồ sơ tốt nghiệp theo đợt xét
  * @param {number} dotXetId - ID đợt xét
  * @returns {Array} Danh sách hồ sơ tốt nghiệp
  */
-export async function getHoSoTotNghiepTheoDot(dotXetId) {
+export async function getHoSoTotNghiepTheoDot(dotXetId, { page = 1, limit = 10, search = '' } = {}) {
   try {
+    let whereClause = 'hstn.dot_xet_id = ?'
+    const params = [dotXetId]
+
+    // Thêm điều kiện tìm kiếm theo mã sinh viên
+    if (search && search.trim()) {
+      whereClause += ' AND sv.ma_sv LIKE ?'
+      params.push(`%${search.trim()}%`)
+    }
+
+    // Đếm tổng số bản ghi
+    const [countRows] = await pool.execute(
+      `SELECT COUNT(*) as total
+       FROM HoSoTotNghiep hstn
+       JOIN SinhVien sv ON hstn.sinh_vien_id = sv.id
+       WHERE ${whereClause}`,
+      params
+    )
+    const total = countRows[0].total
+
+    // Lấy dữ liệu với phân trang
+    const pageNum = parseInt(page) || 1
+    const limitNum = parseInt(limit) || 10
+    const offset = (pageNum - 1) * limitNum
+    
+    // Đảm bảo limit và offset là số nguyên dương
+    const limitValue = Math.max(1, parseInt(limitNum))
+    const offsetValue = Math.max(0, parseInt(offset))
+    
+    // Sử dụng template literal cho LIMIT và OFFSET để tránh lỗi prepared statement
     const [rows] = await pool.execute(
       `SELECT 
         hstn.id,
@@ -207,15 +321,28 @@ export async function getHoSoTotNghiepTheoDot(dotXetId) {
         hstn.trang_thai,
         hstn.ngay_dang_ky,
         hstn.ket_qua_xet_duyet,
-        hstn.ly_do_tu_choi
+        hstn.ly_do_tu_choi,
+        ccta.loai_chung_chi,
+        ccta.ngay_cap as ngay_cap_chung_chi,
+        ccta.diem as diem_chung_chi
        FROM HoSoTotNghiep hstn
        JOIN SinhVien sv ON hstn.sinh_vien_id = sv.id
-       WHERE hstn.dot_xet_id = ?
-       ORDER BY hstn.ngay_dang_ky DESC`,
-      [dotXetId]
-    );
+       LEFT JOIN ChungChiTiengAnh ccta ON sv.id = ccta.sinh_vien_id
+       WHERE ${whereClause}
+       ORDER BY hstn.ngay_dang_ky DESC
+       LIMIT ${limitValue} OFFSET ${offsetValue}`,
+      params
+    )
 
-    return rows;
+    return {
+      data: rows,
+      pagination: {
+        page: pageNum,
+        limit: limitNum,
+        total,
+        totalPages: Math.ceil(total / limitNum)
+      }
+    }
   } catch (err) {
     console.error('❌ Lỗi khi lấy hồ sơ tốt nghiệp:', err);
     throw err;

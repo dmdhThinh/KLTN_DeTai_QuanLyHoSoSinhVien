@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import AdminLayout from '../../components/AdminLayout'
+import { ConfirmModal } from '../../components/Modal'
 
 export default function EditThongBao() {
   const { id } = useParams()
@@ -17,6 +18,7 @@ export default function EditThongBao() {
   const [existingImages, setExistingImages] = useState([])
   const [existingVideo, setExistingVideo] = useState(null)
   const [existingFile, setExistingFile] = useState(null)
+  const [confirmModal, setConfirmModal] = useState({ show: false, message: '', onConfirm: null })
   
   // State để track items bị xóa
   const [deleteVideo, setDeleteVideo] = useState(false)
@@ -124,9 +126,14 @@ export default function EditThongBao() {
                         className="btn btn-danger btn-sm position-absolute top-0 end-0 m-1"
                         style={{ padding: '2px 6px', fontSize: '12px' }}
                         onClick={() => {
-                          if (window.confirm('Ảnh này sẽ bị xóa khi bạn lưu thay đổi. Tiếp tục?')) {
-                            setExistingImages(existingImages.filter((_, idx) => idx !== i))
-                          }
+                          setConfirmModal({
+                            show: true,
+                            message: 'Ảnh này sẽ bị xóa khi bạn lưu thay đổi. Tiếp tục?',
+                            onConfirm: () => {
+                              setExistingImages(existingImages.filter((_, idx) => idx !== i))
+                              setConfirmModal({ show: false, message: '', onConfirm: null })
+                            }
+                          })
                         }}
                       >
                         <i className="bi bi-x-lg"></i>
@@ -156,9 +163,14 @@ export default function EditThongBao() {
                   type="button"
                   className="btn btn-danger btn-sm"
                   onClick={() => {
-                    if (window.confirm('Video này sẽ bị xóa khi bạn lưu thay đổi. Tiếp tục?')) {
-                      setDeleteVideo(true)
-                    }
+                    setConfirmModal({
+                      show: true,
+                      message: 'Video này sẽ bị xóa khi bạn lưu thay đổi. Tiếp tục?',
+                      onConfirm: () => {
+                        setDeleteVideo(true)
+                        setConfirmModal({ show: false, message: '', onConfirm: null })
+                      }
+                    })
                   }}
                 >
                   <i className="bi bi-trash"></i> Xóa video
@@ -207,9 +219,14 @@ export default function EditThongBao() {
                   type="button"
                   className="btn btn-danger btn-sm"
                   onClick={() => {
-                    if (window.confirm('File này sẽ bị xóa khi bạn lưu thay đổi. Tiếp tục?')) {
-                      setDeleteFile(true)
-                    }
+                    setConfirmModal({
+                      show: true,
+                      message: 'File này sẽ bị xóa khi bạn lưu thay đổi. Tiếp tục?',
+                      onConfirm: () => {
+                        setDeleteFile(true)
+                        setConfirmModal({ show: false, message: '', onConfirm: null })
+                      }
+                    })
                   }}
                 >
                   <i className="bi bi-trash"></i> Xóa file
@@ -272,6 +289,15 @@ export default function EditThongBao() {
           <button className="btn btn-success">Cập nhật</button>
         </form>
       </div>
+      <ConfirmModal
+        show={confirmModal.show}
+        message={confirmModal.message}
+        onConfirm={() => {
+          if (confirmModal.onConfirm) confirmModal.onConfirm();
+          setConfirmModal({ show: false, message: '', onConfirm: null });
+        }}
+        onCancel={() => setConfirmModal({ show: false, message: '', onConfirm: null })}
+      />
     </AdminLayout>
   )
 }

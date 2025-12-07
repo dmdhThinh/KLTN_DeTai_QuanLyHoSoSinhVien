@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import AdminLayout from '../../components/AdminLayout'
 import { apiFetch } from '../../api'
+import { ConfirmModal, AlertModal } from '../../components/Modal'
 
 export default function GiangVienList() {
   const navigate = useNavigate()
@@ -13,6 +14,8 @@ export default function GiangVienList() {
   const [message, setMessage] = useState('')
   const [confirmDelete, setConfirmDelete] = useState(null)
   const [importResult, setImportResult] = useState(null)
+  const [confirmModal, setConfirmModal] = useState({ show: false, message: '', onConfirm: null })
+  const [alertModal, setAlertModal] = useState({ show: false, message: '', type: 'info' })
   const [khoas, setKhoas] = useState([])
   const [nganhs, setNganhs] = useState([])
   const [selectedKhoa, setSelectedKhoa] = useState('')
@@ -91,18 +94,23 @@ export default function GiangVienList() {
     }
   }
 
-  const handleDeleteMultiple = async () => {
-    if (!window.confirm(`Bạn có chắc muốn xoá ${selectedIds.length} giảng viên đã chọn?`)) return
-    try {
-      await Promise.all(selectedIds.map((id) => apiFetch(`/api/giangviens/${id}`, { method: 'DELETE' })))
-      setMessage(`✅ Đã xoá ${selectedIds.length} giảng viên thành công!`)
-      setSelectedIds([])
-      loadGiangViens()
-      setTimeout(() => setMessage(''), 3000)
-    } catch (err) {
-      setMessage('❌ Xoá thất bại: ' + err.message)
-      setTimeout(() => setMessage(''), 3000)
-    }
+  const handleDeleteMultiple = () => {
+    setConfirmModal({
+      show: true,
+      message: `Bạn có chắc muốn xoá ${selectedIds.length} giảng viên đã chọn?`,
+      onConfirm: async () => {
+        try {
+          await Promise.all(selectedIds.map((id) => apiFetch(`/api/giangviens/${id}`, { method: 'DELETE' })))
+          setMessage(`✅ Đã xoá ${selectedIds.length} giảng viên thành công!`)
+          setSelectedIds([])
+          loadGiangViens()
+          setTimeout(() => setMessage(''), 3000)
+        } catch (err) {
+          setMessage('❌ Xoá thất bại: ' + err.message)
+          setTimeout(() => setMessage(''), 3000)
+        }
+      }
+    })
   }
 
   const handleDelete = async (id) => {
@@ -157,7 +165,7 @@ export default function GiangVienList() {
       link.remove()
       window.URL.revokeObjectURL(url)
     } catch (err) {
-      alert(err.message)
+      setAlertModal({ show: true, message: err.message, type: 'danger' })
     }
   }
 
@@ -397,6 +405,23 @@ export default function GiangVienList() {
           </div>
         </div>
       )}
+
+      <ConfirmModal
+        show={confirmModal.show}
+        message={confirmModal.message}
+        onConfirm={() => {
+          if (confirmModal.onConfirm) confirmModal.onConfirm();
+          setConfirmModal({ show: false, message: '', onConfirm: null });
+        }}
+        onCancel={() => setConfirmModal({ show: false, message: '', onConfirm: null })}
+      />
+
+      <AlertModal
+        show={alertModal.show}
+        message={alertModal.message}
+        type={alertModal.type}
+        onClose={() => setAlertModal({ show: false, message: '', type: 'info' })}
+      />
     </AdminLayout>
   )
 }

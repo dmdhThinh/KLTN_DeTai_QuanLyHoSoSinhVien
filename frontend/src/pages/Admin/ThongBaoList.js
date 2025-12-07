@@ -1,10 +1,12 @@
 // src/pages/Admin/ThongBaoList.js
 import React, { useEffect, useState } from 'react'
 import AdminLayout from '../../components/AdminLayout'
+import { ConfirmModal } from '../../components/Modal'
 
 export default function ThongBaoList() {
   const [list, setList] = useState([])
   const [search, setSearch] = useState('')
+  const [confirmModal, setConfirmModal] = useState({ show: false, message: '', onConfirm: null })
 
   useEffect(() => {
   loadData()
@@ -20,10 +22,15 @@ const loadData = () => {
      .catch(() => setList([]))
  }
 
- const handleDelete = async (id) => {
-   if (!window.confirm('Bạn có chắc muốn xóa thông báo này?')) return
-   await fetch(`/api/thongbao/${id}`, { method: 'DELETE' })
-   loadData()
+ const handleDelete = (id) => {
+   setConfirmModal({
+     show: true,
+     message: 'Bạn có chắc muốn xóa thông báo này?',
+     onConfirm: async () => {
+       await fetch(`/api/thongbao/${id}`, { method: 'DELETE' })
+       loadData()
+     }
+   })
  }
   return (
     <AdminLayout title="Danh sách tin tức" activeMenu="thongbao">
@@ -86,7 +93,17 @@ const loadData = () => {
         </table>
       </div>
       </div>
-    </div>
+      </div>
+
+      <ConfirmModal
+        show={confirmModal.show}
+        message={confirmModal.message}
+        onConfirm={() => {
+          if (confirmModal.onConfirm) confirmModal.onConfirm();
+          setConfirmModal({ show: false, message: '', onConfirm: null });
+        }}
+        onCancel={() => setConfirmModal({ show: false, message: '', onConfirm: null })}
+      />
     </AdminLayout>
   )
 }

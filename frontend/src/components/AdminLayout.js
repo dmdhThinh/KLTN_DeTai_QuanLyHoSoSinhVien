@@ -118,6 +118,8 @@ export default function AdminLayout({ children, title = '', activeMenu = '' }) {
           <li><a href="/admin/dot-nhap-diem" className={`nav-link ${location.pathname.includes('/dot-nhap-diem') ? 'active bg-info' : 'text-white-50'}`}><i className="bi bi-clipboard-check me-2"></i> Đợt nhập điểm</a></li>
           <li><a href="/admin/hoc-phi" className={`nav-link ${location.pathname.includes('/hoc-phi') ? 'active bg-info' : 'text-white-50'}`}><i className="bi bi-cash-coin me-2"></i> Quản lý học phí</a></li>
           <li><a href="/admin/diem-ren-luyen" className={`nav-link ${location.pathname.includes('/diem-ren-luyen') ? 'active bg-info' : 'text-white-50'}`}><i className="bi bi-award me-2"></i> Điểm rèn luyện</a></li>
+          <li><a href="/admin/chung-chi-tieng-anh" className={`nav-link ${location.pathname.includes('/chung-chi-tieng-anh') && !location.pathname.includes('/quan-ly-chung-chi-tieng-anh') ? 'active bg-info' : 'text-white-50'}`}><i className="bi bi-file-earmark-arrow-up me-2"></i> Import chứng chỉ TA</a></li>
+          <li><a href="/admin/quan-ly-chung-chi-tieng-anh" className={`nav-link ${location.pathname.includes('/quan-ly-chung-chi-tieng-anh') ? 'active bg-info' : 'text-white-50'}`}><i className="bi bi-translate me-2"></i> Quản lý chứng chỉ TA</a></li>
           <li><a href="/admin/xet-hoc-bong" className={`nav-link ${location.pathname.includes('/xet-hoc-bong') ? 'active bg-info' : 'text-white-50'}`}><i className="bi bi-trophy me-2"></i> Xét học bổng</a></li>
           <li><a href="/admin/xet-tot-nghiep" className={`nav-link ${location.pathname.includes('/xet-tot-nghiep') ? 'active bg-info' : 'text-white-50'}`}><i className="bi bi-mortarboard me-2"></i> Xét tốt nghiệp</a></li>
         </ul>

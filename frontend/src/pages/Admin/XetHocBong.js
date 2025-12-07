@@ -1,16 +1,50 @@
 import React, { useState, useEffect } from 'react'
 import AdminLayout from '../../components/AdminLayout'
 import { apiFetch } from '../../api'
-import { exportToExcel } from '../../components/excelExport' 
+import { exportToExcel } from '../../components/excelExport'
+import { ConfirmModal, AlertModal } from '../../components/Modal' 
 
 export default function XetHocBong() {
-  const [namHoc, setNamHoc] = useState('2023-2024')
-  const [hocKy, setHocKy] = useState('HK1')
+  // Hàm tính học kỳ và năm học hiện tại
+  const getCurrentSemester = () => {
+    const now = new Date()
+    const month = now.getMonth() + 1 // 1-12
+    const year = now.getFullYear()
+    
+    let hocKy = 'HK1'
+    let namHoc = ''
+    
+    // HK1: Tháng 9-12 (năm học bắt đầu)
+    // HK2: Tháng 1-5 (năm học tiếp tục)
+    // HK3: Tháng 6-8 (hè, nếu có)
+    
+    if (month >= 9 && month <= 12) {
+      // Học kỳ 1: năm học mới bắt đầu
+      hocKy = 'HK1'
+      namHoc = `${year}-${year + 1}`
+    } else if (month >= 1 && month <= 5) {
+      // Học kỳ 2: tiếp tục năm học
+      hocKy = 'HK2'
+      namHoc = `${year - 1}-${year}`
+    } else {
+      // Học kỳ hè hoặc mặc định HK1
+      hocKy = 'HK1'
+      namHoc = `${year}-${year + 1}`
+    }
+    
+    return { hocKy, namHoc }
+  }
+
+  const currentSem = getCurrentSemester()
+  const [namHoc, setNamHoc] = useState(currentSem.namHoc)
+  const [hocKy, setHocKy] = useState(currentSem.hocKy)
   const [minTinChi, setMinTinChi] = useState(14)
   
   const [results, setResults] = useState([])
   const [loading, setLoading] = useState(false)
   const [saved, setSaved] = useState(false)
+  const [confirmModal, setConfirmModal] = useState({ show: false, message: '', onConfirm: null })
+  const [alertModal, setAlertModal] = useState({ show: false, message: '', type: 'info' })
 
   // Load saved results on init
   useEffect(() => {
@@ -30,51 +64,59 @@ export default function XetHocBong() {
     }
   }
 
-  const handleCalculate = async () => {
-    if (!window.confirm('Hệ thống sẽ tính toán lại dựa trên điểm hiện tại. Tiếp tục?')) return
-
-    setLoading(true)
-    try {
-      const res = await apiFetch('/api/hoc-bong/xet-duyet', {
-        method: 'POST',
-        body: JSON.stringify({
-          hoc_ky: hocKy,
-          nam_hoc: namHoc,
-          min_tin_chi: Number(minTinChi),
-          save: false // Preview mode
-        })
-      })
-      setResults(res.data || [])
-      setSaved(false) // Đánh dấu là đang xem preview (chưa lưu mới)
-    } catch (err) {
-      alert('Lỗi: ' + err.message)
-    } finally {
-      setLoading(false)
-    }
+  const handleCalculate = () => {
+    setConfirmModal({
+      show: true,
+      message: 'Hệ thống sẽ tính toán lại dựa trên điểm hiện tại. Tiếp tục?',
+      onConfirm: async () => {
+        setLoading(true)
+        try {
+          const res = await apiFetch('/api/hoc-bong/xet-duyet', {
+            method: 'POST',
+            body: JSON.stringify({
+              hoc_ky: hocKy,
+              nam_hoc: namHoc,
+              min_tin_chi: Number(minTinChi),
+              save: false // Preview mode
+            })
+          })
+          setResults(res.data || [])
+          setSaved(false) // Đánh dấu là đang xem preview (chưa lưu mới)
+        } catch (err) {
+          setAlertModal({ show: true, message: 'Lỗi: ' + err.message, type: 'danger' })
+        } finally {
+          setLoading(false)
+        }
+      }
+    })
   }
 
-  const handleSave = async () => {
+  const handleSave = () => {
     if (!results.length) return
-    if (!window.confirm('Lưu kết quả này vào hệ thống? Dữ liệu cũ của kỳ này sẽ bị thay thế.')) return
-
-    setLoading(true)
-    try {
-      await apiFetch('/api/hoc-bong/xet-duyet', {
-        method: 'POST',
-        body: JSON.stringify({
-          hoc_ky: hocKy,
-          nam_hoc: namHoc,
-          min_tin_chi: Number(minTinChi),
-          save: true
-        })
-      })
-      setSaved(true)
-      alert('Đã lưu thành công!')
-    } catch (err) {
-      alert('Lỗi lưu: ' + err.message)
-    } finally {
-      setLoading(false)
-    }
+    setConfirmModal({
+      show: true,
+      message: 'Lưu kết quả này vào hệ thống? Dữ liệu cũ của kỳ này sẽ bị thay thế.',
+      onConfirm: async () => {
+        setLoading(true)
+        try {
+          await apiFetch('/api/hoc-bong/xet-duyet', {
+            method: 'POST',
+            body: JSON.stringify({
+              hoc_ky: hocKy,
+              nam_hoc: namHoc,
+              min_tin_chi: Number(minTinChi),
+              save: true
+            })
+          })
+          setSaved(true)
+          setAlertModal({ show: true, message: 'Đã lưu thành công!', type: 'success' })
+        } catch (err) {
+          setAlertModal({ show: true, message: 'Lỗi lưu: ' + err.message, type: 'danger' })
+        } finally {
+          setLoading(false)
+        }
+      }
+    })
   }
   
   const handleExport = () => {
@@ -247,6 +289,22 @@ export default function XetHocBong() {
         </div>
       </div>
 
+      <ConfirmModal
+        show={confirmModal.show}
+        message={confirmModal.message}
+        onConfirm={() => {
+          if (confirmModal.onConfirm) confirmModal.onConfirm();
+          setConfirmModal({ show: false, message: '', onConfirm: null });
+        }}
+        onCancel={() => setConfirmModal({ show: false, message: '', onConfirm: null })}
+      />
+
+      <AlertModal
+        show={alertModal.show}
+        message={alertModal.message}
+        type={alertModal.type}
+        onClose={() => setAlertModal({ show: false, message: '', type: 'info' })}
+      />
     </AdminLayout>
   )
 }

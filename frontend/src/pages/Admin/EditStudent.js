@@ -4,6 +4,7 @@ import { useNavigate, useParams } from 'react-router-dom'
 import AdminLayout from '../../components/AdminLayout'
 import { apiFetch, getSinhVienById } from '../../api'
 import '../../styles/Admin/StudentForm.css'
+import { AlertModal } from '../../components/Modal'
 
 function CenterError({ message, onClose }) {
   if (!message) return null
@@ -35,6 +36,7 @@ export default function EditStudent() {
   const [message, setMessage] = useState('')
   const [photoFile, setPhotoFile] = useState(null)
   const [relativeType, setRelativeType] = useState('cha-me') // Loại người thân
+  const [alertModal, setAlertModal] = useState({ show: false, message: '', type: 'info' })
 
   // dropdown
   useEffect(() => {
@@ -168,7 +170,7 @@ export default function EditStudent() {
         } else {
           const errorData = await res.json().catch(() => ({ message: 'Unknown error' }))
           console.error('❌ Upload ảnh thất bại:', errorData)
-          alert(`⚠️ Upload ảnh thất bại: ${errorData.message}. Thông tin sinh viên vẫn sẽ được lưu.`)
+          setAlertModal({ show: true, message: `⚠️ Upload ảnh thất bại: ${errorData.message}. Thông tin sinh viên vẫn sẽ được lưu.`, type: 'warning' })
         }
       }
 
@@ -566,6 +568,13 @@ export default function EditStudent() {
           </div>
         </div>
       </div>
+
+      <AlertModal
+        show={alertModal.show}
+        message={alertModal.message}
+        type={alertModal.type}
+        onClose={() => setAlertModal({ show: false, message: '', type: 'info' })}
+      />
     </AdminLayout>
   )
 }

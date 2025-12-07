@@ -71,6 +71,8 @@ import YeuCauTuVanSinhVien from './pages/SinhVien/YeuCauTuVan.js'
 import YeuCauTuVanGiangVien from './pages/GiangVien/YeuCauTuVan.js'
 import YeuCauTuVanAdmin from './pages/Admin/YeuCauTuVan.js'
 import ImportDiemRenLuyen from './pages/Admin/ImportDiemRenLuyen.js'
+import ImportChungChiTiengAnh from './pages/Admin/ImportChungChiTiengAnh.js'
+import QuanLyChungChiTiengAnh from './pages/Admin/QuanLyChungChiTiengAnh.js'
 import XetHocBong from './pages/Admin/XetHocBong.js'
 import XetTotNghiep from './pages/Admin/XetTotNghiep.js'
 import ThongBaoGiangVien from './pages/GiangVien/ThongBaoGiangVien.js'
@@ -231,6 +233,16 @@ function App() {
         <Route path="/admin/hocphan/new" element={<PrivateRoute allowRoles={['Quản trị']}><AddHocPhan /></PrivateRoute>} />
         <Route path="/admin/hocphan/edit/:id" element={<PrivateRoute allowRoles={['Quản trị']}><EditHocPhan /></PrivateRoute>} />
 
+        {/* Quản lý học phí */}
+        <Route
+          path="/admin/hoc-phi"
+          element={
+            <PrivateRoute allowRoles={['Quản trị']}>
+              <QuanLyHocPhi />
+            </PrivateRoute>
+          }
+        />
+
         <Route path="/admin/teachers" element={<PrivateRoute allowRoles={['Quản trị']}><GiangVienList /></PrivateRoute>} />
         <Route path="/admin/teachers/new" element={<PrivateRoute allowRoles={['Quản trị']}><AddGiangVien /></PrivateRoute>} />
         <Route path="/admin/teachers/edit/:id" element={<PrivateRoute allowRoles={['Quản trị']}><EditGiangVien /></PrivateRoute>} />
@@ -242,6 +254,8 @@ function App() {
         <Route path="/admin/dot-dang-ky" element={<PrivateRoute allowRoles={['Quản trị']}><QuanLyDotDangKy /></PrivateRoute>} />
         <Route path="/admin/sua-diem/:lopHocPhanId" element={<PrivateRoute allowRoles={['Quản trị']}><SuaDiem /></PrivateRoute>} />
          <Route path="/admin/diem-ren-luyen" element={<PrivateRoute allowRoles={['Quản trị']}><ImportDiemRenLuyen /></PrivateRoute>} />
+         <Route path="/admin/chung-chi-tieng-anh" element={<PrivateRoute allowRoles={['Quản trị']}><ImportChungChiTiengAnh /></PrivateRoute>} />
+         <Route path="/admin/quan-ly-chung-chi-tieng-anh" element={<PrivateRoute allowRoles={['Quản trị']}><QuanLyChungChiTiengAnh /></PrivateRoute>} />
         <Route path="/admin/xet-hoc-bong" element={<PrivateRoute allowRoles={['Quản trị']}><XetHocBong /></PrivateRoute>} />
         <Route path="/admin/xet-tot-nghiep" element={<PrivateRoute allowRoles={['Quản trị']}><XetTotNghiep /></PrivateRoute>} />
         <Route path="/admin/tu-van" element={<PrivateRoute allowRoles={['Quản trị']}><YeuCauTuVanAdmin /></PrivateRoute>} />

@@ -1,14 +1,17 @@
-import React, { useEffect, useState } from 'react'
-import { useLocation, Link } from 'react-router-dom'
-import { getGiangVienId, getGiangVienById, apiFetch, getUnreadCountGiangVien } from '../api'
+import React, { useEffect, useState, useRef } from 'react'
+import { useLocation, Link, useNavigate } from 'react-router-dom'
+import { getGiangVienId, getGiangVienById, apiFetch, getUnreadCountGiangVien, clearAuth } from '../api'
 import { Bell, MessageCircle } from 'lucide-react'
 import 'bootstrap-icons/font/bootstrap-icons.css'
 
 export default function TeacherLayout({ children, title = '', activeMenu = '' }) {
   const location = useLocation()
+  const navigate = useNavigate()
   const [gv, setGv] = useState(null)
   const [tuVanCount, setTuVanCount] = useState(0)
   const [thongBaoCount, setThongBaoCount] = useState(0)
+  const [showMenu, setShowMenu] = useState(false)
+  const menuRef = useRef(null)
 
   // Lấy thông tin giảng viên đang đăng nhập
   useEffect(() => {
@@ -57,6 +60,22 @@ export default function TeacherLayout({ children, title = '', activeMenu = '' })
       delete window.refreshThongBaoCount
     }
   }, [])
+
+  // Đóng dropdown khi click ra ngoài
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (menuRef.current && !menuRef.current.contains(e.target)) {
+        setShowMenu(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [])
+
+  const handleLogout = () => {
+    clearAuth()
+    window.location.href = '/login'
+  }
 
   // Custom scrollbar styling
   useEffect(() => {
@@ -221,13 +240,13 @@ export default function TeacherLayout({ children, title = '', activeMenu = '' })
         </ul>
 
         <div className="border-top pt-3 mt-3">
-          <a
-            href="/login"
+          <button
+            onClick={handleLogout}
             className="btn btn-danger w-100 d-flex align-items-center justify-content-center fw-semibold"
             style={{ borderRadius: '8px' }}
           >
             <i className="bi bi-box-arrow-right me-2"></i> Đăng xuất
-          </a>
+          </button>
         </div>
       </aside>
 
@@ -239,7 +258,7 @@ export default function TeacherLayout({ children, title = '', activeMenu = '' })
             <h5 className="fw-semibold mb-0">{title}</h5>
 
             {/* Tin tức + Tin nhắn + Thông tin GV */}
-            <div className="d-flex align-items-center gap-4">
+            <div className="d-flex align-items-center gap-4" ref={menuRef}>
               {/* Tin tức */}
               <Link
                 to="/teacher/thong-bao"
@@ -274,12 +293,61 @@ export default function TeacherLayout({ children, title = '', activeMenu = '' })
                 )}
               </Link>
 
-              <div className="text-muted small">
-                Xin chào, <b>{gv?.hoTen || 'Giảng viên'}</b>
+              {/* Dropdown thông tin giảng viên */}
+              <div className="text-muted small dropdown">
+                Xin chào,{' '}
+                <b
+                  className="text-primary"
+                  onClick={() => setShowMenu((prev) => !prev)}
+                  style={{ cursor: 'pointer' }}
+                >
+                  {gv?.hoTen || 'Giảng viên'}
+                </b>
+                {showMenu && (
+                  <div
+                    className="student-dropdown-menu shadow-lg border-0 rounded-3 bg-white position-absolute end-0 mt-2"
+                    style={{
+                      zIndex: 9999,
+                      minWidth: '220px',
+                      animation: 'fadeInDown 0.2s ease-out',
+                    }}
+                  >
+                    <button
+                      className="student-dropdown-item"
+                      onClick={() => {
+                        setShowMenu(false)
+                        navigate('/teacher')
+                      }}
+                    >
+                      <i className="bi bi-person-circle me-2" style={{ fontSize: '16px' }}></i>
+                      <span>Thông tin cá nhân</span>
+                    </button>
+                    <div className="dropdown-divider mx-2"></div>
+                    <button
+                      className="student-dropdown-item"
+                      onClick={() => {
+                        setShowMenu(false)
+                        navigate('/change-password')
+                      }}
+                    >
+                      <i className="bi bi-shield-lock me-2" style={{ fontSize: '16px' }}></i>
+                      <span>Đổi mật khẩu</span>
+                    </button>
+                    <div className="dropdown-divider mx-2"></div>
+                    <button
+                      className="student-dropdown-item student-dropdown-item-danger"
+                      onClick={handleLogout}
+                    >
+                      <i className="bi bi-box-arrow-right me-2" style={{ fontSize: '16px' }}></i>
+                      <span>Đăng xuất</span>
+                    </button>
+                  </div>
+                )}
               </div>
               <div
                 className="rounded-circle bg-light border d-flex align-items-center justify-content-center overflow-hidden"
-                style={{ width: 40, height: 40 }}
+                style={{ width: 40, height: 40, cursor: 'pointer' }}
+                onClick={() => setShowMenu((prev) => !prev)}
               >
                 {gv?.anh_the || gv?.anhThe ? (
                   <img

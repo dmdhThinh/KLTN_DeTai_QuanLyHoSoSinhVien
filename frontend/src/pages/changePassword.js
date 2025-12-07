@@ -2,6 +2,7 @@
 import React, { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { apiFetch } from '../api'
+import { AlertModal } from '../components/Modal'
 
 export default function ChangePassword() {
   const navigate = useNavigate()
@@ -9,6 +10,7 @@ export default function ChangePassword() {
   const [confirmPass, setConfirmPass] = useState('')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
+  const [alertModal, setAlertModal] = useState({ show: false, message: '', type: 'info' })
 
   const handleSubmit = async (e) => {
     e.preventDefault()
@@ -22,9 +24,15 @@ export default function ChangePassword() {
          headers: { Authorization: `Bearer ${sessionStorage.getItem('temp_token')}` },
         body: JSON.stringify({ newPassword: newPass }),
       })
-      alert('Đổi mật khẩu thành công! Vui lòng đăng nhập lại.')
-      sessionStorage.removeItem('temp_token')
-      navigate('/login')
+      setAlertModal({ 
+        show: true, 
+        message: 'Đổi mật khẩu thành công! Vui lòng đăng nhập lại.', 
+        type: 'success',
+        onClose: () => {
+          sessionStorage.removeItem('temp_token')
+          navigate('/login')
+        }
+      })
     } catch (err) {
       setError(err.message || 'Không thể đổi mật khẩu')
     } finally {
@@ -61,6 +69,16 @@ export default function ChangePassword() {
           </button>
         </form>
       </div>
+
+      <AlertModal
+        show={alertModal.show}
+        message={alertModal.message}
+        type={alertModal.type}
+        onClose={() => {
+          if (alertModal.onClose) alertModal.onClose();
+          setAlertModal({ show: false, message: '', type: 'info' });
+        }}
+      />
     </div>
   )
 }

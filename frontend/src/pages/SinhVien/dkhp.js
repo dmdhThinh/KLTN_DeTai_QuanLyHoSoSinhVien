@@ -519,17 +519,7 @@ const loadClassDetail = async (lop) => {
         {/* Bảng 1: MÔN HỌC PHẦN ĐANG CHỜ ĐĂNG KÝ */}
         <div className="card mb-4">
           <div className="card-header bg-warning text-dark">
-            <div className="d-flex justify-content-between align-items-center">
-              <strong>MÔN HỌC PHẦN ĐANG CHỜ ĐĂNG KÝ</strong>
-              <small className="fw-semibold">
-                Số TC phải đăng ký trong học kỳ này:&nbsp;
-                <span className="text-primary">{hpTotals.tongTc}</span>
-                &nbsp;(
-                Bắt buộc:&nbsp;<span className="text-danger">{hpTotals.tongTcBatBuoc}</span>,
-                &nbsp;Tự chọn:&nbsp;<span className="text-success">{hpTotals.tongTcTuChon}</span>
-                )
-              </small>
-            </div>
+            <strong>MÔN HỌC PHẦN ĐANG CHỜ ĐĂNG KÝ</strong>
           </div>
               <div className="table-responsive">
                 <table className="table table-hover mb-0">

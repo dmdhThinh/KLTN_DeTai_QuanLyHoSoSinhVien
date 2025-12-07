@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { apiFetch } from "../../api";
 import AdminLayout from "../../components/AdminLayout";
+import { ConfirmModal } from "../../components/Modal";
 
 function SuaDiem() {
   const { lopHocPhanId } = useParams();
@@ -13,6 +14,7 @@ function SuaDiem() {
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState('');
+  const [confirmModal, setConfirmModal] = useState({ show: false, message: '', onConfirm: null });
 
   // Load thông tin lớp học phần và danh sách sinh viên
   const loadData = async () => {
@@ -184,12 +186,12 @@ function SuaDiem() {
   };
 
   // Lưu tất cả điểm
-  const handleSaveAll = async () => {
-    if (!window.confirm('⚠️ Bạn có chắc chắn muốn cập nhật điểm cho tất cả sinh viên?')) {
-      return;
-    }
-
-    setSaving(true);
+  const handleSaveAll = () => {
+    setConfirmModal({
+      show: true,
+      message: '⚠️ Bạn có chắc chắn muốn cập nhật điểm cho tất cả sinh viên?',
+      onConfirm: async () => {
+        setSaving(true);
     setMessage("");
     let successCount = 0;
     let errorCount = 0;
@@ -225,15 +227,17 @@ function SuaDiem() {
         }
       }
 
-      setMessage(`✅ Đã cập nhật thành công ${successCount} sinh viên${errorCount > 0 ? `, ${errorCount} lỗi` : ''}!`);
-      await loadData();
-    } catch (err) {
-      setMessage('❌ Có lỗi xảy ra khi cập nhật điểm!');
-      console.error('Error in handleSaveAll:', err);
-    } finally {
-      setSaving(false);
+        setMessage(`✅ Đã cập nhật thành công ${successCount} sinh viên${errorCount > 0 ? `, ${errorCount} lỗi` : ''}!`);
+        await loadData();
+      } catch (err) {
+        setMessage('❌ Có lỗi xảy ra khi cập nhật điểm!');
+        console.error('Error in handleSaveAll:', err);
+      } finally {
+        setSaving(false);
+      }
     }
-  };
+  });
+};
 
   return (
     <AdminLayout>
@@ -492,6 +496,16 @@ function SuaDiem() {
           )}
         </div>
       </div>
+
+      <ConfirmModal
+        show={confirmModal.show}
+        message={confirmModal.message}
+        onConfirm={() => {
+          if (confirmModal.onConfirm) confirmModal.onConfirm();
+          setConfirmModal({ show: false, message: '', onConfirm: null });
+        }}
+        onCancel={() => setConfirmModal({ show: false, message: '', onConfirm: null })}
+      />
     </AdminLayout>
   );
 }

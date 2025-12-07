@@ -3,12 +3,12 @@ import AdminLayout from '../../components/AdminLayout'
 import { apiFetch } from '../../api'
 import { AlertModal } from '../../components/Modal'
 
-export default function ImportDiemRenLuyen() {
+export default function ImportChungChiTiengAnh() {
   const [importResult, setImportResult] = useState(null)
   const [loading, setLoading] = useState(false)
-  const [diemRenLuyenList, setDiemRenLuyenList] = useState([])
+  const [chungChiList, setChungChiList] = useState([])
   const [loadingList, setLoadingList] = useState(false)
-  const [filters, setFilters] = useState({ hoc_ky: '', nam_hoc: '' })
+  const [search, setSearch] = useState('')
   const [alertModal, setAlertModal] = useState({ show: false, message: '', type: 'info' })
 
   const handleImport = async (e) => {
@@ -20,9 +20,7 @@ export default function ImportDiemRenLuyen() {
     formData.append('file', file)
 
     try {
-      // Gọi trực tiếp API fetch mà không qua apiFetch để gửi formData
-      // Vì apiFetch thường mặc định JSON
-      const res = await fetch('http://localhost:8080/api/import/training-scores', {
+      const res = await fetch('http://localhost:8080/api/import/english-certificate', {
         method: 'POST',
         body: formData,
       })
@@ -31,6 +29,10 @@ export default function ImportDiemRenLuyen() {
       if (!res.ok) throw new Error(data.message || 'Import thất bại')
 
       setImportResult(data)
+      // Reload danh sách sau khi import thành công
+      if (data.thành_công > 0) {
+        loadChungChiList()
+      }
     } catch (err) {
       console.error(err)
       setImportResult({
@@ -39,19 +41,19 @@ export default function ImportDiemRenLuyen() {
       })
     } finally {
       setLoading(false)
-      e.target.value = '' // Reset input
+      e.target.value = ''
     }
   }
 
   const handleDownloadTemplate = async () => {
     try {
-      const response = await fetch('http://localhost:8080/api/import/training-scores/template')
+      const response = await fetch('http://localhost:8080/api/import/english-certificate/template')
       if (!response.ok) throw new Error('Không thể tải file mẫu')
       const blob = await response.blob()
       const url = window.URL.createObjectURL(blob)
       const link = document.createElement('a')
       link.href = url
-      link.download = 'MauNhapDiemRenLuyen.xlsx'
+      link.download = 'MauNhapChungChiTiengAnh.xlsx'
       link.click()
       link.remove()
       window.URL.revokeObjectURL(url)
@@ -60,38 +62,39 @@ export default function ImportDiemRenLuyen() {
     }
   }
 
-  // Load danh sách điểm rèn luyện
-  const loadDiemRenLuyenList = async () => {
+  // Load danh sách chứng chỉ
+  const loadChungChiList = async () => {
     setLoadingList(true)
     try {
       const params = new URLSearchParams()
-      if (filters.hoc_ky) params.append('hoc_ky', filters.hoc_ky)
-      if (filters.nam_hoc) params.append('nam_hoc', filters.nam_hoc)
+      if (search.trim()) {
+        params.append('search', search.trim())
+      }
       
-      const result = await apiFetch(`/api/import/training-scores?${params.toString()}`)
-      setDiemRenLuyenList(result.data || [])
+      const result = await apiFetch(`/api/import/english-certificate?${params.toString()}`)
+      setChungChiList(result.data || [])
     } catch (err) {
-      console.error('Lỗi load danh sách điểm rèn luyện:', err)
+      console.error('Lỗi load danh sách chứng chỉ:', err)
     } finally {
       setLoadingList(false)
     }
   }
 
   useEffect(() => {
-    loadDiemRenLuyenList()
+    loadChungChiList()
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [filters.hoc_ky, filters.nam_hoc])
+  }, [search])
 
   // Reload danh sách sau khi import thành công
   useEffect(() => {
     if (importResult && importResult.thành_công > 0) {
-      loadDiemRenLuyenList()
+      loadChungChiList()
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [importResult])
 
   return (
-    <AdminLayout activeMenu="diem-ren-luyen" title="Nhập điểm rèn luyện">
+    <AdminLayout activeMenu="chung-chi-tieng-anh" title="Nhập chứng chỉ tiếng Anh">
       <div className="card shadow-sm mb-4">
         <div className="card-body">
           <div className="d-flex gap-3 align-items-center mb-3">
@@ -112,9 +115,10 @@ export default function ImportDiemRenLuyen() {
           <div className="alert alert-light border">
              <strong>Lưu ý:</strong>
              <ul className="mb-0 mt-1 ps-3">
-               <li>File Excel cần có các cột: <strong>Mã sinh viên, Học kỳ, Năm học, Điểm rèn luyện</strong></li>
-               <li>Xếp loại sẽ được tự động tính toán nếu không nhập.</li>
-               <li>Hệ thống sẽ cập nhật điểm nếu sinh viên đã có điểm trong học kỳ đó.</li>
+               <li>File Excel cần có các cột: <strong>Mã sinh viên, Loại chứng chỉ, Ngày cấp, Điểm, Ghi chú</strong></li>
+               <li>Loại chứng chỉ: TOEIC, IELTS, TOEFL, hoặc các loại khác</li>
+               <li>Hệ thống sẽ cập nhật chứng chỉ nếu sinh viên đã có chứng chỉ.</li>
+               <li>Nếu trong file có nhiều dòng cùng mã SV, chỉ dòng cuối cùng được lưu.</li>
              </ul>
           </div>
         </div>
@@ -122,36 +126,20 @@ export default function ImportDiemRenLuyen() {
 
       {loading && <div className="text-center py-3">Đang xử lý import...</div>}
 
-      {/* Danh sách điểm rèn luyện đã import */}
+      {/* Danh sách chứng chỉ đã import */}
       <div className="card shadow-sm mb-4">
         <div className="card-header bg-info text-white d-flex justify-content-between align-items-center">
-          <strong>DANH SÁCH ĐIỂM RÈN LUYỆN ĐÃ IMPORT</strong>
+          <strong>DANH SÁCH CHỨNG CHỈ TIẾNG ANH ĐÃ IMPORT</strong>
           <div className="d-flex gap-2">
-            <select
-              className="form-select form-select-sm"
-              style={{ width: '120px' }}
-              value={filters.hoc_ky}
-              onChange={(e) => setFilters({ ...filters, hoc_ky: e.target.value })}
-            >
-              <option value="">Tất cả HK</option>
-              <option value="HK1">HK1</option>
-              <option value="HK2">HK2</option>
-              <option value="HK3">HK3</option>
-              <option value="HK4">HK4</option>
-              <option value="HK5">HK5</option>
-              <option value="HK6">HK6</option>
-              <option value="HK7">HK7</option>
-              <option value="HK8">HK8</option>
-            </select>
             <input
               type="text"
               className="form-control form-control-sm"
-              style={{ width: '150px' }}
-              placeholder="Năm học (VD: 2024-2025)"
-              value={filters.nam_hoc}
-              onChange={(e) => setFilters({ ...filters, nam_hoc: e.target.value })}
+              style={{ width: '250px' }}
+              placeholder="Tìm kiếm mã SV hoặc tên..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
             />
-            <button className="btn btn-sm btn-light" onClick={loadDiemRenLuyenList}>
+            <button className="btn btn-sm btn-light" onClick={loadChungChiList}>
               🔄 Tải lại
             </button>
           </div>
@@ -159,8 +147,8 @@ export default function ImportDiemRenLuyen() {
         <div className="card-body p-0">
           {loadingList ? (
             <div className="text-center py-4">Đang tải...</div>
-          ) : diemRenLuyenList.length === 0 ? (
-            <div className="text-center py-4 text-muted">Chưa có dữ liệu điểm rèn luyện</div>
+          ) : chungChiList.length === 0 ? (
+            <div className="text-center py-4 text-muted">Chưa có dữ liệu chứng chỉ tiếng Anh</div>
           ) : (
             <div className="table-responsive" style={{ maxHeight: '500px' }}>
               <table className="table table-bordered table-hover mb-0">
@@ -170,51 +158,27 @@ export default function ImportDiemRenLuyen() {
                     <th style={{ width: '120px' }}>Mã SV</th>
                     <th>Họ tên</th>
                     <th style={{ width: '100px' }}>Lớp</th>
-                    <th style={{ width: '80px' }}>Học kỳ</th>
-                    <th style={{ width: '120px' }}>Năm học</th>
+                    <th style={{ width: '120px' }}>Loại chứng chỉ</th>
+                    <th style={{ width: '120px' }}>Ngày cấp</th>
                     <th style={{ width: '100px' }} className="text-center">Điểm</th>
-                    <th style={{ width: '120px' }}>Xếp loại</th>
+                    <th>Ghi chú</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {diemRenLuyenList.map((item, index) => {
-                    // Kiểm tra xem có bản ghi trùng mã SV và học kỳ nhưng khác năm học không
-                    const hasDuplicate = diemRenLuyenList.some(
-                      (other, idx) => 
-                        idx !== index && 
-                        other.ma_sv === item.ma_sv && 
-                        other.hoc_ky === item.hoc_ky && 
-                        other.nam_hoc !== item.nam_hoc
-                    )
-                    
-                    return (
-                      <tr key={item.id} className={hasDuplicate ? 'table-warning' : ''}>
-                        <td>{index + 1}</td>
-                        <td>
-                          {item.ma_sv}
-                          {hasDuplicate && <span className="badge bg-secondary ms-1" title="Có bản ghi khác năm học">⚠</span>}
-                        </td>
-                        <td>{item.ho_ten}</td>
-                        <td>{item.ten_lop || '-'}</td>
-                        <td>{item.hoc_ky}</td>
-                        <td>
-                          <strong>{item.nam_hoc}</strong>
-                        </td>
-                        <td className="text-center fw-bold">{item.so_diem}</td>
-                        <td>
-                          <span className={`badge ${
-                            item.xep_loai === 'Xuất sắc' ? 'bg-success' :
-                            item.xep_loai === 'Tốt' ? 'bg-info' :
-                            item.xep_loai === 'Khá' ? 'bg-primary' :
-                            item.xep_loai === 'Trung bình' ? 'bg-warning' :
-                            'bg-danger'
-                          }`}>
-                            {item.xep_loai}
-                          </span>
-                        </td>
-                      </tr>
-                    )
-                  })}
+                  {chungChiList.map((item, index) => (
+                    <tr key={item.id}>
+                      <td>{index + 1}</td>
+                      <td>{item.ma_sv}</td>
+                      <td>{item.ho_ten}</td>
+                      <td>{item.ten_lop || '-'}</td>
+                      <td>
+                        <span className="badge bg-primary">{item.loai_chung_chi}</span>
+                      </td>
+                      <td>{item.ngay_cap ? new Date(item.ngay_cap).toLocaleDateString('vi-VN') : '-'}</td>
+                      <td className="text-center fw-bold">{item.diem || '-'}</td>
+                      <td><small>{item.ghi_chu || '-'}</small></td>
+                    </tr>
+                  ))}
                 </tbody>
               </table>
             </div>
@@ -257,7 +221,7 @@ export default function ImportDiemRenLuyen() {
               </div>
             ) : (
               <div className="p-4 text-center text-success">
-                <h5 className="mb-0">🎉 Đã cập nhật điểm rèn luyện thành công!</h5>
+                <h5 className="mb-0">🎉 Đã cập nhật chứng chỉ tiếng Anh thành công!</h5>
               </div>
             )}
           </div>
@@ -273,3 +237,4 @@ export default function ImportDiemRenLuyen() {
     </AdminLayout>
   )
 }
+

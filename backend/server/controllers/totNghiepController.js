@@ -112,6 +112,7 @@ export async function xetTotNghiep(req, res) {
 export async function getHoSoTheoDot(req, res) {
   try {
     const { dotXetId } = req.params;
+    const { page = 1, limit = 10, search = '' } = req.query;
     
     if (!dotXetId) {
       return res.status(400).json({
@@ -120,11 +121,32 @@ export async function getHoSoTheoDot(req, res) {
       });
     }
 
-    const data = await TotNghiepModel.getHoSoTotNghiepTheoDot(Number(dotXetId));
+    const result = await TotNghiepModel.getHoSoTotNghiepTheoDot(Number(dotXetId), {
+      page: parseInt(page),
+      limit: parseInt(limit),
+      search: search.toString()
+    });
+
+    // Lấy thống kê tổng (không phân trang)
+    const statsResult = await TotNghiepModel.getHoSoTotNghiepTheoDot(Number(dotXetId), {
+      page: 1,
+      limit: 999999, // Lấy tất cả để tính thống kê
+      search: search.toString()
+    });
+
+    // Tính thống kê từ tất cả dữ liệu
+    const stats = {
+      total: statsResult.data.length,
+      duDieuKien: statsResult.data.filter(h => h.trang_thai === 'DU_DIEU_KIEN').length,
+      daTotNghiep: statsResult.data.filter(h => h.trang_thai === 'DA_TOT_NGHIEP').length,
+      khongDuDieuKien: statsResult.data.filter(h => h.trang_thai === 'KHONG_DU_DIEU_KIEN').length
+    };
 
     return res.json({
       success: true,
-      data
+      data: result.data,
+      pagination: result.pagination,
+      stats: stats
     });
   } catch (err) {
     console.error('❌ Lỗi khi lấy hồ sơ tốt nghiệp:', err);
@@ -184,6 +206,53 @@ export async function getKhoaHoc(req, res) {
     return res.status(500).json({
       success: false,
       message: 'Lỗi server khi lấy danh sách khóa học',
+      error: err.message
+    });
+  }
+}
+
+/**
+ * Thống kê khóa học: khóa nào đã học xong, khóa nào chưa học xong
+ * GET /api/tot-nghiep/thong-ke-khoa-hoc
+ */
+export async function thongKeKhoaHoc(req, res) {
+  try {
+    const [stats] = await pool.execute(`
+      SELECT 
+        sv.khoa_hoc,
+        COUNT(DISTINCT sv.id) as tong_sv,
+        COUNT(DISTINCT CASE WHEN hstn.trang_thai = 'DA_TOT_NGHIEP' THEN sv.id END) as da_tot_nghiep,
+        COUNT(DISTINCT CASE WHEN hstn.trang_thai = 'DU_DIEU_KIEN' THEN sv.id END) as du_dieu_kien,
+        COUNT(DISTINCT CASE WHEN hstn.trang_thai = 'KHONG_DU_DIEU_KIEN' THEN sv.id END) as khong_du_dieu_kien,
+        COUNT(DISTINCT CASE WHEN hstn.id IS NULL THEN sv.id END) as chua_tao_ho_so
+      FROM SinhVien sv
+      LEFT JOIN HoSoTotNghiep hstn ON sv.id = hstn.sinh_vien_id
+      WHERE sv.khoa_hoc IS NOT NULL AND sv.khoa_hoc != ''
+      GROUP BY sv.khoa_hoc
+      ORDER BY sv.khoa_hoc DESC
+    `);
+
+    const result = stats.map(stat => ({
+      khoa_hoc: stat.khoa_hoc,
+      tong_sv: stat.tong_sv,
+      da_tot_nghiep: stat.da_tot_nghiep,
+      du_dieu_kiên: stat.du_dieu_kien || 0,
+      khong_du_dieu_kiên: stat.khong_du_dieu_kien || 0,
+      chua_tao_ho_so: stat.chua_tao_ho_so,
+      ty_le_tot_nghiep: stat.tong_sv > 0 ? ((stat.da_tot_nghiep / stat.tong_sv) * 100).toFixed(2) : 0,
+      trang_thai: stat.da_tot_nghiep === stat.tong_sv ? 'Đã học xong' : 
+                  stat.da_tot_nghiep > 0 ? 'Đang học' : 'Chưa học xong'
+    }));
+
+    return res.json({
+      success: true,
+      data: result
+    });
+  } catch (err) {
+    console.error('❌ Lỗi khi thống kê khóa học:', err);
+    return res.status(500).json({
+      success: false,
+      message: 'Lỗi server khi thống kê khóa học',
       error: err.message
     });
   }
@@ -363,6 +432,85 @@ export async function xetHangLoat(req, res) {
     return res.status(500).json({
       success: false,
       message: 'Lỗi server khi xét tốt nghiệp hàng loạt',
+      error: err.message
+    });
+  }
+}
+
+/**
+ * Cập nhật lại trạng thái tất cả hồ sơ trong đợt xét
+ * POST /api/tot-nghiep/cap-nhat-lai-trang-thai
+ */
+export async function capNhatLaiTrangThai(req, res) {
+  try {
+    const { dot_xet_id } = req.body;
+    
+    if (!dot_xet_id) {
+      return res.status(400).json({
+        success: false,
+        message: 'Thiếu thông tin đợt xét'
+      });
+    }
+
+    const result = await TotNghiepModel.capNhatLaiTrangThaiHoSo(Number(dot_xet_id));
+
+    return res.json({
+      success: true,
+      message: `Đã cập nhật ${result.updatedCount} hồ sơ. Đủ điều kiện: ${result.duDieuKienCount}, Không đủ điều kiện: ${result.khongDuDieuKienCount}`,
+      data: result
+    });
+  } catch (err) {
+    console.error('❌ Lỗi khi cập nhật lại trạng thái hồ sơ:', err);
+    return res.status(500).json({
+      success: false,
+      message: 'Lỗi server khi cập nhật lại trạng thái hồ sơ',
+      error: err.message
+    });
+  }
+}
+
+/**
+ * Xóa hồ sơ tốt nghiệp theo khóa học
+ * DELETE /api/tot-nghiep/xoa-theo-khoa-hoc
+ */
+export async function xoaHoSoTheoKhoaHoc(req, res) {
+  try {
+    const { khoa_hoc, dot_xet_id } = req.body;
+    
+    if (!khoa_hoc) {
+      return res.status(400).json({
+        success: false,
+        message: 'Thiếu thông tin khóa học'
+      });
+    }
+
+    let query = `
+      DELETE hstn FROM HoSoTotNghiep hstn
+      INNER JOIN SinhVien sv ON hstn.sinh_vien_id = sv.id
+      WHERE sv.khoa_hoc = ?
+    `;
+    const params = [khoa_hoc];
+
+    // Nếu có dot_xet_id, chỉ xóa trong đợt xét đó
+    if (dot_xet_id) {
+      query += ' AND hstn.dot_xet_id = ?';
+      params.push(dot_xet_id);
+    }
+
+    const [result] = await pool.execute(query, params);
+
+    return res.json({
+      success: true,
+      message: `Đã xóa ${result.affectedRows} hồ sơ tốt nghiệp của khóa ${khoa_hoc}`,
+      data: {
+        deletedCount: result.affectedRows
+      }
+    });
+  } catch (err) {
+    console.error('❌ Lỗi khi xóa hồ sơ tốt nghiệp:', err);
+    return res.status(500).json({
+      success: false,
+      message: 'Lỗi server khi xóa hồ sơ tốt nghiệp',
       error: err.message
     });
   }

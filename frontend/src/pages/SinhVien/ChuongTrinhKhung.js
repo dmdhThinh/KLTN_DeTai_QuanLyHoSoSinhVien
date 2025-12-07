@@ -58,7 +58,7 @@ export default function ChuongTrinhKhung() {
   const hasData = data && data.danh_sach && data.danh_sach.length > 0
 
   // Render một bảng
-  const renderTable = (danhSach, tieuDe, tongTc) => {
+  const renderTable = (danhSach, tieuDe, tongTc, showTotal = true) => {
     if (!danhSach.length) return null
 
     return (
@@ -66,7 +66,7 @@ export default function ChuongTrinhKhung() {
         {/* Section header */}
         <div className="section-header">
           <div className="section-title">{tieuDe}</div>
-          <div className="section-total">TỔNG SỐ TC: {tongTc}</div>
+          {showTotal && <div className="section-total">TỔNG SỐ TC: {tongTc}</div>}
         </div>
 
         {/* Bảng */}
@@ -205,8 +205,8 @@ export default function ChuongTrinhKhung() {
         ) : (
           <>
             {/* Render 2 bảng: Bắt buộc và Tự chọn */}
-            {renderTable(monBatBuoc, 'HỌC PHẦN BẮT BUỘC', tongTcBatBuoc)}
-            {renderTable(monTuChon, 'HỌC PHẦN TỰ CHỌN', tongTcTuChon)}
+            {renderTable(monBatBuoc, 'HỌC PHẦN BẮT BUỘC', tongTcBatBuoc, true)}
+            {renderTable(monTuChon, 'HỌC PHẦN TỰ CHỌN', tongTcTuChon, false)}
           </>
         )}
 

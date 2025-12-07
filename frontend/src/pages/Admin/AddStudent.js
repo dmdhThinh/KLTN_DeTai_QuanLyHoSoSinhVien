@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { apiFetch, createSinhVien } from '../../api'
 import AdminLayout from '../../components/AdminLayout'
 import '../../styles/Admin/StudentForm.css'
+import { AlertModal } from '../../components/Modal'
 
 function CenterError({ message, onClose }) {
   if (!message) return null
@@ -46,6 +47,7 @@ export default function AddStudent() {
   const [photoFile, setPhotoFile] = useState(null)
   const [photoPreview, setPhotoPreview] = useState(null)
   const [message, setMessage] = useState('')
+  const [alertModal, setAlertModal] = useState({ show: false, message: '', type: 'info' })
 
   // dữ liệu dropdown
   const [khoas, setKhoas] = useState([])
@@ -329,14 +331,14 @@ const onSubmit = async (e) => {
         if (!res.ok) {
           const errorData = await res.json().catch(() => ({ message: 'Unknown error' }));
           console.error('❌ Upload ảnh thất bại:', errorData);
-          alert(`⚠️ Sinh viên đã được tạo nhưng upload ảnh thất bại: ${errorData.message || 'Lỗi không xác định'}`);
+          setAlertModal({ show: true, message: `⚠️ Sinh viên đã được tạo nhưng upload ảnh thất bại: ${errorData.message || 'Lỗi không xác định'}`, type: 'warning' });
         } else {
           const data = await res.json();
           console.log('✅ Upload ảnh thành công:', data);
         }
       } catch (err) {
         console.error('❌ Lỗi upload ảnh:', err);
-        alert(`⚠️ Sinh viên đã được tạo nhưng upload ảnh thất bại: ${err.message}`);
+        setAlertModal({ show: true, message: `⚠️ Sinh viên đã được tạo nhưng upload ảnh thất bại: ${err.message}`, type: 'warning' });
       }
     } else {
       console.log('ℹ️ Không có ảnh để upload hoặc không có ID sinh viên');
@@ -706,6 +708,13 @@ const onSubmit = async (e) => {
           </div>
         </div>
       </div>
+
+      <AlertModal
+        show={alertModal.show}
+        message={alertModal.message}
+        type={alertModal.type}
+        onClose={() => setAlertModal({ show: false, message: '', type: 'info' })}
+      />
     </AdminLayout>
   )
 }

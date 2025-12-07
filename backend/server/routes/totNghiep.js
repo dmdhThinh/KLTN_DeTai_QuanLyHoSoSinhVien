@@ -30,5 +30,14 @@ router.post('/dot-xet', TotNghiepController.taoDotXet);
 // Lấy danh sách khóa học
 router.get('/khoa-hoc', TotNghiepController.getKhoaHoc);
 
+// Thống kê khóa học
+router.get('/thong-ke-khoa-hoc', TotNghiepController.thongKeKhoaHoc);
+
+// Cập nhật lại trạng thái hồ sơ
+router.post('/cap-nhat-lai-trang-thai', TotNghiepController.capNhatLaiTrangThai);
+
+// Xóa hồ sơ tốt nghiệp theo khóa học
+router.delete('/xoa-theo-khoa-hoc', TotNghiepController.xoaHoSoTheoKhoaHoc);
+
 export default router;
 

@@ -3,6 +3,7 @@ import React, { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import AdminLayout from '../../components/AdminLayout'
 import { apiFetch } from '../../api'
+import { ConfirmModal, AlertModal } from '../../components/Modal'
 
 export default function StudentList() {
   const navigate = useNavigate()
@@ -14,6 +15,8 @@ export default function StudentList() {
   const [message, setMessage] = useState('')
   const [confirmDelete, setConfirmDelete] = useState(null)
   const [importResult, setImportResult] = useState(null)
+  const [confirmModal, setConfirmModal] = useState({ show: false, message: '', onConfirm: null })
+  const [alertModal, setAlertModal] = useState({ show: false, message: '', type: 'info' })
 
   const [khoas, setKhoas] = useState([])
   const [nganhs, setNganhs] = useState([])
@@ -104,22 +107,27 @@ export default function StudentList() {
   }
 
   // ✅ bulk delete
-  const handleBulkDelete = async () => {
+  const handleBulkDelete = () => {
     if (!selectedIds.length) return
-    if (!window.confirm(`Bạn chắc chắn xoá ${selectedIds.length} sinh viên đã chọn?`)) return
-    try {
-      await apiFetch('/api/sinhviens/bulk-delete', {
-        method: 'POST',
-        body: JSON.stringify({ ids: selectedIds })
-      })
-      setSelectedIds([])
-      setMessage('Đã xoá các sinh viên đã chọn!')
-      await loadStudents()
-      setTimeout(() => setMessage(''), 3000)
-    } catch (err) {
-      setMessage('Xoá nhiều thất bại: ' + (err.message || 'Lỗi'))
-      setTimeout(() => setMessage(''), 3000)
-    }
+    setConfirmModal({
+      show: true,
+      message: `Bạn chắc chắn xoá ${selectedIds.length} sinh viên đã chọn?`,
+      onConfirm: async () => {
+        try {
+          await apiFetch('/api/sinhviens/bulk-delete', {
+            method: 'POST',
+            body: JSON.stringify({ ids: selectedIds })
+          })
+          setSelectedIds([])
+          setMessage('Đã xoá các sinh viên đã chọn!')
+          await loadStudents()
+          setTimeout(() => setMessage(''), 3000)
+        } catch (err) {
+          setMessage('Xoá nhiều thất bại: ' + (err.message || 'Lỗi'))
+          setTimeout(() => setMessage(''), 3000)
+        }
+      }
+    })
   }
 
   // tick tất cả hàng trên TRANG hiện tại
@@ -186,7 +194,7 @@ export default function StudentList() {
       link.remove()
       window.URL.revokeObjectURL(url)
     } catch (err) {
-      alert(err.message)
+      setAlertModal({ show: true, message: err.message, type: 'danger' })
     }
   }
 
@@ -431,6 +439,23 @@ export default function StudentList() {
           </div>
         </div>
       )}
+
+      <ConfirmModal
+        show={confirmModal.show}
+        message={confirmModal.message}
+        onConfirm={() => {
+          if (confirmModal.onConfirm) confirmModal.onConfirm();
+          setConfirmModal({ show: false, message: '', onConfirm: null });
+        }}
+        onCancel={() => setConfirmModal({ show: false, message: '', onConfirm: null })}
+      />
+
+      <AlertModal
+        show={alertModal.show}
+        message={alertModal.message}
+        type={alertModal.type}
+        onClose={() => setAlertModal({ show: false, message: '', type: 'info' })}
+      />
     </AdminLayout>
   )
 }

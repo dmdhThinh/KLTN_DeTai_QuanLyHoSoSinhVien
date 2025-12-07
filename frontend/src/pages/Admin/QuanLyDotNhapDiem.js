@@ -1,12 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { apiFetch } from '../../api';
 import AdminLayout from '../../components/AdminLayout';
+import { ConfirmModal } from '../../components/Modal';
 
 function QuanLyDotNhapDiem() {
   const [dotList, setDotList] = useState([]);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
   const [showModal, setShowModal] = useState(false);
+  const [confirmModal, setConfirmModal] = useState({ show: false, message: '', onConfirm: null });
   const [formData, setFormData] = useState({
     hocKy: 'HK1',
     namHoc: '',
@@ -30,22 +32,24 @@ function QuanLyDotNhapDiem() {
     }
   };
 
-  const handleUpdateTrangThai = async (hocKy, namHoc, trangThai) => {
-    if (!window.confirm(`Xác nhận chuyển sang trạng thái: ${getTrangThaiText(trangThai)}?`)) {
-      return;
-    }
-
-    try {
-      await apiFetch('/api/dot-nhap-diem/update', {
-        method: 'PUT',
-        body: JSON.stringify({ hocKy, namHoc, trangThai })
-      });
-      setMessage(`✅ Đã cập nhật trạng thái: ${getTrangThaiText(trangThai)}`);
-      loadDotNhapDiem();
-    } catch (err) {
-      console.error('Lỗi update:', err);
-      setMessage('❌ Lỗi cập nhật trạng thái');
-    }
+  const handleUpdateTrangThai = (hocKy, namHoc, trangThai) => {
+    setConfirmModal({
+      show: true,
+      message: `Xác nhận chuyển sang trạng thái: ${getTrangThaiText(trangThai)}?`,
+      onConfirm: async () => {
+        try {
+          await apiFetch('/api/dot-nhap-diem/update', {
+            method: 'PUT',
+            body: JSON.stringify({ hocKy, namHoc, trangThai })
+          });
+          setMessage(`✅ Đã cập nhật trạng thái: ${getTrangThaiText(trangThai)}`);
+          loadDotNhapDiem();
+        } catch (err) {
+          console.error('Lỗi update:', err);
+          setMessage('❌ Lỗi cập nhật trạng thái');
+        }
+      }
+    });
   };
 
   const handleCreate = async (e) => {
@@ -71,21 +75,23 @@ function QuanLyDotNhapDiem() {
     }
   };
 
-  const handleDelete = async (hocKy, namHoc) => {
-    if (!window.confirm(`⚠️ Xác nhận XÓA đợt nhập điểm ${hocKy} ${namHoc}?\n\nLưu ý: Điểm đã nhập sẽ KHÔNG bị xóa, chỉ xóa thông tin đợt nhập điểm.`)) {
-      return;
-    }
-
-    try {
-      await apiFetch(`/api/dot-nhap-diem/delete/${hocKy}/${namHoc}`, {
-        method: 'DELETE'
-      });
-      setMessage('✅ Đã xóa đợt nhập điểm!');
-      loadDotNhapDiem();
-    } catch (err) {
-      console.error('Lỗi xóa:', err);
-      setMessage('❌ Lỗi xóa đợt nhập điểm');
-    }
+  const handleDelete = (hocKy, namHoc) => {
+    setConfirmModal({
+      show: true,
+      message: `⚠️ Xác nhận XÓA đợt nhập điểm ${hocKy} ${namHoc}?\n\nLưu ý: Điểm đã nhập sẽ KHÔNG bị xóa, chỉ xóa thông tin đợt nhập điểm.`,
+      onConfirm: async () => {
+        try {
+          await apiFetch(`/api/dot-nhap-diem/delete/${hocKy}/${namHoc}`, {
+            method: 'DELETE'
+          });
+          setMessage('✅ Đã xóa đợt nhập điểm!');
+          loadDotNhapDiem();
+        } catch (err) {
+          console.error('Lỗi xóa:', err);
+          setMessage('❌ Lỗi xóa đợt nhập điểm');
+        }
+      }
+    });
   };
 
   const getTrangThaiText = (trangThai) => {

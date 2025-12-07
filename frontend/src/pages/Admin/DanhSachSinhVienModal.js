@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { apiFetch } from '../../api'; // Điều chỉnh đường dẫn import apiFetch tuỳ cấu trúc
+import { ConfirmModal } from '../../components/Modal';
 
 function DanhSachSinhVienModal({ show, onHide, lopHocPhan }) {
   const [sinhVienList, setSinhVienList] = useState([]);
@@ -7,6 +8,7 @@ function DanhSachSinhVienModal({ show, onHide, lopHocPhan }) {
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
+  const [confirmModal, setConfirmModal] = useState({ show: false, message: '', onConfirm: null });
 
   // Load danh sách sinh viên khi modal mở
   useEffect(() => {
@@ -57,22 +59,26 @@ function DanhSachSinhVienModal({ show, onHide, lopHocPhan }) {
     }
   };
 
-  const handleRemove = async (sinhVienId, tenSV) => {
-    if (!window.confirm(`Bạn có chắc muốn xóa sinh viên ${tenSV} khỏi lớp này?`)) return;
-    
-    setMessage('');
-    setError('');
+  const handleRemove = (sinhVienId, tenSV) => {
+    setConfirmModal({
+      show: true,
+      message: `Bạn có chắc muốn xóa sinh viên ${tenSV} khỏi lớp này?`,
+      onConfirm: async () => {
+        setMessage('');
+        setError('');
 
-    try {
-      await apiFetch(`/api/lophocphan/${lopHocPhan.id}/remove-student/${sinhVienId}`, {
-        method: 'DELETE',
-      });
-      setMessage('✅ Xóa sinh viên thành công');
-      loadSinhVien();
-    } catch (err) {
-      console.error('Lỗi xóa SV:', err);
-      setError(`❌ ${err.message || 'Lỗi khi xóa sinh viên'}`);
-    }
+        try {
+          await apiFetch(`/api/lophocphan/${lopHocPhan.id}/remove-student/${sinhVienId}`, {
+            method: 'DELETE',
+          });
+          setMessage('✅ Xóa sinh viên thành công');
+          loadSinhVien();
+        } catch (err) {
+          console.error('Lỗi xóa SV:', err);
+          setError(`❌ ${err.message || 'Lỗi khi xóa sinh viên'}`);
+        }
+      }
+    });
   };
 
   if (!show) return null;
@@ -176,6 +182,16 @@ function DanhSachSinhVienModal({ show, onHide, lopHocPhan }) {
           </div>
         </div>
       </div>
+
+      <ConfirmModal
+        show={confirmModal.show}
+        message={confirmModal.message}
+        onConfirm={() => {
+          if (confirmModal.onConfirm) confirmModal.onConfirm();
+          setConfirmModal({ show: false, message: '', onConfirm: null });
+        }}
+        onCancel={() => setConfirmModal({ show: false, message: '', onConfirm: null })}
+      />
     </div>
   );
 }

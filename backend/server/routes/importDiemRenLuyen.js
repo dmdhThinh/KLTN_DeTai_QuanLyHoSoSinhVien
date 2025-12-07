@@ -3,7 +3,7 @@ import multer from 'multer'
 import XLSX from 'xlsx'
 import path from 'path'
 import fs from 'fs'
-import { importDiemRenLuyen } from '../models/diemRenLuyen.js'
+import { importDiemRenLuyen, getDiemRenLuyenList } from '../models/diemRenLuyen.js'
 
 const router = Router()
 const upload = multer({ dest: 'uploads/' })
@@ -92,23 +92,50 @@ router.post('/training-scores', upload.single('file'), async (req, res) => {
         hoc_ky: hoc_ky.toString().trim(),
         nam_hoc: nam_hoc.toString().trim(),
         so_diem: Number(so_diem),
-        xep_loai
+        xep_loai,
+        dong: i + 2 // Lưu số dòng để báo lỗi nếu cần
       })
     }
 
-    // Gọi model xử lý batch import
-    const result = await importDiemRenLuyen(dataToImport)
+    // Loại bỏ trùng lặp trong file: chỉ giữ dòng cuối cùng (mới nhất) cho mỗi cặp (ma_sv, hoc_ky, nam_hoc)
+    const uniqueData = new Map()
+    const duplicateLines = [] // Lưu các dòng bị ghi đè để thông báo
+    
+    for (const item of dataToImport) {
+      const key = `${item.ma_sv}_${item.hoc_ky}_${item.nam_hoc}`
+      if (uniqueData.has(key)) {
+        // Đã có bản ghi trước đó, lưu thông tin dòng bị ghi đè
+        duplicateLines.push({
+          dòng: uniqueData.get(key).dong,
+          lỗi: `Bị ghi đè bởi dòng ${item.dong} (cùng mã SV, học kỳ, năm học)`
+        })
+      }
+      // Luôn cập nhật với dòng mới nhất
+      uniqueData.set(key, item)
+    }
 
-    // Gộp lỗi parse và lỗi db
-    const finalErrors = [...errors, ...result.errors]
+    // Chuyển Map thành Array (chỉ lấy các giá trị - dòng mới nhất)
+    const finalDataToImport = Array.from(uniqueData.values())
+
+    // Gọi model xử lý batch import
+    const result = await importDiemRenLuyen(finalDataToImport)
+
+    // Gộp lỗi parse, lỗi duplicate trong file, và lỗi db
+    const finalErrors = [...errors, ...duplicateLines, ...result.errors]
 
     // Cleanup uploaded file
     fs.unlinkSync(req.file.path)
 
+    const duplicateCount = duplicateLines.length
+    const message = duplicateCount > 0 
+      ? `Đã xử lý ${sheet.length} dòng. ${duplicateCount} dòng trùng đã được ghi đè bằng dòng mới nhất.`
+      : `Đã xử lý ${sheet.length} dòng.`
+
     res.json({
-      message: `Đã xử lý ${sheet.length} dòng.`,
+      message,
       thành_công: result.successCount,
-      lỗi: finalErrors
+      lỗi: finalErrors,
+      duplicate_count: duplicateCount
     })
 
   } catch (err) {
@@ -117,6 +144,20 @@ router.post('/training-scores', upload.single('file'), async (req, res) => {
         fs.unlinkSync(req.file.path)
     }
     res.status(500).json({ message: 'Lỗi server khi import điểm rèn luyện' })
+  }
+})
+
+// =======================================
+// 📋 3️⃣ API: Lấy danh sách điểm rèn luyện đã import
+// =======================================
+router.get('/training-scores', async (req, res) => {
+  try {
+    const { hoc_ky, nam_hoc, page = 1, limit = 50 } = req.query
+    const result = await getDiemRenLuyenList({ hoc_ky, nam_hoc, page: parseInt(page), limit: parseInt(limit) })
+    res.json(result)
+  } catch (err) {
+    console.error('❌ Lỗi lấy danh sách điểm rèn luyện:', err)
+    res.status(500).json({ message: 'Lỗi server khi lấy danh sách điểm rèn luyện' })
   }
 })
 

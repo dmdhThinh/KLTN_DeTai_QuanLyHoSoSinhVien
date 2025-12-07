@@ -23,6 +23,7 @@ import hocphanRoutes from './routes/hocphan.js'
 
 import importGiangVienRoutes from './routes/importGiangVien.js'
 import importDiemRenLuyenRoutes from './routes/importDiemRenLuyen.js'
+import importChungChiTiengAnhRoutes from './routes/importChungChiTiengAnh.js'
 import taiKhoanRoutes from './routes/taiKhoan.js'
 import ketQuaHocTapRoutes from './routes/ketQuaHocTap.js';
 import diemTrungBinhRoutes from './routes/diemTrungBinh.js';
@@ -62,6 +63,7 @@ app.use('/api/sinhviens', sinhvienRoutes)
 app.use('/api/giangviens', giangvienRoutes)
 app.use('/api/import', importGiangVienRoutes)
 app.use('/api/import', importDiemRenLuyenRoutes)
+app.use('/api/import', importChungChiTiengAnhRoutes)
 app.use('/api/taikhoan', taiKhoanRoutes)
 app.use('/api/lich', lichRoutes)
 app.use('/api/lich-nghi', lichNghiRoutes)
