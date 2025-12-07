@@ -3,12 +3,12 @@ import { useNavigate } from 'react-router-dom'
 import AdminLayout from '../../components/AdminLayout'
 import { apiFetch } from '../../api'
 
-export default function AddLich() {
+
+export default function AddLich2() {
   const navigate = useNavigate()
 
   const [form, setForm] = useState({
     lop_hoc_phan_id: '',
-    ngay_hoc: '', 
     thu: '',
     ca: '',
     tiet_bat_dau: '',
@@ -25,7 +25,6 @@ export default function AddLich() {
 
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
-  const [phongError, setPhongError] = useState('')
   const [saving, setSaving] = useState(false)
   const [message, setMessage] = useState('')
 
@@ -57,49 +56,6 @@ export default function AddLich() {
 
   const handleChange = (field, value) => {
     setForm(prev => ({ ...prev, [field]: value }))
-  }
-
-  // Kiểm tra trùng phòng khi thay đổi các field liên quan
-  const checkPhongConflict = async (newForm) => {
-    if (newForm.phong && newForm.thu && newForm.ca && newForm.tiet_bat_dau && newForm.tiet_ket_thuc) {
-      const isTrung = await checkTrungPhong(
-        newForm.thu,
-        newForm.ca,
-        newForm.tiet_bat_dau,
-        newForm.tiet_ket_thuc,
-        newForm.phong
-      )
-      
-      if (isTrung) {
-        setPhongError(`Phòng ${newForm.phong} đã được sử dụng trong ${getThuLabel(newForm.thu)}, ca ${newForm.ca}, tiết ${newForm.tiet_bat_dau}-${newForm.tiet_ket_thuc}. Vui lòng chọn phòng khác.`)
-      } else {
-        setPhongError('')
-      }
-    } else {
-      setPhongError('')
-    }
-  }
-
-  // Tính thứ từ ngày học
-  const getThuFromDate = (dateString) => {
-    if (!dateString) return ''
-    const date = new Date(dateString)
-    const dayOfWeek = date.getDay() // 0 = Chủ nhật, 1 = Thứ 2, ..., 6 = Thứ 7
-    // Chuyển đổi: 0 (CN) -> 8, 1 (T2) -> 2, ..., 6 (T7) -> 7
-    return dayOfWeek === 0 ? '8' : String(dayOfWeek + 1)
-  }
-
-  const handleNgayHocChange = async (dateString) => {
-    handleChange('ngay_hoc', dateString)
-    // Tự động tính và set thứ
-    const thu = getThuFromDate(dateString)
-    handleChange('thu', thu)
-    
-    // Kiểm tra lại trùng phòng nếu đã có phòng
-    if (form.phong) {
-      const newForm = { ...form, ngay_hoc: dateString, thu }
-      await checkPhongConflict(newForm)
-    }
   }
 
   const handleSearchChange = (value) => {
@@ -191,20 +147,6 @@ export default function AddLich() {
     }
   }
 
-  // Hàm chuyển đổi thứ
-  const getThuLabel = (thu) => {
-    const thuMap = {
-      2: 'Thứ 2',
-      3: 'Thứ 3',
-      4: 'Thứ 4',
-      5: 'Thứ 5',
-      6: 'Thứ 6',
-      7: 'Thứ 7',
-      8: 'Chủ nhật'
-    }
-    return thuMap[thu] || thu
-  }
-
   const handleSubmit = async (e) => {
     e.preventDefault()
     
@@ -233,8 +175,8 @@ export default function AddLich() {
       }
     }
     
-    // Kiểm tra trùng phòng học (nếu chưa có lỗi từ real-time check)
-    if (form.phong && form.thu && form.ca && form.tiet_bat_dau && form.tiet_ket_thuc && !phongError) {
+    // Kiểm tra trùng phòng học
+    if (form.phong && form.thu && form.ca && form.tiet_bat_dau && form.tiet_ket_thuc) {
       const isTrung = await checkTrungPhong(
         form.thu,
         form.ca,
@@ -245,14 +187,9 @@ export default function AddLich() {
       
       if (isTrung) {
         setMessage('')
-        setPhongError(`Phòng ${form.phong} đã được sử dụng trong ${getThuLabel(form.thu)}, ca ${form.ca}, tiết ${form.tiet_bat_dau}-${form.tiet_ket_thuc}. Vui lòng chọn phòng khác.`)
+        setError(`Phòng ${form.phong} đã được sử dụng trong ${getThuLabel(form.thu)}, ca ${form.ca}, tiết ${form.tiet_bat_dau}-${form.tiet_ket_thuc}. Vui lòng chọn phòng khác.`)
         return
       }
-    }
-    
-    // Nếu đã có lỗi phòng từ real-time check, không submit
-    if (phongError) {
-      return
     }
     
     setSaving(true)
@@ -262,7 +199,6 @@ export default function AddLich() {
     try {
       const payload = {
         ...form,
-        ngay_hoc: form.ngay_hoc || null,
         lop_hoc_phan_id: Number(form.lop_hoc_phan_id),
         thu: form.thu ? Number(form.thu) : null,
         tiet_bat_dau: form.tiet_bat_dau ? Number(form.tiet_bat_dau) : null,
@@ -275,7 +211,7 @@ export default function AddLich() {
       })
 
       setMessage('✅ Thêm lịch học thành công!')
-      setTimeout(() => navigate('/admin/lich'), 1500)
+      setTimeout(() => navigate('/admin/quan-ly-lich-hoc'), 1500)
     } catch (err) {
       console.error(err)
       setError('Không thể thêm lịch học: ' + (err.message || 'Lỗi không xác định'))
@@ -284,22 +220,36 @@ export default function AddLich() {
     }
   }
 
+  // Hàm chuyển đổi thứ
+  const getThuLabel = (thu) => {
+    const thuMap = {
+      2: 'Thứ 2',
+      3: 'Thứ 3',
+      4: 'Thứ 4',
+      5: 'Thứ 5',
+      6: 'Thứ 6',
+      7: 'Thứ 7',
+      8: 'Chủ nhật'
+    }
+    return thuMap[thu] || thu
+  }
+
   if (loading) return <div className="text-center mt-5">Đang tải dữ liệu...</div>
 
   return (
-    <AdminLayout activeMenu="lich" title="Thêm Lịch học">
+    <AdminLayout activeMenu="quan-ly-lich-hoc" title="Thêm Lịch học">
       {message && <div className="alert alert-success text-center py-2">{message}</div>}
       
       <div className="d-flex justify-content-center">
         <div className="card shadow-sm w-100" style={{ maxWidth: 1370 }}>
-        <div className="card-body">
+          <div className="card-body">
             
             <form onSubmit={handleSubmit} className="row g-3">
 
               {/* Row 1 */}
               <div className="col-md-4" style={{ position: 'relative' }}>
                 <label className="form-label">Mã lớp học phần *</label>
-  <input
+                <input
                   type="text"
                   className={`form-control ${error && searchText && !form.lop_hoc_phan_id ? 'is-invalid' : ''}`}
                   value={searchText}
@@ -315,7 +265,7 @@ export default function AddLich() {
                 {searchText && !form.lop_hoc_phan_id && (
                   <div className="invalid-feedback d-block">
                     Mã lớp học phần không tồn tại. Vui lòng chọn từ danh sách gợi ý.
-</div>
+                  </div>
                 )}
                 {showSuggestions && filteredSuggestions.length > 0 && (
                   <div
@@ -346,73 +296,62 @@ export default function AddLich() {
                         <div className="small text-muted">{lhp.tenHocPhan || lhp.ten_hoc_phan}</div>
                       </button>
                     ))}
-            </div>
+                  </div>
                 )}
-</div>
-
-              <div className="col-md-4">
-                <label className="form-label">Ngày học *</label>
-              <input
-                  type="date"
-                className="form-control"
-                  value={form.ngay_hoc}
-                  onChange={(e) => handleNgayHocChange(e.target.value)}
-                required
-              />
-                {form.ngay_hoc && form.thu && (
-                  <small className="text-muted">
-                    Thứ: {form.thu === '2' ? 'Thứ 2' : form.thu === '3' ? 'Thứ 3' : form.thu === '4' ? 'Thứ 4' : form.thu === '5' ? 'Thứ 5' : form.thu === '6' ? 'Thứ 6' : form.thu === '7' ? 'Thứ 7' : 'Chủ nhật'}
-                  </small>
-                )}
-            </div>
+              </div>
 
               {/* Row 2 */}
+              <div className="col-md-4">
+                <label className="form-label">Thứ *</label>
+                <select
+                  className="form-select"
+                  value={form.thu}
+                  onChange={(e) => handleChange('thu', e.target.value)}
+                  required
+                >
+                  <option value="">-- Chọn thứ --</option>
+                  <option value="2">Thứ 2</option>
+                  <option value="3">Thứ 3</option>
+                  <option value="4">Thứ 4</option>
+                  <option value="5">Thứ 5</option>
+                  <option value="6">Thứ 6</option>
+                  <option value="7">Thứ 7</option>
+                  <option value="8">Chủ nhật</option>
+                </select>
+              </div>
 
               <div className="col-md-4">
                 <label className="form-label">Ca *</label>
-              <select
-                className="form-select"
+                <select
+                  className="form-select"
                   value={form.ca}
-                  onChange={async (e) => {
-                    const value = e.target.value
-                    handleChange('ca', value)
-                    if (form.phong) {
-                      const newForm = { ...form, ca: value }
-                      await checkPhongConflict(newForm)
-                    }
-                  }}
-                required
-              >
+                  onChange={(e) => handleChange('ca', e.target.value)}
+                  required
+                >
                   <option value="">-- Chọn ca --</option>
-                <option value="sáng">Sáng</option>
-                <option value="chiều">Chiều</option>
-                <option value="tối">Tối</option>
-              </select>
-            </div>
+                  <option value="sáng">Sáng</option>
+                  <option value="chiều">Chiều</option>
+                  <option value="tối">Tối</option>
+                </select>
+              </div>
 
               {/* Row 3 */}
               <div className="col-md-4">
                 <label className="form-label">Phòng</label>
                 <input
                   type="text"
-                  className={`form-control ${phongError ? 'is-invalid' : ''}`}
+                  className={`form-control ${error && error.includes('Phòng') ? 'is-invalid' : ''}`}
                   value={form.phong}
-                  onChange={async (e) => {
-                    const phongValue = e.target.value
-                    handleChange('phong', phongValue)
-                    
-                    // Kiểm tra trùng phòng real-time nếu đã có đủ thông tin
-                    if (phongValue && form.thu && form.ca && form.tiet_bat_dau && form.tiet_ket_thuc) {
-                      const newForm = { ...form, phong: phongValue }
-                      await checkPhongConflict(newForm)
-                    } else {
-                      setPhongError('')
+                  onChange={(e) => {
+                    handleChange('phong', e.target.value)
+                    if (error && error.includes('Phòng')) {
+                      setError('')
                     }
                   }}
                 />
-                {phongError && (
+                {error && error.includes('Phòng') && (
                   <div className="invalid-feedback d-block">
-                    {phongError}
+                    {error}
                   </div>
                 )}
               </div>
@@ -423,14 +362,7 @@ export default function AddLich() {
                   type="number"
                   className="form-control"
                   value={form.tiet_bat_dau}
-                  onChange={async (e) => {
-                    const value = e.target.value
-                    handleChange('tiet_bat_dau', value)
-                    if (form.phong) {
-                      const newForm = { ...form, tiet_bat_dau: value }
-                      await checkPhongConflict(newForm)
-                    }
-                  }}
+                  onChange={(e) => handleChange('tiet_bat_dau', e.target.value)}
                   required
                   min="1"
                 />
@@ -442,57 +374,51 @@ export default function AddLich() {
                   type="number"
                   className="form-control"
                   value={form.tiet_ket_thuc}
-                  onChange={async (e) => {
-                    const value = e.target.value
-                    handleChange('tiet_ket_thuc', value)
-                    if (form.phong) {
-                      const newForm = { ...form, tiet_ket_thuc: value }
-                      await checkPhongConflict(newForm)
-                    }
-                  }}
+                  onChange={(e) => handleChange('tiet_ket_thuc', e.target.value)}
                   required
                   min="1"
                 />
-            </div>
+              </div>
 
               {/* Row 4 */}
               <div className="col-md-4">
-              <label className="form-label">Cơ sở</label>
-              <input
-                type="text"
-                className="form-control"
+                <label className="form-label">Cơ sở</label>
+                <input
+                  type="text"
+                  className="form-control"
                   value={form.co_so}
                   onChange={(e) => handleChange('co_so', e.target.value)}
-              />
-            </div>
+                />
+              </div>
 
               <div className="col-md-4">
                 <label className="form-label">Loại *</label>
-              <select
-                className="form-select"
+                <select
+                  className="form-select"
                   value={form.loai}
                   onChange={(e) => handleChange('loai', e.target.value)}
                   required
-              >
-                <option value="lythuyet">Lý thuyết</option>
-                <option value="thuchanh">Thực hành</option>
-                <option value="tructuyen">Trực tuyến</option>
-                <option value="thi">Thi</option>
-              </select>
-            </div>
+                >
+                  <option value="lythuyet">Lý thuyết</option>
+                  <option value="thuchanh">Thực hành</option>
+                  <option value="tructuyen">Trực tuyến</option>
+                  <option value="thi">Thi</option>
+                </select>
+              </div>
 
               <div className="col-12 d-flex justify-content-end mt-4">
-                <button type="button" className="btn btn-secondary me-2" onClick={() => navigate('/admin/lich')}>
+                <button type="button" className="btn btn-secondary me-2" onClick={() => navigate('/admin/quan-ly-lich-hoc')}>
                   Hủy
                 </button>
-              <button type="submit" className="btn btn-primary" disabled={saving}>
+                <button type="submit" className="btn btn-primary" disabled={saving}>
                   {saving ? 'Đang lưu...' : 'Lưu thay đổi'}
-              </button>
-            </div>
-          </form>
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       </div>
     </AdminLayout>
   )
 }
+

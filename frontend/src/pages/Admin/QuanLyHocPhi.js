@@ -390,9 +390,12 @@ export default function QuanLyHocPhi() {
             )}
           </div>
           {pagination.totalPages > 1 && (
-            <div className="card-footer bg-white">
+            <div className="card-footer bg-white d-flex justify-content-between align-items-center">
+              <div className="text-muted">
+                Hiển thị {(pagination.page - 1) * pagination.limit + 1} - {Math.min(pagination.page * pagination.limit, pagination.total)} / {pagination.total} bản ghi
+              </div>
               <nav>
-                <ul className="pagination pagination-sm mb-0 justify-content-end">
+                <ul className="pagination pagination-sm mb-0">
                   <li className={`page-item ${pagination.page === 1 ? 'disabled' : ''}`}>
                     <button
                       className="page-link"
@@ -402,16 +405,58 @@ export default function QuanLyHocPhi() {
                       Trước
                     </button>
                   </li>
-                  {[...Array(pagination.totalPages)].map((_, i) => (
-                    <li key={i} className={`page-item ${pagination.page === i + 1 ? 'active' : ''}`}>
-                      <button
-                        className="page-link"
-                        onClick={() => setPagination({ ...pagination, page: i + 1 })}
-                      >
-                        {i + 1}
-                      </button>
-                    </li>
-                  ))}
+                  {(() => {
+                    const pages = []
+                    const maxVisible = 5
+                    const currentPage = pagination.page
+                    const totalPages = pagination.totalPages
+                    let startPage = Math.max(1, currentPage - Math.floor(maxVisible / 2))
+                    let endPage = Math.min(totalPages, startPage + maxVisible - 1)
+                    
+                    if (endPage - startPage < maxVisible - 1) {
+                      startPage = Math.max(1, endPage - maxVisible + 1)
+                    }
+                    
+                    if (startPage > 1) {
+                      pages.push(
+                        <li key={1} className={`page-item ${currentPage === 1 ? 'active' : ''}`}>
+                          <button className="page-link" onClick={() => setPagination({ ...pagination, page: 1 })}>1</button>
+                        </li>
+                      )
+                      if (startPage > 2) {
+                        pages.push(
+                          <li key="ellipsis1" className="page-item disabled">
+                            <span className="page-link">...</span>
+                          </li>
+                        )
+                      }
+                    }
+                    
+                    for (let i = startPage; i <= endPage; i++) {
+                      pages.push(
+                        <li key={i} className={`page-item ${currentPage === i ? 'active' : ''}`}>
+                          <button className="page-link" onClick={() => setPagination({ ...pagination, page: i })}>{i}</button>
+                        </li>
+                      )
+                    }
+                    
+                    if (endPage < totalPages) {
+                      if (endPage < totalPages - 1) {
+                        pages.push(
+                          <li key="ellipsis2" className="page-item disabled">
+                            <span className="page-link">...</span>
+                          </li>
+                        )
+                      }
+                      pages.push(
+                        <li key={totalPages} className={`page-item ${currentPage === totalPages ? 'active' : ''}`}>
+                          <button className="page-link" onClick={() => setPagination({ ...pagination, page: totalPages })}>{totalPages}</button>
+                        </li>
+                      )
+                    }
+                    
+                    return pages
+                  })()}
                   <li className={`page-item ${pagination.page === pagination.totalPages ? 'disabled' : ''}`}>
                     <button
                       className="page-link"

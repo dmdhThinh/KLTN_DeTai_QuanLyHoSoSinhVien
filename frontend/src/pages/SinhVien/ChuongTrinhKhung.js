@@ -50,9 +50,35 @@ export default function ChuongTrinhKhung() {
   const monBatBuoc = data && data.danh_sach ? data.danh_sach.filter(item => item.loai_mon === 'BAT_BUOC') : []
   const monTuChon = data && data.danh_sach ? data.danh_sach.filter(item => item.loai_mon === 'TU_CHON') : []
 
-  // Tính tổng TC cho từng nhóm
+  // Tính tổng TC bắt buộc từ dữ liệu
   const tongTcBatBuoc = monBatBuoc.reduce((sum, item) => sum + (item.so_tc_dvht || 0), 0)
-  const tongTcTuChon = monTuChon.reduce((sum, item) => sum + (item.so_tc_dvht || 0), 0)
+  
+  // Tính tổng TC tự chọn theo quy định từng học kỳ
+  const getTongTcTuChon = (hk) => {
+    switch(hk) {
+      case 'HK2':
+      case 'HK3':
+      case 'HK5':
+      case 'HK6':
+        return 3
+      case 'HK4':
+      case 'HK7':
+        return 7
+      case 'HK8':
+        return 6
+      case 'HK9':
+        // HK9: tính từ dữ liệu (hoặc có thể set giá trị cố định nếu có quy định)
+        return monTuChon.reduce((sum, item) => sum + (item.so_tc_dvht || 0), 0)
+      default:
+        // HK1 hoặc các học kỳ khác: tính từ dữ liệu
+        return monTuChon.reduce((sum, item) => sum + (item.so_tc_dvht || 0), 0)
+    }
+  }
+  
+  const tongTcTuChon = getTongTcTuChon(hocKy)
+  
+  // Tổng TC học kỳ = TC bắt buộc + TC tự chọn (theo quy định)
+  const tongTcHocKy = tongTcBatBuoc + tongTcTuChon
 
   // Check có dữ liệu không
   const hasData = data && data.danh_sach && data.danh_sach.length > 0
@@ -165,6 +191,7 @@ export default function ChuongTrinhKhung() {
             <option value="HK6">Học kỳ 6</option>
             <option value="HK7">Học kỳ 7</option>
             <option value="HK8">Học kỳ 8</option>
+            <option value="HK9">Học kỳ 9</option>
           </select>
         </div>
 
@@ -194,7 +221,7 @@ export default function ChuongTrinhKhung() {
         {/* HỌC KỲ X + TỔNG SỐ TC (nằm dưới header bảng) */}
         <div className="hoc-ky-row">
           <div className="hoc-ky-label">HỌC KỲ {hocKy.replace('HK', '')}</div>
-          <div className="tong-tc-label">TỔNG SỐ TC: {data?.tong_tc || 0}</div>
+          <div className="tong-tc-label">TỔNG SỐ TC: {tongTcHocKy}</div>
         </div>
 
         {/* Thông báo nếu không có dữ liệu */}
@@ -206,7 +233,7 @@ export default function ChuongTrinhKhung() {
           <>
             {/* Render 2 bảng: Bắt buộc và Tự chọn */}
             {renderTable(monBatBuoc, 'HỌC PHẦN BẮT BUỘC', tongTcBatBuoc, true)}
-            {renderTable(monTuChon, 'HỌC PHẦN TỰ CHỌN', tongTcTuChon, false)}
+            {renderTable(monTuChon, 'HỌC PHẦN TỰ CHỌN', tongTcTuChon, true)}
           </>
         )}
 

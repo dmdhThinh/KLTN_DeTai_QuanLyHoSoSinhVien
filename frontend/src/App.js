@@ -28,8 +28,11 @@ import AddLop from  './pages/Admin/AddLop'
 import EditLop from  './pages/Admin/EditLop'
 
 import LichList from './pages/Admin/LichList'
+import LichList2 from './pages/Admin/LichList2'
 import AddLich from  './pages/Admin/AddLich'
-import EditLich from  './pages/Admin/EditLich'
+import AddLich2 from  './pages/Admin/AddLich2'
+// import EditLich from  './pages/Admin/EditLich'
+import EditLich2 from  './pages/Admin/EditLich2'
 
 import LopHocPhanList from './pages/Admin/LopHocPhanList'
 import AddLopHocPhan from  './pages/Admin/AddLopHocPhan'
@@ -222,8 +225,11 @@ function App() {
         <Route path="/admin/lop/edit/:id" element={<PrivateRoute allowRoles={['Quản trị']}><EditLop /></PrivateRoute>} />
 
         <Route path="/admin/lich" element={<PrivateRoute allowRoles={['Quản trị']}><LichList /></PrivateRoute>} />
+        <Route path="/admin/quan-ly-lich-hoc" element={<PrivateRoute allowRoles={['Quản trị']}><LichList2 /></PrivateRoute>} />
+        <Route path="/admin/quan-ly-lich-hoc/new" element={<PrivateRoute allowRoles={['Quản trị']}><AddLich2 /></PrivateRoute>} />
+        <Route path="/admin/quan-ly-lich-hoc/edit/:id" element={<PrivateRoute allowRoles={['Quản trị']}><EditLich2 /></PrivateRoute>} />
         <Route path="/admin/lich/new" element={<PrivateRoute allowRoles={['Quản trị']}><AddLich /></PrivateRoute>} />
-        <Route path="/admin/lich/edit/:id" element={<PrivateRoute allowRoles={['Quản trị']}><EditLich /></PrivateRoute>} />
+        {/* <Route path="/admin/lich/edit/:id" element={<PrivateRoute allowRoles={['Quản trị']}><EditLich /></PrivateRoute>} /> */}
 
         <Route path="/admin/lophocphan" element={<PrivateRoute allowRoles={['Quản trị']}><LopHocPhanList /></PrivateRoute>} />
         <Route path="/admin/lophocphan/new" element={<PrivateRoute allowRoles={['Quản trị']}><AddLopHocPhan /></PrivateRoute>} />

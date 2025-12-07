@@ -9,11 +9,9 @@ export default function LopHocPhanList() {
   const [list, setList] = useState([])
   const [filtered, setFiltered] = useState([])
   const [search, setSearch] = useState('')
-  const [khoaId, setKhoaId] = useState('')
   const [nganhId, setNganhId] = useState('')
-  const [khoas, setKhoas] = useState([])
   const [nganhs, setNganhs] = useState([])
-  const [filteredNganhs, setFilteredNganhs] = useState([])
+  const [showSuggestions, setShowSuggestions] = useState(false)
   const [loading, setLoading] = useState(true)
   const [message, setMessage] = useState('')
   const [confirmDelete, setConfirmDelete] = useState(null)
@@ -34,17 +32,6 @@ export default function LopHocPhanList() {
     loadLopHocPhan()
   }, [])
 
-  // 🔹 Khi chọn Khoa → lọc ngành thuộc khoa đó
-  useEffect(() => {
-    if (!khoaId) {
-      setFilteredNganhs(nganhs)
-      setNganhId('')
-    } else {
-      const filteredList = nganhs.filter(n => String(n.khoaId) === String(khoaId))
-      setFilteredNganhs(filteredList)
-      setNganhId('') // reset ngành khi đổi khoa
-    }
-  }, [khoaId, nganhs])
 
   // 🔹 Khi chọn Ngành → lọc lớp thuộc ngành đó
   useEffect(() => {
@@ -58,26 +45,15 @@ export default function LopHocPhanList() {
     }
   }, [nganhId, lops])
 
-  // ===== Load dropdown (Khoa & Ngành)
+  // ===== Load dropdown (Ngành & Lớp)
   const loadDropdowns = async () => {
     try {
-      const khoaData = await apiFetch('/api/khoa')
       const nganhData = await apiFetch('/api/nganh')
       const lopData = await apiFetch('/api/lop') // Gọi API để lấy danh sách lớp
-      console.log('Khoa data:', khoaData)
-      console.log('Nganh data:', nganhData)
-      console.log('Lop data:', lopData)
-      if (Array.isArray(khoaData)) {
-        setKhoas(khoaData.map(k => ({ id: k.id, ten_khoa: k.ten_khoa || k.tenKhoa || 'Không xác định' })))
-      } else {
-        setKhoas([])
-      }
       if (Array.isArray(nganhData)) {
-        setNganhs(nganhData.map(n => ({ id: n.id, ten_nganh: n.ten_nganh || n.tenNganh || 'Không xác định', khoaId: n.khoaId })))
-        setFilteredNganhs(nganhData.map(n => ({ id: n.id, ten_nganh: n.ten_nganh || n.tenNganh || 'Không xác định', khoaId: n.khoaId })))
+        setNganhs(nganhData.map(n => ({ id: n.id, ten_nganh: n.ten_nganh || n.tenNganh || 'Không xác định' })))
       } else {
         setNganhs([])
-        setFilteredNganhs([])
       }
       if (Array.isArray(lopData)) {
         setLops(lopData.map(l => ({ id: l.id, tenLop: l.tenLop || 'Không xác định', nganhId: l.nganhId })))
@@ -88,9 +64,7 @@ export default function LopHocPhanList() {
       }
     } catch (err) {
       console.error('Error loading dropdowns:', err)
-      setKhoas([])
       setNganhs([])
-      setFilteredNganhs([])
       setLops([])
       setFilteredLops([])
     }
@@ -112,6 +86,37 @@ export default function LopHocPhanList() {
     }
   }
 
+  // Filter suggestions cho autocomplete
+  const filteredSuggestions = search
+    ? list.filter(lop => {
+        const maLopHocPhan = (lop.maLopHocPhan || '').toLowerCase()
+        const tenHocPhan = (lop.tenHocPhan || '').toLowerCase()
+        const tenLop = (lop.tenLop || '').toLowerCase()
+        const searchLower = search.toLowerCase()
+        return maLopHocPhan.includes(searchLower) || 
+               tenHocPhan.includes(searchLower) || 
+               tenLop.includes(searchLower)
+      }).slice(0, 10) // Giới hạn 10 kết quả
+    : []
+
+  const handleSearchChange = (value) => {
+    setSearch(value)
+    setShowSuggestions(true)
+  }
+
+  const handleSelectSuggestion = (lop) => {
+    const searchValue = `${lop.maLopHocPhan} - ${lop.tenHocPhan}`
+    setSearch(searchValue)
+    setShowSuggestions(false)
+    // useEffect sẽ tự động filter, nhưng cần đảm bảo format search đúng
+  }
+
+  const handleSearchBlur = () => {
+    setTimeout(() => {
+      setShowSuggestions(false)
+    }, 200)
+  }
+
   // ===== Xử lý tìm kiếm & lọc (tự động)
   useEffect(() => {
     let result = [...list]
@@ -123,16 +128,14 @@ export default function LopHocPhanList() {
         const maLopHocPhan = (lop.maLopHocPhan || '').toLowerCase()
         const tenHocPhan = (lop.tenHocPhan || '').toLowerCase()
         const tenLop = (lop.tenLop || '').toLowerCase()
+        // Tìm trong từng field riêng lẻ hoặc trong chuỗi "Mã - Tên"
+        const fullString = `${maLopHocPhan} - ${tenHocPhan}`.toLowerCase()
         
         return maLopHocPhan.includes(keyword) || 
                tenHocPhan.includes(keyword) || 
-               tenLop.includes(keyword)
+               tenLop.includes(keyword) ||
+               fullString.includes(keyword)
       })
-    }
-
-    // Lọc theo khoa
-    if (khoaId) {
-      result = result.filter(lop => String(lop.khoaId) === String(khoaId))
     }
 
     // Lọc theo ngành
@@ -147,7 +150,7 @@ export default function LopHocPhanList() {
 
     setFiltered(result)
     setCurrentPage(1) // Reset về trang 1 khi lọc
-  }, [search, khoaId, nganhId, lopId, list])
+  }, [search, nganhId, lopId, list])
 
   // ===== Xử lý xoá
   const handleDelete = async (id) => {
@@ -199,38 +202,59 @@ export default function LopHocPhanList() {
       <div className="d-flex align-items-center mb-3 flex-wrap gap-2">
         <div className="d-flex align-items-center gap-2 flex-wrap">
           {/* 🔍 Tìm kiếm lớp học phần */}
-          <input
-            type="text"
-            className="form-control"
-            placeholder="Tìm theo mã lớp, tên học phần, tên lớp..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            style={{ width: 280 }}
-          />
+          <div style={{ position: 'relative', width: 280 }}>
+            <input
+              type="text"
+              className="form-control"
+              placeholder="Tìm theo mã lớp, tên học phần, tên lớp..."
+              value={search}
+              onChange={(e) => handleSearchChange(e.target.value)}
+              onFocus={() => setShowSuggestions(true)}
+              onBlur={handleSearchBlur}
+            />
+            {showSuggestions && filteredSuggestions.length > 0 && (
+              <div
+                className="list-group"
+                style={{
+                  position: 'absolute',
+                  top: '100%',
+                  left: 0,
+                  right: 0,
+                  zIndex: 1000,
+                  maxHeight: '300px',
+                  overflowY: 'auto',
+                  border: '1px solid #ced4da',
+                  borderRadius: '0.375rem',
+                  backgroundColor: 'white',
+                  boxShadow: '0 0.5rem 1rem rgba(0, 0, 0, 0.15)',
+                  marginTop: '2px'
+                }}
+              >
+                {filteredSuggestions.map(lop => (
+                  <button
+                    key={lop.id}
+                    type="button"
+                    className="list-group-item list-group-item-action"
+                    onClick={() => handleSelectSuggestion(lop)}
+                    style={{ textAlign: 'left', cursor: 'pointer' }}
+                  >
+                    <div className="fw-semibold">{lop.maLopHocPhan}</div>
+                    <div className="small text-muted">{lop.tenHocPhan} {lop.tenLop ? `- ${lop.tenLop}` : ''}</div>
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
 
-          {/* 🏫 Chọn khoa */}
-          <select
-            className="form-select"
-            style={{ width: 200 }}
-            value={khoaId}
-            onChange={(e) => setKhoaId(e.target.value)}
-          >
-            <option value="">-- Tất cả khoa --</option>
-            {khoas.map(k => (
-              <option key={k.id} value={k.id}>{k.ten_khoa}</option>
-            ))}
-          </select>
-
-          {/* 🎓 Chọn ngành (lọc theo khoa) */}
+          {/* 🎓 Chọn ngành */}
           <select
             className="form-select"
             style={{ width: 200 }}
             value={nganhId}
             onChange={(e) => setNganhId(e.target.value)}
-            disabled={!filteredNganhs.length}
           >
             <option value="">-- Tất cả ngành --</option>
-            {filteredNganhs.map(n => (
+            {nganhs.map(n => (
               <option key={n.id} value={n.id}>{n.ten_nganh}</option>
             ))}
           </select>
@@ -297,35 +321,39 @@ export default function LopHocPhanList() {
                       <td>{lop.ngayBatDau ? new Date(lop.ngayBatDau).toLocaleDateString('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh' }) : '—'}</td>
                       <td>{lop.ngayKetThuc ? new Date(lop.ngayKetThuc).toLocaleDateString('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh' }) : '—'}</td>
                       <td>
-                        <button
-                          className="btn btn-sm btn-outline-primary me-2"
-                          title="Danh sách sinh viên"
-                          onClick={() => {
-                            setSelectedLop(lop)
-                            setShowModal(true)
-                          }}
-                        >
-                          DS Lớp
-                        </button>
-                        <button
-                          className="btn btn-sm btn-outline-warning me-2"
-                          onClick={() => navigate(`/admin/sua-diem/${lop.id}`)}
-                          title="Admin sửa điểm"
-                        >
-                          🔧 Sửa điểm
-                        </button>
-                        <button
-                          className="btn btn-sm btn-outline-secondary me-2"
-                          onClick={() => navigate(`/admin/lophocphan/edit/${lop.id}`)}
-                        >
-                           Sửa
-                        </button>
-                        <button
-                          className="btn btn-sm btn-outline-danger"
-                          onClick={() => setConfirmDelete(lop)}
-                        >
-                          Xoá
-                        </button>
+                        <div className="d-flex gap-1" style={{ whiteSpace: 'nowrap' }}>
+                          <button
+                            className="btn btn-sm btn-outline-primary"
+                            title="Danh sách sinh viên"
+                            onClick={() => {
+                              setSelectedLop(lop)
+                              setShowModal(true)
+                            }}
+                          >
+                            <i className="bi bi-people"></i>
+                          </button>
+                          <button
+                            className="btn btn-sm btn-outline-warning"
+                            onClick={() => navigate(`/admin/sua-diem/${lop.id}`)}
+                            title="Sửa điểm"
+                          >
+                            <i className="bi bi-pencil-square"></i>
+                          </button>
+                          <button
+                            className="btn btn-sm btn-outline-secondary"
+                            onClick={() => navigate(`/admin/lophocphan/edit/${lop.id}`, { state: lop })}
+                            title="Sửa"
+                          >
+                            <i className="bi bi-pencil"></i>
+                          </button>
+                          <button
+                            className="btn btn-sm btn-outline-danger"
+                            onClick={() => setConfirmDelete(lop)}
+                            title="Xoá"
+                          >
+                            <i className="bi bi-trash"></i>
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   ))}
@@ -336,45 +364,91 @@ export default function LopHocPhanList() {
         </div>
 
         {/* Phân trang */}
-        {filtered.length > 0 && (
-          <div className="card-footer d-flex justify-content-between align-items-center">
-            <div className="text-muted small">
-              Hiển thị {Math.min((currentPage - 1) * itemsPerPage + 1, filtered.length)} - {Math.min(currentPage * itemsPerPage, filtered.length)} trong tổng số {filtered.length} lớp học phần
-            </div>
-            <nav>
-              <ul className="pagination pagination-sm mb-0">
-                <li className={`page-item ${currentPage === 1 ? 'disabled' : ''}`}>
-                  <button
-                    className="page-link"
-                    onClick={() => setCurrentPage(currentPage - 1)}
-                    disabled={currentPage === 1}
-                  >
-                    « Trước
-                  </button>
-                </li>
-                {Array.from({ length: Math.ceil(filtered.length / itemsPerPage) }, (_, i) => i + 1).map(page => (
-                  <li key={page} className={`page-item ${currentPage === page ? 'active' : ''}`}>
+        {filtered.length > 0 && (() => {
+          const totalPages = Math.ceil(filtered.length / itemsPerPage)
+          const startIndex = (currentPage - 1) * itemsPerPage
+          const endIndex = Math.min(currentPage * itemsPerPage, filtered.length)
+          
+          return (
+            <div className="card-footer bg-white d-flex justify-content-between align-items-center">
+              <div className="text-muted">
+                Hiển thị {startIndex + 1} - {endIndex} / {filtered.length} bản ghi
+              </div>
+              <nav>
+                <ul className="pagination pagination-sm mb-0">
+                  <li className={`page-item ${currentPage === 1 ? 'disabled' : ''}`}>
                     <button
                       className="page-link"
-                      onClick={() => setCurrentPage(page)}
+                      onClick={() => setCurrentPage(currentPage - 1)}
+                      disabled={currentPage === 1}
                     >
-                      {page}
+                      Trước
                     </button>
                   </li>
-                ))}
-                <li className={`page-item ${currentPage === Math.ceil(filtered.length / itemsPerPage) ? 'disabled' : ''}`}>
-                  <button
-                    className="page-link"
-                    onClick={() => setCurrentPage(currentPage + 1)}
-                    disabled={currentPage === Math.ceil(filtered.length / itemsPerPage)}
-                  >
-                    Sau »
-                  </button>
-                </li>
-              </ul>
-            </nav>
-          </div>
-        )}
+                  {(() => {
+                    const pages = []
+                    const maxVisible = 5
+                    let startPage = Math.max(1, currentPage - Math.floor(maxVisible / 2))
+                    let endPage = Math.min(totalPages, startPage + maxVisible - 1)
+                    
+                    if (endPage - startPage < maxVisible - 1) {
+                      startPage = Math.max(1, endPage - maxVisible + 1)
+                    }
+                    
+                    if (startPage > 1) {
+                      pages.push(
+                        <li key={1} className={`page-item ${currentPage === 1 ? 'active' : ''}`}>
+                          <button className="page-link" onClick={() => setCurrentPage(1)}>1</button>
+                        </li>
+                      )
+                      if (startPage > 2) {
+                        pages.push(
+                          <li key="ellipsis1" className="page-item disabled">
+                            <span className="page-link">...</span>
+                          </li>
+                        )
+                      }
+                    }
+                    
+                    for (let i = startPage; i <= endPage; i++) {
+                      pages.push(
+                        <li key={i} className={`page-item ${currentPage === i ? 'active' : ''}`}>
+                          <button className="page-link" onClick={() => setCurrentPage(i)}>{i}</button>
+                        </li>
+                      )
+                    }
+                    
+                    if (endPage < totalPages) {
+                      if (endPage < totalPages - 1) {
+                        pages.push(
+                          <li key="ellipsis2" className="page-item disabled">
+                            <span className="page-link">...</span>
+                          </li>
+                        )
+                      }
+                      pages.push(
+                        <li key={totalPages} className={`page-item ${currentPage === totalPages ? 'active' : ''}`}>
+                          <button className="page-link" onClick={() => setCurrentPage(totalPages)}>{totalPages}</button>
+                        </li>
+                      )
+                    }
+                    
+                    return pages
+                  })()}
+                  <li className={`page-item ${currentPage === totalPages ? 'disabled' : ''}`}>
+                    <button
+                      className="page-link"
+                      onClick={() => setCurrentPage(currentPage + 1)}
+                      disabled={currentPage === totalPages}
+                    >
+                      Sau
+                    </button>
+                  </li>
+                </ul>
+              </nav>
+            </div>
+          )
+        })()}
       </div>
 
       {/* Modal danh sách sinh viên */}
