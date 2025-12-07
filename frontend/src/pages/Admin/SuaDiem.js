@@ -243,7 +243,7 @@ function SuaDiem() {
     <AdminLayout>
       <div className="container-fluid mt-4">
         <div className="d-flex justify-content-between align-items-center mb-3">
-          <h3 className="mb-0">🔧 Admin - Sửa điểm</h3>
+          <h3 className="mb-0">Admin - Sửa điểm</h3>
           <button className="btn btn-outline-secondary" onClick={() => navigate('/admin/lophocphan')}>
             ← Quay lại danh sách lớp
           </button>

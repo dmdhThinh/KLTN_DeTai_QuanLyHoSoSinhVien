@@ -34,11 +34,9 @@ export default function AddLopHocPhan() {
   const [soTuanHoc, setSoTuanHoc] = useState('')
 
   // 🧠 Combobox phụ thuộc
-  const [khoaId, setKhoaId] = useState('')
   const [nganhId, setNganhId] = useState('')
 
   // 🗂️ Data lists
-  const [khoas, setKhoas] = useState([])
   const [nganhs, setNganhs] = useState([])
   const [lops, setLops] = useState([])
   const [hocPhans, setHocPhans] = useState([])
@@ -48,7 +46,6 @@ export default function AddLopHocPhan() {
   const [submitting, setSubmitting] = useState(false)
 
   useEffect(() => {
-    loadKhoas()
     loadNganhs()
     loadLops()
     loadHocPhans()
@@ -56,15 +53,6 @@ export default function AddLopHocPhan() {
   }, [])
 
   // 🧩 Load data
-  const loadKhoas = async () => {
-    try {
-      const data = await apiFetch('/api/khoa')
-      setKhoas(data || [])
-    } catch {
-      setKhoas([])
-    }
-  }
-
   const loadNganhs = async () => {
     try {
       const data = await apiFetch('/api/nganh')
@@ -100,9 +88,6 @@ export default function AddLopHocPhan() {
       setGiangViens([])
     }
   }
-
-  // 🎯 Lọc ngành theo khoa
-  const filteredNganhs = nganhs.filter(n => n.khoaId == khoaId || n.khoa_id == khoaId)
 
   // 🎯 Lọc lớp theo ngành
   const filteredLops = lops.filter(l => l.nganhId == nganhId || l.nganh_id == nganhId)
@@ -144,13 +129,13 @@ export default function AddLopHocPhan() {
     }
   }
 
+
   return (
     <AdminLayout activeMenu="lophocphan" title="Thêm Lớp Học Phần">
       <CenterError message={error} onClose={() => setError('')} />
       <div className="d-flex justify-content-center">
         <div className="card shadow-sm w-100" style={{ maxWidth: 1370 }}>
           <div className="card-body">
-            <h5 className="mb-3">Thông tin Lớp Học Phần</h5>
             <form onSubmit={handleSubmit} className="row g-3">
 
               {/* Mã lớp học phần */}
@@ -164,28 +149,6 @@ export default function AddLopHocPhan() {
                 />
               </div>
 
-              {/* Khoa */}
-              <div className="col-md-4">
-                <label className="form-label">Khoa *</label>
-                <select
-                  className="form-select"
-                  value={khoaId}
-                  onChange={(e) => {
-                    setKhoaId(e.target.value)
-                    setNganhId('')
-                    setLopId('')
-                    setHocPhanId('')
-                  }}
-                >
-                  <option value="">-- Chọn khoa --</option>
-                  {khoas.map((k) => (
-                    <option key={k.id} value={k.id}>
-                      {k.tenKhoa || k.ten_khoa}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
               {/* Ngành */}
               <div className="col-md-4">
                 <label className="form-label">Ngành *</label>
@@ -197,10 +160,9 @@ export default function AddLopHocPhan() {
                     setLopId('')
                     setHocPhanId('')
                   }}
-                  disabled={!khoaId}
                 >
                   <option value="">-- Chọn ngành --</option>
-                  {filteredNganhs.map((n) => (
+                  {nganhs.map((n) => (
                     <option key={n.id} value={n.id}>
                       {n.tenNganh || n.ten_nganh}
                     </option>
@@ -332,8 +294,20 @@ export default function AddLopHocPhan() {
               </div>
 
               {/* Submit */}
-              <div className="col-12 d-flex justify-content-end">
-                <button className="btn btn-primary" disabled={submitting}>
+              <div className="col-12 d-flex justify-content-end gap-2">
+                <button 
+                  type="button"
+                  className="btn btn-secondary" 
+                  onClick={() => navigate('/admin/lophocphan')}
+                  disabled={submitting}
+                >
+                  Hủy
+                </button>
+                <button 
+                  type="submit"
+                  className="btn btn-primary" 
+                  disabled={submitting}
+                >
                   {submitting ? 'Đang lưu...' : 'Lưu lớp học phần'}
                 </button>
               </div>

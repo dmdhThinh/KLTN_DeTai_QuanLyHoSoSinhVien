@@ -91,18 +91,76 @@ export async function getTienDoHocTap(sinhVienId) {
 
     const nganhId = svRows[0].nganh_id
 
-    // 2. Tính tổng tín chỉ từ chương trình khung của ngành
-    const [tongRows] = await pool.execute(
-      `SELECT SUM(hp.so_tin_chi) as tongTinChi
+    // 2. Tính tổng tín chỉ BẮT BUỘC từ chương trình khung
+    const [batBuocRows] = await pool.execute(
+      `SELECT SUM(hp.so_tin_chi) as tongTinChiBatBuoc
        FROM ChuongTrinhKhung ctk
        JOIN HocPhan hp ON ctk.hoc_phan_id = hp.id
-       WHERE ctk.nganh_id = ?`,
+       WHERE ctk.nganh_id = ? AND ctk.loai_mon = 'BAT_BUOC'`,
       [nganhId]
     )
 
-    const tongTinChi = tongRows[0]?.tongTinChi || 0
+    const tongTinChiBatBuoc = Number(batBuocRows[0]?.tongTinChiBatBuoc || 0)
 
-    // 3. Tính tổng tín chỉ đã hoàn thành (môn đạt: điểm >= 4.0)
+    // 3. Tính tổng tín chỉ TỰ CHỌN theo quy định từng học kỳ
+    // Lấy danh sách học kỳ có trong chương trình khung
+    const [hocKyRows] = await pool.execute(
+      `SELECT DISTINCT ctk.hoc_ky 
+       FROM ChuongTrinhKhung ctk
+       WHERE ctk.nganh_id = ?
+       ORDER BY ctk.hoc_ky`,
+      [nganhId]
+    )
+
+    // Hàm tính TC tự chọn theo quy định từng học kỳ
+    const getTcTuChonTheoHocKy = (hocKy) => {
+      switch(hocKy) {
+        case 'HK2':
+        case 'HK3':
+        case 'HK5':
+        case 'HK6':
+          return 3
+        case 'HK4':
+        case 'HK7':
+          return 7
+        case 'HK8':
+          return 6
+        default:
+          // HK1 hoặc các học kỳ khác: tính từ dữ liệu
+          return null
+      }
+    }
+
+    let tongTcTuChon = 0
+
+    // Tính TC tự chọn cho HK1 (từ dữ liệu)
+    const [hk1TuChonRows] = await pool.execute(
+      `SELECT SUM(hp.so_tin_chi) as tongTcTuChonHK1
+       FROM ChuongTrinhKhung ctk
+       JOIN HocPhan hp ON ctk.hoc_phan_id = hp.id
+       WHERE ctk.nganh_id = ? 
+         AND ctk.hoc_ky = 'HK1' 
+         AND ctk.loai_mon = 'TU_CHON'`,
+      [nganhId]
+    )
+    const tcTuChonHK1 = Number(hk1TuChonRows[0]?.tongTcTuChonHK1 || 0)
+    tongTcTuChon += tcTuChonHK1
+
+    // Tính TC tự chọn cho các học kỳ khác (theo quy định)
+    for (const row of hocKyRows) {
+      const hocKy = row.hoc_ky
+      if (hocKy !== 'HK1') {
+        const tcTuChon = getTcTuChonTheoHocKy(hocKy)
+        if (tcTuChon !== null) {
+          tongTcTuChon += tcTuChon
+        }
+      }
+    }
+
+    // 4. Tổng tín chỉ = TC bắt buộc + TC tự chọn (theo quy định)
+    const tongTinChi = tongTinChiBatBuoc + tongTcTuChon
+
+    // 5. Tính tổng tín chỉ đã hoàn thành (môn đạt: điểm >= 4.0)
     const [hoanThanhRows] = await pool.execute(
       `SELECT SUM(hp.so_tin_chi) as tinChiHoanThanh
        FROM KetQuaHocTap kq
@@ -113,11 +171,11 @@ export async function getTienDoHocTap(sinhVienId) {
       [sinhVienId]
     )
 
-    const tinChiHoanThanh = hoanThanhRows[0]?.tinChiHoanThanh || 0
+    const tinChiHoanThanh = Number(hoanThanhRows[0]?.tinChiHoanThanh || 0)
 
     return {
-      tongTinChi: Number(tongTinChi) || 0,
-      tinChiHoanThanh: Number(tinChiHoanThanh) || 0
+      tongTinChi: tongTinChi,
+      tinChiHoanThanh: tinChiHoanThanh
     }
   } catch (err) {
     console.error('❌ Lỗi khi lấy tiến độ học tập:', err)

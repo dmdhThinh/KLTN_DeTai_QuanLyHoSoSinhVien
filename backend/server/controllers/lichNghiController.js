@@ -45,8 +45,7 @@ export async function getDanhSachBuoiNghi(req, res) {
         ln.id,
         ln.lich_hoc_id,
         ln.ngay_nghi,
-        ln.ly_do,
-        ln.created_at
+        ln.ly_do
       FROM LichNghi ln
       WHERE ln.lich_hoc_id = ?
       ORDER BY ln.ngay_nghi DESC
@@ -98,5 +97,73 @@ export async function themBuoiNghiToanKhoa(req, res) {
   } catch (err) {
     console.error('❌ Lỗi themBuoiNghiToanKhoa:', err)
     res.status(500).json({ message: 'Lỗi server khi thêm buổi nghỉ toàn khoa' })
+  }
+}
+
+// Xóa buổi nghỉ toàn khoa (reset nghỉ toàn khoa)
+export async function xoaBuoiNghiToanKhoa(req, res) {
+  try {
+    const { khoaId, ngayNghi } = req.body
+
+    if (!ngayNghi) {
+      return res.status(400).json({ message: 'Thiếu thông tin ngayNghi' })
+    }
+
+    // Xóa các bản ghi LichNghi có ly_do = 'Nghỉ toàn khoa' và ngày nghỉ tương ứng
+    let sql = `
+      DELETE ln FROM LichNghi ln
+      INNER JOIN LichHoc lh ON lh.id = ln.lich_hoc_id
+      INNER JOIN LopHocPhan lhp ON lhp.id = lh.lop_hoc_phan_id
+      INNER JOIN Lop l ON l.id = lhp.lop_id
+      WHERE ln.ngay_nghi = ? AND ln.ly_do = 'Nghỉ toàn khoa'
+    `
+    const params = [ngayNghi]
+
+    if (khoaId) {
+      sql += ' AND l.khoa_id = ?'
+      params.push(khoaId)
+    }
+
+    const [result] = await pool.execute(sql, params)
+
+    res.json({
+      message: 'Đã xóa nghỉ toàn khoa thành công',
+      affectedRows: result.affectedRows || 0,
+    })
+  } catch (err) {
+    console.error('❌ Lỗi xoaBuoiNghiToanKhoa:', err)
+    res.status(500).json({ message: 'Lỗi server khi xóa nghỉ toàn khoa' })
+  }
+}
+
+// Lấy danh sách các ngày nghỉ toàn khoa
+export async function getDanhSachNghiToanKhoa(req, res) {
+  try {
+    const { khoaId } = req.query
+
+    let sql = `
+      SELECT DISTINCT
+        ln.ngay_nghi,
+        COUNT(DISTINCT ln.lich_hoc_id) as so_lich_hoc
+      FROM LichNghi ln
+      INNER JOIN LichHoc lh ON lh.id = ln.lich_hoc_id
+      INNER JOIN LopHocPhan lhp ON lhp.id = lh.lop_hoc_phan_id
+      INNER JOIN Lop l ON l.id = lhp.lop_id
+      WHERE ln.ly_do = 'Nghỉ toàn khoa'
+    `
+    const params = []
+
+    if (khoaId) {
+      sql += ' AND l.khoa_id = ?'
+      params.push(khoaId)
+    }
+
+    sql += ' GROUP BY ln.ngay_nghi ORDER BY ln.ngay_nghi DESC'
+
+    const [rows] = await pool.execute(sql, params)
+    res.json(rows)
+  } catch (err) {
+    console.error('❌ Lỗi getDanhSachNghiToanKhoa:', err)
+    res.status(500).json({ message: 'Lỗi server khi lấy danh sách nghỉ toàn khoa' })
   }
 }

@@ -1,13 +1,29 @@
 import React, { useEffect, useState } from 'react'
-import { useParams, useNavigate } from 'react-router-dom'
+import { useNavigate, useParams } from 'react-router-dom'
 import AdminLayout from '../../components/AdminLayout'
 import { apiFetch } from '../../api'
 
-export default function EditLich() {
+function CenterError({ message, onClose }) {
+  if (!message) return null
+  return (
+    <div className="position-fixed top-50 start-50 translate-middle" style={{ zIndex: 1055 }}>
+      <div className="card shadow-lg border-danger" style={{ maxWidth: 520 }}>
+        <div className="card-body text-center">
+          <div className="fw-semibold text-danger mb-2">Có lỗi xảy ra</div>
+          <div className="mb-3">{message}</div>
+          <button className="btn btn-danger" onClick={onClose}>Đóng</button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+export default function EditLich2() {
   const { id } = useParams()
   const navigate = useNavigate()
+
   const [form, setForm] = useState({
-    ngay_hoc: '',
+    lop_hoc_phan_id: '',
     thu: '',
     ca: '',
     tiet_bat_dau: '',
@@ -15,46 +31,62 @@ export default function EditLich() {
     phong: '',
     co_so: '',
     loai: 'lythuyet',
-    ghi_chu: '',
+    ghi_chu: ''
   })
+
+  const [nganhId, setNganhId] = useState('')
+  const [lopId, setLopId] = useState('')
+
+  const [nganhs, setNganhs] = useState([])
+  const [lops, setLops] = useState([])
   const [lopHocPhanInfo, setLopHocPhanInfo] = useState(null)
+
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState('')
   const [saving, setSaving] = useState(false)
   const [message, setMessage] = useState('')
-  const [error, setError] = useState('')
-  const [phongError, setPhongError] = useState('')
 
   useEffect(() => {
     loadData()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id])
 
-  // 🔹 Lấy chi tiết lịch
   const loadData = async () => {
-    setLoading(true)
     try {
-      const lichData = await apiFetch(`/api/lich-admin/${id}`)
-      
+      const [nganhData, lopData, lichData] = await Promise.all([
+        apiFetch('/api/nganh'),
+        apiFetch('/api/lop'),
+        apiFetch(`/api/lich-admin/${id}`)
+      ])
+
+      setNganhs(nganhData || [])
+      setLops(lopData || [])
+
+      // Load thông tin lịch học
       if (lichData) {
         setForm({
-          ngay_hoc: lichData.ngay_hoc || '',
+          lop_hoc_phan_id: lichData.lopHocPhanId || lichData.lop_hoc_phan_id || '',
           thu: lichData.thu || '',
           ca: lichData.ca || '',
-          tiet_bat_dau: lichData.tiet_bat_dau || lichData.tietBatDau || '',
-          tiet_ket_thuc: lichData.tiet_ket_thuc || lichData.tietKetThuc || '',
+          tiet_bat_dau: lichData.tietBatDau || lichData.tiet_bat_dau || '',
+          tiet_ket_thuc: lichData.tietKetThuc || lichData.tiet_ket_thuc || '',
           phong: lichData.phong || '',
-          co_so: lichData.co_so || lichData.coSo || '',
+          co_so: lichData.coSo || lichData.co_so || '',
           loai: lichData.loai || 'lythuyet',
-          ghi_chu: lichData.ghi_chu || lichData.ghiChu || ''
+          ghi_chu: lichData.ghiChu || lichData.ghi_chu || ''
         })
 
-        // Load thông tin lớp học phần
+        // Load thông tin lớp học phần để lấy khoa/ngành/lớp
         const lhpId = lichData.lopHocPhanId || lichData.lop_hoc_phan_id
         if (lhpId) {
           try {
             const lhpInfo = await apiFetch(`/api/lophocphan/${lhpId}`)
             if (lhpInfo) {
               setLopHocPhanInfo(lhpInfo)
+              const lop = lopData.find(l => l.id === (lhpInfo.lopId || lhpInfo.lop_id))
+              if (lop) {
+                setLopId(lop.id)
+                setNganhId(lop.nganhId || lop.nganh_id)
+              }
             }
           } catch (err) {
             console.error('Error loading lop hoc phan info:', err)
@@ -69,17 +101,11 @@ export default function EditLich() {
     }
   }
 
+  // Filter dropdowns
+  const filteredLops = lops.filter(l => String(l.nganhId || l.nganh_id) === String(nganhId))
+
   const handleChange = (field, value) => {
     setForm(prev => ({ ...prev, [field]: value }))
-  }
-
-  // Tính thứ từ ngày học
-  const getThuFromDate = (dateString) => {
-    if (!dateString) return ''
-    const date = new Date(dateString)
-    const dayOfWeek = date.getDay() // 0 = Chủ nhật, 1 = Thứ 2, ..., 6 = Thứ 7
-    // Chuyển đổi: 0 (CN) -> 8, 1 (T2) -> 2, ..., 6 (T7) -> 7
-    return dayOfWeek === 0 ? '8' : String(dayOfWeek + 1)
   }
 
   const checkTrungPhong = async (thu, ca, tietBatDau, tietKetThuc, phong, excludeId) => {
@@ -122,28 +148,6 @@ export default function EditLich() {
     }
   }
 
-  // Kiểm tra trùng phòng khi thay đổi các field liên quan
-  const checkPhongConflict = async (newForm) => {
-    if (newForm.phong && newForm.thu && newForm.ca && newForm.tiet_bat_dau && newForm.tiet_ket_thuc) {
-      const isTrung = await checkTrungPhong(
-        newForm.thu,
-        newForm.ca,
-        newForm.tiet_bat_dau,
-        newForm.tiet_ket_thuc,
-        newForm.phong,
-        id
-      )
-      
-      if (isTrung) {
-        setPhongError(`Phòng ${newForm.phong} đã được sử dụng trong ${getThuLabel(newForm.thu)}, ca ${newForm.ca}, tiết ${newForm.tiet_bat_dau}-${newForm.tiet_ket_thuc}. Vui lòng chọn phòng khác.`)
-      } else {
-        setPhongError('')
-      }
-    } else {
-      setPhongError('')
-    }
-  }
-
   // Hàm chuyển đổi thứ
   const getThuLabel = (thu) => {
     const thuMap = {
@@ -158,24 +162,11 @@ export default function EditLich() {
     return thuMap[thu] || thu
   }
 
-  const handleNgayHocChange = async (dateString) => {
-    handleChange('ngay_hoc', dateString)
-    // Tự động tính và set thứ
-    const thu = getThuFromDate(dateString)
-    handleChange('thu', thu)
-    
-    // Kiểm tra lại trùng phòng nếu đã có phòng
-    if (form.phong) {
-      const newForm = { ...form, ngay_hoc: dateString, thu }
-      await checkPhongConflict(newForm)
-    }
-  }
-
   const handleSubmit = async (e) => {
     e.preventDefault()
     
-    // Kiểm tra trùng phòng học (nếu chưa có lỗi từ real-time check)
-    if (form.phong && form.thu && form.ca && form.tiet_bat_dau && form.tiet_ket_thuc && !phongError) {
+    // Kiểm tra trùng phòng học
+    if (form.phong && form.thu && form.ca && form.tiet_bat_dau && form.tiet_ket_thuc) {
       const isTrung = await checkTrungPhong(
         form.thu,
         form.ca,
@@ -186,53 +177,34 @@ export default function EditLich() {
       )
       
       if (isTrung) {
-        setPhongError(`Phòng ${form.phong} đã được sử dụng trong ${getThuLabel(form.thu)}, ca ${form.ca}, tiết ${form.tiet_bat_dau}-${form.tiet_ket_thuc}. Vui lòng chọn phòng khác.`)
+        setError(`Phòng ${form.phong} đã được sử dụng trong ${getThuLabel(form.thu)}, ca ${form.ca}, tiết ${form.tiet_bat_dau}-${form.tiet_ket_thuc}. Vui lòng chọn phòng khác.`)
         return
       }
     }
     
-    // Nếu đã có lỗi phòng từ real-time check, không submit
-    if (phongError) {
-      return
-    }
-
     setSaving(true)
     setMessage('')
     setError('')
 
     try {
-      // Nếu có ngày học cụ thể → gọi API tạo bản ghi ngoại lệ
-      if (form.ngay_hoc && form.ngay_hoc.trim() !== '') {
-        await apiFetch('/api/lich-admin/override', {
-          method: 'POST',
-          body: JSON.stringify({
-            lich_hoc_id: id,
-            ngay_hoc: form.ngay_hoc,
-            phong: form.phong,
-            co_so: form.co_so,
-            ghi_chu: form.ghi_chu,
-          }),
-        })
-      } else {
-        // Ngược lại → sửa mẫu lịch gốc (áp dụng mọi tuần)
-        const payload = {
-          thu: form.thu ? Number(form.thu) : null,
-          ca: form.ca || '',
-          tiet_bat_dau: form.tiet_bat_dau ? Number(form.tiet_bat_dau) : null,
-          tiet_ket_thuc: form.tiet_ket_thuc ? Number(form.tiet_ket_thuc) : null,
-          phong: form.phong?.trim() || null,
-          co_so: form.co_so?.trim() || null,
-          loai: form.loai || 'lythuyet',
-          ghi_chu: form.ghi_chu || null,
-        }
-        await apiFetch(`/api/lich-admin/${id}`, {
-          method: 'PUT',
-          body: JSON.stringify(payload),
-        })
+      const payload = {
+        thu: form.thu ? Number(form.thu) : null,
+        ca: form.ca || '',
+        tiet_bat_dau: form.tiet_bat_dau ? Number(form.tiet_bat_dau) : null,
+        tiet_ket_thuc: form.tiet_ket_thuc ? Number(form.tiet_ket_thuc) : null,
+        phong: form.phong?.trim() || null,
+        co_so: form.co_so?.trim() || null,
+        loai: form.loai || 'lythuyet',
+        ghi_chu: form.ghi_chu || null
       }
 
+      await apiFetch(`/api/lich-admin/${id}`, {
+        method: 'PUT',
+        body: JSON.stringify(payload)
+      })
+
       setMessage('✅ Cập nhật lịch học thành công!')
-      setTimeout(() => navigate('/admin/lich'), 1500)
+      setTimeout(() => navigate('/admin/quan-ly-lich-hoc'), 1500)
     } catch (err) {
       console.error(err)
       setError('Không thể cập nhật lịch học: ' + (err.message || 'Lỗi không xác định'))
@@ -244,9 +216,9 @@ export default function EditLich() {
   if (loading) return <div className="text-center mt-5">Đang tải dữ liệu...</div>
 
   return (
-    <AdminLayout activeMenu="lich" title="Cập nhật Lịch học">
+    <AdminLayout activeMenu="quan-ly-lich-hoc" title="Cập nhật Lịch học">
+      <CenterError message={error} onClose={() => setError('')} />
       {message && <div className="alert alert-success text-center py-2">{message}</div>}
-      {error && !error.includes('Phòng') && <div className="alert alert-danger text-center py-2">{error}</div>}
       
       <div className="d-flex justify-content-center">
         <div className="card shadow-sm w-100" style={{ maxWidth: 1370 }}>
@@ -266,19 +238,43 @@ export default function EditLich() {
               </div>
 
               <div className="col-md-4">
-                <label className="form-label">Ngày học *</label>
+                <label className="form-label">Ngành *</label>
                 <input
-                  type="date"
+                  type="text"
                   className="form-control"
-                  value={form.ngay_hoc}
-                  onChange={(e) => handleNgayHocChange(e.target.value)}
-                  required
+                  value={nganhs.find(n => n.id === nganhId)?.tenNganh || nganhs.find(n => n.id === nganhId)?.ten_nganh || ''}
+                  disabled
                 />
-                {form.ngay_hoc && form.thu && (
-                  <small className="text-muted">
-                    Thứ: {form.thu === '2' ? 'Thứ 2' : form.thu === '3' ? 'Thứ 3' : form.thu === '4' ? 'Thứ 4' : form.thu === '5' ? 'Thứ 5' : form.thu === '6' ? 'Thứ 6' : form.thu === '7' ? 'Thứ 7' : 'Chủ nhật'}
-                  </small>
-                )}
+              </div>
+
+              <div className="col-md-4">
+                <label className="form-label">Lớp *</label>
+                <input
+                  type="text"
+                  className="form-control"
+                  value={filteredLops.find(l => l.id === lopId)?.tenLop || filteredLops.find(l => l.id === lopId)?.ten_lop || ''}
+                  disabled
+                />
+              </div>
+
+              {/* Cột 2 */}
+              <div className="col-md-4">
+                <label className="form-label">Thứ *</label>
+                <select
+                  className="form-select"
+                  value={form.thu}
+                  onChange={(e) => handleChange('thu', e.target.value)}
+                  required
+                >
+                  <option value="">-- Chọn thứ --</option>
+                  <option value="2">Thứ 2</option>
+                  <option value="3">Thứ 3</option>
+                  <option value="4">Thứ 4</option>
+                  <option value="5">Thứ 5</option>
+                  <option value="6">Thứ 6</option>
+                  <option value="7">Thứ 7</option>
+                  <option value="8">Chủ nhật</option>
+                </select>
               </div>
 
               <div className="col-md-4">
@@ -286,14 +282,7 @@ export default function EditLich() {
                 <select
                   className="form-select"
                   value={form.ca}
-                  onChange={async (e) => {
-                    const value = e.target.value
-                    handleChange('ca', value)
-                    if (form.phong) {
-                      const newForm = { ...form, ca: value }
-                      await checkPhongConflict(newForm)
-                    }
-                  }}
+                  onChange={(e) => handleChange('ca', e.target.value)}
                   required
                 >
                   <option value="">-- Chọn ca --</option>
@@ -303,31 +292,15 @@ export default function EditLich() {
                 </select>
               </div>
 
-              {/* Cột 2 */}
+              {/* Cột 3 */}
               <div className="col-md-4">
                 <label className="form-label">Phòng</label>
                 <input
                   type="text"
-                  className={`form-control ${phongError ? 'is-invalid' : ''}`}
+                  className="form-control"
                   value={form.phong}
-                  onChange={async (e) => {
-                    const phongValue = e.target.value
-                    handleChange('phong', phongValue)
-                    
-                    // Kiểm tra trùng phòng real-time nếu đã có đủ thông tin
-                    if (phongValue && form.thu && form.ca && form.tiet_bat_dau && form.tiet_ket_thuc) {
-                      const newForm = { ...form, phong: phongValue }
-                      await checkPhongConflict(newForm)
-                    } else {
-                      setPhongError('')
-                    }
-                  }}
+                  onChange={(e) => handleChange('phong', e.target.value)}
                 />
-                {phongError && (
-                  <div className="invalid-feedback d-block">
-                    {phongError}
-                  </div>
-                )}
               </div>
 
               <div className="col-md-4">
@@ -336,14 +309,7 @@ export default function EditLich() {
                   type="number"
                   className="form-control"
                   value={form.tiet_bat_dau}
-                  onChange={async (e) => {
-                    const value = e.target.value
-                    handleChange('tiet_bat_dau', value)
-                    if (form.phong) {
-                      const newForm = { ...form, tiet_bat_dau: value }
-                      await checkPhongConflict(newForm)
-                    }
-                  }}
+                  onChange={(e) => handleChange('tiet_bat_dau', e.target.value)}
                   required
                   min="1"
                 />
@@ -355,14 +321,7 @@ export default function EditLich() {
                   type="number"
                   className="form-control"
                   value={form.tiet_ket_thuc}
-                  onChange={async (e) => {
-                    const value = e.target.value
-                    handleChange('tiet_ket_thuc', value)
-                    if (form.phong) {
-                      const newForm = { ...form, tiet_ket_thuc: value }
-                      await checkPhongConflict(newForm)
-                    }
-                  }}
+                  onChange={(e) => handleChange('tiet_ket_thuc', e.target.value)}
                   required
                   min="1"
                 />
@@ -395,7 +354,7 @@ export default function EditLich() {
               </div>
 
               <div className="col-12 d-flex justify-content-end mt-4">
-                <button type="button" className="btn btn-secondary me-2" onClick={() => navigate('/admin/lich')}>
+                <button type="button" className="btn btn-secondary me-2" onClick={() => navigate('/admin/quan-ly-lich-hoc')}>
                   Hủy
                 </button>
                 <button type="submit" className="btn btn-primary" disabled={saving}>
@@ -409,3 +368,4 @@ export default function EditLich() {
     </AdminLayout>
   )
 }
+

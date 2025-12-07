@@ -8,11 +8,9 @@ export default function HocPhanList() {
   const [list, setList] = useState([])
   const [filtered, setFiltered] = useState([])
   const [search, setSearch] = useState('')
-  const [khoaId, setKhoaId] = useState('')
   const [nganhId, setNganhId] = useState('')
-  const [khoas, setKhoas] = useState([])
   const [nganhs, setNganhs] = useState([])
-  const [filteredNganhs, setFilteredNganhs] = useState([])
+  const [showSuggestions, setShowSuggestions] = useState(false)
   const [loading, setLoading] = useState(true)
   const [message, setMessage] = useState('')
   const [confirmDelete, setConfirmDelete] = useState(null)
@@ -34,36 +32,15 @@ export default function HocPhanList() {
     loadHocPhan()
   }, [])
 
-  // 🔹 Khi chọn Khoa → lọc ngành thuộc khoa đó
-  useEffect(() => {
-    if (!khoaId) {
-      setFilteredNganhs(nganhs)
-      setNganhId('')
-    } else {
-      const filteredList = nganhs.filter(n => String(n.khoaId) === String(khoaId))
-      setFilteredNganhs(filteredList)
-      setNganhId('')
-    }
-  }, [khoaId, nganhs])
 
-  // ===== Load dropdown (Khoa & Ngành)
+  // ===== Load dropdown (Ngành)
   const loadDropdowns = async () => {
     try {
-      const khoaData = await apiFetch('/api/khoa')
       const nganhData = await apiFetch('/api/nganh')
-      if (Array.isArray(khoaData)) {
-        setKhoas(khoaData.map(k => ({ id: k.id, ten_khoa: k.ten_khoa || k.tenKhoa })))
-      }
       if (Array.isArray(nganhData)) {
         setNganhs(nganhData.map(n => ({
           id: n.id,
-          ten_nganh: n.ten_nganh || n.tenNganh,
-          khoaId: n.khoaId
-        })))
-        setFilteredNganhs(nganhData.map(n => ({
-          id: n.id,
-          ten_nganh: n.ten_nganh || n.tenNganh,
-          khoaId: n.khoaId
+          ten_nganh: n.ten_nganh || n.tenNganh
         })))
       }
     } catch (err) {
@@ -86,21 +63,71 @@ export default function HocPhanList() {
     }
   }
 
+  // Filter suggestions cho autocomplete
+  const filteredSuggestions = search
+    ? list.filter(hp => {
+        const maHocPhan = (hp.maHocPhan || '').toLowerCase()
+        const tenHocPhan = (hp.tenHocPhan || '').toLowerCase()
+        const searchLower = search.toLowerCase()
+        return maHocPhan.includes(searchLower) || tenHocPhan.includes(searchLower)
+      }).slice(0, 10) // Giới hạn 10 kết quả
+    : []
+
+  const handleSearchChange = (value) => {
+    setSearch(value)
+    setShowSuggestions(true)
+  }
+
+  const handleSelectSuggestion = (hp) => {
+    const searchValue = `${hp.maHocPhan} - ${hp.tenHocPhan}`
+    setSearch(searchValue)
+    setShowSuggestions(false)
+    // Tự động filter sau khi chọn
+    setTimeout(() => {
+      let result = [...list]
+      if (searchValue.trim()) {
+        const keyword = searchValue.toLowerCase()
+        result = result.filter(hp => {
+          const tenHocPhan = (hp.tenHocPhan || '').toLowerCase()
+          const maHocPhan = (hp.maHocPhan || '').toLowerCase()
+          const fullString = `${maHocPhan} - ${tenHocPhan}`.toLowerCase()
+          
+          return tenHocPhan.includes(keyword) ||
+                 maHocPhan.includes(keyword) ||
+                 fullString.includes(keyword)
+        })
+      }
+      if (nganhId) {
+        result = result.filter(hp => String(hp.nganhId) === String(nganhId))
+      }
+      setFiltered(result)
+      setPage(1)
+    }, 0)
+  }
+
+  const handleSearchBlur = () => {
+    setTimeout(() => {
+      setShowSuggestions(false)
+    }, 200)
+  }
+
   // ===== Xử lý tìm kiếm & lọc
   const handleSubmit = (e) => {
     e.preventDefault()
+    setShowSuggestions(false)
     let result = [...list]
 
     if (search.trim()) {
       const keyword = search.toLowerCase()
-      result = result.filter(hp =>
-        hp.tenHocPhan.toLowerCase().includes(keyword) ||
-        hp.maHocPhan.toLowerCase().includes(keyword)
-      )
-    }
-
-    if (khoaId) {
-      result = result.filter(hp => String(hp.khoaId) === String(khoaId))
+      result = result.filter(hp => {
+        const tenHocPhan = (hp.tenHocPhan || '').toLowerCase()
+        const maHocPhan = (hp.maHocPhan || '').toLowerCase()
+        const fullString = `${maHocPhan} - ${tenHocPhan}`.toLowerCase()
+        
+        return tenHocPhan.includes(keyword) ||
+               maHocPhan.includes(keyword) ||
+               fullString.includes(keyword)
+      })
     }
 
     if (nganhId) {
@@ -162,27 +189,49 @@ export default function HocPhanList() {
           className="d-flex align-items-center gap-2 flex-wrap"
         >
           {/* 🔍 Tìm kiếm */}
-          <input
-            type="text"
-            className="form-control"
-            placeholder="Tìm theo mã / tên học phần..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            style={{ width: 240 }}
-          />
-
-          {/* 🏫 Chọn khoa */}
-          <select
-            className="form-select"
-            style={{ width: 200 }}
-            value={khoaId}
-            onChange={(e) => setKhoaId(e.target.value)}
-          >
-            <option value="">-- Tất cả khoa --</option>
-            {khoas.map(k => (
-              <option key={k.id} value={k.id}>{k.ten_khoa}</option>
-            ))}
-          </select>
+          <div style={{ position: 'relative', width: 240 }}>
+            <input
+              type="text"
+              className="form-control"
+              placeholder="Tìm theo mã / tên học phần..."
+              value={search}
+              onChange={(e) => handleSearchChange(e.target.value)}
+              onFocus={() => setShowSuggestions(true)}
+              onBlur={handleSearchBlur}
+            />
+            {showSuggestions && filteredSuggestions.length > 0 && (
+              <div
+                className="list-group"
+                style={{
+                  position: 'absolute',
+                  top: '100%',
+                  left: 0,
+                  right: 0,
+                  zIndex: 1000,
+                  maxHeight: '300px',
+                  overflowY: 'auto',
+                  border: '1px solid #ced4da',
+                  borderRadius: '0.375rem',
+                  backgroundColor: 'white',
+                  boxShadow: '0 0.5rem 1rem rgba(0, 0, 0, 0.15)',
+                  marginTop: '2px'
+                }}
+              >
+                {filteredSuggestions.map(hp => (
+                  <button
+                    key={hp.id}
+                    type="button"
+                    className="list-group-item list-group-item-action"
+                    onClick={() => handleSelectSuggestion(hp)}
+                    style={{ textAlign: 'left', cursor: 'pointer' }}
+                  >
+                    <div className="fw-semibold">{hp.maHocPhan}</div>
+                    <div className="small text-muted">{hp.tenHocPhan}</div>
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
 
           {/* 🎓 Chọn ngành */}
           <select
@@ -190,10 +239,9 @@ export default function HocPhanList() {
             style={{ width: 200 }}
             value={nganhId}
             onChange={(e) => setNganhId(e.target.value)}
-            disabled={!filteredNganhs.length}
           >
             <option value="">-- Tất cả ngành --</option>
-            {filteredNganhs.map(n => (
+            {nganhs.map(n => (
               <option key={n.id} value={n.id}>{n.ten_nganh}</option>
             ))}
           </select>

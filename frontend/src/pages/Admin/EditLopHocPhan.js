@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react'
-import { useNavigate, useParams } from 'react-router-dom'
+import { useNavigate, useParams, useLocation } from 'react-router-dom'
 import { apiFetch } from '../../api'
 import AdminLayout from '../../components/AdminLayout'
 
@@ -21,6 +21,7 @@ function CenterError({ message, onClose }) {
 export default function EditLopHocPhan() {
   const { id } = useParams()
   const navigate = useNavigate()
+  const location = useLocation()
 
   const [form, setForm] = useState({
     maLopHocPhan: '',
@@ -35,10 +36,8 @@ export default function EditLopHocPhan() {
     soTuanHoc: ''
   })
 
-  const [khoaId, setKhoaId] = useState('')
   const [nganhId, setNganhId] = useState('')
 
-  const [khoas, setKhoas] = useState([])
   const [nganhs, setNganhs] = useState([])
   const [lops, setLops] = useState([])
   const [hocPhans, setHocPhans] = useState([])
@@ -54,8 +53,8 @@ export default function EditLopHocPhan() {
 
   const loadData = async () => {
     try {
-      const [khoaData, nganhData, lopData, hocPhanData, gvData, lhpData] = await Promise.all([
-        apiFetch('/api/khoa'),
+      // Luôn gọi API để lấy đầy đủ dữ liệu
+      const [nganhData, lopData, hocPhanData, gvData, lhpData] = await Promise.all([
         apiFetch('/api/nganh'),
         apiFetch('/api/lop'),
         apiFetch('/api/hocphan'),
@@ -63,31 +62,39 @@ export default function EditLopHocPhan() {
         apiFetch(`/api/lophocphan/${id}`)
       ])
 
-      setKhoas(khoaData)
       setNganhs(nganhData)
       setLops(lopData)
       setHocPhans(hocPhanData)
       setGiangViens(gvData.data || []);
 
+      // Format ngày tháng
+      const formatDate = (dateStr) => {
+        if (!dateStr) return ''
+        if (typeof dateStr === 'string') {
+          // Nếu là string, cắt lấy phần ngày (YYYY-MM-DD)
+          return dateStr.substring(0, 10)
+        }
+        return ''
+      }
+
       setForm({
         maLopHocPhan: lhpData.ma_lop_hoc_phan || lhpData.maLopHocPhan || '',
-        hocPhanId: lhpData.hoc_phan_id || lhpData.hocPhanId || '',
-        giangVienId: lhpData.giang_vien_id || lhpData.giangVienId || '',
-        lopId: lhpData.lop_id || lhpData.lopId || '',
+        hocPhanId: String(lhpData.hoc_phan_id || lhpData.hocPhanId || ''),
+        giangVienId: String(lhpData.giang_vien_id || lhpData.giangVienId || ''),
+        lopId: String(lhpData.lop_id || lhpData.lopId || ''),
         hocKy: lhpData.hoc_ky || lhpData.hocKy || 'HK1',
         namHoc: lhpData.nam_hoc || lhpData.namHoc || '',
         trangThai: lhpData.trang_thai || lhpData.trangThai || 'Chấp nhận mở lớp',
-        ngayBatDau: lhpData.ngay_bat_dau ? lhpData.ngay_bat_dau.substring(0, 10) : '',
-        ngayKetThuc: lhpData.ngay_ket_thuc ? lhpData.ngay_ket_thuc.substring(0, 10) : '',
-        soTuanHoc: lhpData.so_tuan_hoc || ''
+        ngayBatDau: formatDate(lhpData.ngay_bat_dau || lhpData.ngayBatDau),
+        ngayKetThuc: formatDate(lhpData.ngay_ket_thuc || lhpData.ngayKetThuc),
+        soTuanHoc: String(lhpData.so_tuan_hoc || lhpData.soTuanHoc || '')
       })
 
-      // Gán khoa/ngành tương ứng (nếu có)
-      const lop = lopData.find(l => l.id === lhpData.lop_id)
+      // Gán ngành tương ứng (nếu có)
+      const lopIdValue = lhpData.lop_id || lhpData.lopId
+      const lop = lopData.find(l => l.id === lopIdValue || String(l.id) === String(lopIdValue))
       if (lop) {
-        setNganhId(lop.nganh_id)
-        const nganh = nganhData.find(n => n.id === lop.nganh_id)
-        if (nganh) setKhoaId(nganh.khoa_id)
+        setNganhId(String(lop.nganh_id || lop.nganhId || ''))
       }
 
     } catch (err) {
@@ -98,7 +105,6 @@ export default function EditLopHocPhan() {
     }
   }
 
-  const filteredNganhs = nganhs.filter(n => n.khoaId == khoaId || n.khoa_id == khoaId)
   const filteredLops = lops.filter(l => l.nganhId == nganhId || l.nganh_id == nganhId)
   const filteredHocPhans = hocPhans.filter(h => h.nganhId == nganhId || h.nganh_id == nganhId)
 
@@ -131,7 +137,6 @@ export default function EditLopHocPhan() {
       <div className="d-flex justify-content-center">
         <div className="card shadow-sm w-100" style={{ maxWidth: 1370 }}>
           <div className="card-body">
-            <h5 className="mb-3">Cập nhật thông tin Lớp Học Phần</h5>
             <form onSubmit={handleSubmit} className="row g-3">
 
               {/* Mã lớp học phần */}
@@ -142,24 +147,6 @@ export default function EditLopHocPhan() {
                   value={form.maLopHocPhan}
                   onChange={(e) => handleChange('maLopHocPhan', e.target.value)}
                 />
-              </div>
-
-              {/* Khoa */}
-              <div className="col-md-4">
-                <label className="form-label">Khoa *</label>
-                <select
-                  className="form-select"
-                  value={khoaId}
-                  onChange={(e) => {
-                    setKhoaId(e.target.value)
-                    setNganhId('')
-                    handleChange('lopId', '')
-                    handleChange('hocPhanId', '')
-                  }}
-                >
-                  <option value="">-- Chọn khoa --</option>
-                  {khoas.map(k => <option key={k.id} value={k.id}>{k.tenKhoa || k.ten_khoa}</option>)}
-                </select>
               </div>
 
               {/* Ngành */}
@@ -173,10 +160,9 @@ export default function EditLopHocPhan() {
                     handleChange('lopId', '')
                     handleChange('hocPhanId', '')
                   }}
-                  disabled={!khoaId}
                 >
                   <option value="">-- Chọn ngành --</option>
-                  {filteredNganhs.map(n => (
+                  {nganhs.map(n => (
                     <option key={n.id} value={n.id}>{n.tenNganh || n.ten_nganh}</option>
                   ))}
                 </select>
@@ -282,8 +268,20 @@ export default function EditLopHocPhan() {
                 </select>
               </div>
 
-              <div className="col-12 d-flex justify-content-end">
-                <button className="btn btn-primary" disabled={saving}>
+              <div className="col-12 d-flex justify-content-end gap-2">
+                <button 
+                  type="button"
+                  className="btn btn-secondary" 
+                  onClick={() => navigate('/admin/lophocphan')}
+                  disabled={saving}
+                >
+                  Hủy
+                </button>
+                <button 
+                  type="submit"
+                  className="btn btn-primary" 
+                  disabled={saving}
+                >
                   {saving ? 'Đang lưu...' : 'Lưu thay đổi'}
                 </button>
               </div>

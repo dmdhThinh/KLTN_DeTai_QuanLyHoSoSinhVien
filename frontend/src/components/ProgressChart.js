@@ -48,6 +48,9 @@ export default function ProgressChart({ sinhVienId }) {
 
   const { tongTinChi, tinChiHoanThanh } = data
   const percent = tongTinChi > 0 ? Math.round((tinChiHoanThanh / tongTinChi) * 100) : 0
+  const isOverLimit = tinChiHoanThanh > tongTinChi
+  const tinChiConLai = tongTinChi - tinChiHoanThanh
+  const tinChiVuotQua = isOverLimit ? tinChiHoanThanh - tongTinChi : 0
 
   // SVG circle parameters
   const size = 200
@@ -55,7 +58,11 @@ export default function ProgressChart({ sinhVienId }) {
   const center = size / 2
   const radius = (size - strokeWidth) / 2
   const circumference = 2 * Math.PI * radius
-  const offset = circumference - (percent / 100) * circumference
+  // Giới hạn progress circle ở 100% (khi vượt quá vẫn hiển thị đầy)
+  const displayPercent = Math.min(percent, 100)
+  const offset = circumference - (displayPercent / 100) * circumference
+  // Giữ màu xanh lá
+  const progressColor = '#28a745'
 
   return (
     <div className="card shadow-sm border-0 h-100">
@@ -83,13 +90,13 @@ export default function ProgressChart({ sinhVienId }) {
                 cy={center}
                 r={radius}
                 fill="none"
-                stroke="#28a745"
+                stroke={progressColor}
                 strokeWidth={strokeWidth}
                 strokeDasharray={circumference}
                 strokeDashoffset={offset}
                 strokeLinecap="round"
                 style={{
-                  transition: 'stroke-dashoffset 1s ease-in-out'
+                  transition: 'stroke-dashoffset 1s ease-in-out, stroke 0.3s ease-in-out'
                 }}
               />
             </svg>
@@ -100,7 +107,9 @@ export default function ProgressChart({ sinhVienId }) {
               style={{ width: '140px' }}
             >
               <div className="small text-muted mb-1">Đã hoàn thành</div>
-              <div className="fs-1 fw-bold text-success">{percent}%</div>
+              <div className="fs-1 fw-bold text-success">
+                {percent}%
+              </div>
               <div className="small text-muted mt-2">
                 <strong>{tinChiHoanThanh}</strong>/<strong>{tongTinChi}</strong> tín chỉ
               </div>
@@ -121,8 +130,10 @@ export default function ProgressChart({ sinhVienId }) {
             </div>
             <div className="vr"></div>
             <div>
-              <div className="small text-muted">Còn lại</div>
-              <div className="fw-semibold fs-5 text-warning">{tongTinChi - tinChiHoanThanh}</div>
+              <div className="small text-muted">{isOverLimit ? 'Vượt quá' : 'Còn lại'}</div>
+              <div className={`fw-semibold fs-5 ${isOverLimit ? 'text-success' : 'text-warning'}`}>
+                {isOverLimit ? `+${tinChiVuotQua}` : tinChiConLai}
+              </div>
             </div>
           </div>
         </div>
