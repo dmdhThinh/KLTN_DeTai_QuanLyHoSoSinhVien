@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react'
 import StudentLayout from '../../components/StudentLayout'
 import { apiFetch, getSinhVienId } from '../../api'
+import { AlertModal } from '../../components/Modal'
 import dayjs from 'dayjs'
 
 export default function YeuCauTuVan() {
@@ -28,6 +29,7 @@ export default function YeuCauTuVan() {
   
   // Notification và confirm modals
   const [notification, setNotification] = useState({ show: false, message: '', type: '' })
+  const [alertModal, setAlertModal] = useState({ show: false, message: '', type: 'info' })
   const [confirmCancel, setConfirmCancel] = useState(null)
 
   const loadData = useCallback(async (showLoading = true) => {
@@ -166,7 +168,7 @@ export default function YeuCauTuVan() {
       }
     } catch (error) {
       console.error('Lỗi load chi tiết:', error)
-      alert('Lỗi khi tải chi tiết yêu cầu')
+      setAlertModal({ show: true, message: 'Lỗi khi tải chi tiết yêu cầu', type: 'danger' })
     }
   }
 
@@ -175,7 +177,7 @@ export default function YeuCauTuVan() {
     e.preventDefault()
     
     if (!tinNhanMoi.trim()) {
-      alert('Vui lòng nhập nội dung tin nhắn')
+      setAlertModal({ show: true, message: 'Vui lòng nhập nội dung tin nhắn', type: 'warning' })
       return
     }
     
@@ -649,6 +651,13 @@ export default function YeuCauTuVan() {
           </div>
         </div>
       )}
+
+      <AlertModal
+        show={alertModal.show}
+        message={alertModal.message}
+        type={alertModal.type}
+        onClose={() => setAlertModal({ show: false, message: '', type: 'info' })}
+      />
     </StudentLayout>
   )
 }

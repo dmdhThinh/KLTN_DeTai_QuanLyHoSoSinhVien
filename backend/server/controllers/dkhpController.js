@@ -185,3 +185,22 @@ export async function getMonCaiThien(req, res) {
     res.status(500).json({ message: 'Lỗi lấy danh sách môn cải thiện', error: err.message })
   }
 }
+
+// GET /api/dkhp/all-courses?sinh_vien_id=&hoc_ky=&nam_hoc=
+// Lấy TẤT CẢ môn của học kỳ (cho phép học vượt)
+export async function listAllCoursesBySemester(req, res) {
+  try {
+    const { sinh_vien_id, hoc_ky, nam_hoc } = req.query
+    if (!sinh_vien_id || !hoc_ky || !nam_hoc) {
+      return res.status(400).json({ message: 'Thiếu sinh_vien_id, hoc_ky, nam_hoc' })
+    }
+    const rows = await DkModel.listAllCoursesBySemester({
+      sinh_vien_id: +sinh_vien_id,
+      hoc_ky,
+      nam_hoc
+    })
+    res.json(rows)
+  } catch (err) {
+    res.status(500).json({ message: 'Lỗi lấy danh sách môn học kỳ', error: err.message })
+  }
+}

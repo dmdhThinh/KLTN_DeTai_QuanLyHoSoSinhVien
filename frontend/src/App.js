@@ -5,6 +5,8 @@ import Login from './pages/login'
 import StudentDashboard from './pages/SinhVien/StudentDashboard'
 import StudentDetail from './pages/SinhVien/StudentDetail'
 import StudentChangePassword from './pages/SinhVien/ChangePassword'
+import TeacherChangePassword from './pages/GiangVien/ChangePassword'
+import TeacherDetail from './pages/GiangVien/TeacherDetail'
 import TeacherDashboard from './pages/GiangVien/TeacherDashboard'
 import AdminDashboard from './pages/Admin/AdminDashboard'
 
@@ -69,6 +71,8 @@ import QuanLyDotNhapDiem from './pages/Admin/QuanLyDotNhapDiem.js'
 import QuanLyDotDangKy from './pages/Admin/QuanLyDotDangKy.js'
 import SuaDiem from './pages/Admin/SuaDiem.js'
 import CongNo from './pages/SinhVien/CongNo.js'
+import DiemRenLuyen from './pages/SinhVien/DiemRenLuyen.js'
+import HocBong from './pages/SinhVien/HocBong.js'
 import QuanLyHocPhi from './pages/Admin/QuanLyHocPhi.js'
 import YeuCauTuVanSinhVien from './pages/SinhVien/YeuCauTuVan.js'
 import YeuCauTuVanGiangVien from './pages/GiangVien/YeuCauTuVan.js'
@@ -162,10 +166,26 @@ function App() {
   path="/teacher/thong-bao"
   element={<PrivateRoute allowRoles={['Giảng viên']}><ThongBaoGiangVien /></PrivateRoute>}
 />
-<Route
-  path="/teacher/thong-bao/:id"
-  element={<PrivateRoute allowRoles={['Giảng viên']}><ThongBaoChiTietGiangVien /></PrivateRoute>}
-/>
+        <Route
+          path="/teacher/thong-bao/:id"
+          element={<PrivateRoute allowRoles={['Giảng viên']}><ThongBaoChiTietGiangVien /></PrivateRoute>}
+        />
+        <Route
+          path="/teacher/change-password"
+          element={
+            <PrivateRoute allowRoles={['Giảng viên']}>
+              <TeacherChangePassword />
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/teacher/detail"
+          element={
+            <PrivateRoute allowRoles={['Giảng viên']}>
+              <TeacherDetail />
+            </PrivateRoute>
+          }
+        />
 
         {/* Quản trị */}
         <Route
@@ -208,6 +228,8 @@ function App() {
         <Route path="/chuongtrinhkhung" element={<PrivateRoute allowRoles={['Sinh viên']}><ChuongTrinhKhung /></PrivateRoute>} />
         <Route path="/dkhp" element={<PrivateRoute allowRoles={['Sinh viên']}><DKHP /></PrivateRoute>} />
         <Route path="/congno" element={<PrivateRoute allowRoles={['Sinh viên']}><CongNo /></PrivateRoute>} />
+        <Route path="/diem-ren-luyen" element={<PrivateRoute allowRoles={['Sinh viên']}><DiemRenLuyen /></PrivateRoute>} />
+        <Route path="/hoc-bong" element={<PrivateRoute allowRoles={['Sinh viên']}><HocBong /></PrivateRoute>} />
         <Route path="/yeu-cau-tu-van" element={<PrivateRoute allowRoles={['Sinh viên']}><YeuCauTuVanSinhVien /></PrivateRoute>} />
 
         <Route path="/admin/accounts" element={<PrivateRoute allowRoles={['Quản trị']}> <AccountList /></PrivateRoute>} />

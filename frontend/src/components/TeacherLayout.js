@@ -316,7 +316,7 @@ export default function TeacherLayout({ children, title = '', activeMenu = '' })
                       className="student-dropdown-item"
                       onClick={() => {
                         setShowMenu(false)
-                        navigate('/teacher')
+                        navigate('/teacher/detail')
                       }}
                     >
                       <i className="bi bi-person-circle me-2" style={{ fontSize: '16px' }}></i>
@@ -327,7 +327,7 @@ export default function TeacherLayout({ children, title = '', activeMenu = '' })
                       className="student-dropdown-item"
                       onClick={() => {
                         setShowMenu(false)
-                        navigate('/change-password')
+                        navigate('/teacher/change-password')
                       }}
                     >
                       <i className="bi bi-shield-lock me-2" style={{ fontSize: '16px' }}></i>

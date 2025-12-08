@@ -40,4 +40,7 @@ router.get('/mon-rot', ctrl.getMonKhongDat)
 // Lấy danh sách môn cải thiện
 router.get('/mon-cai-thien', ctrl.getMonCaiThien)
 
+// Lấy TẤT CẢ môn của học kỳ (cho phép học vượt)
+router.get('/all-courses', ctrl.listAllCoursesBySemester)
+
 export default router

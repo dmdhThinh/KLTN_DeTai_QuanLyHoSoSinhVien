@@ -171,6 +171,34 @@ router.get('/', async (req, res) => {
   }
 });
 
+// 📋 API Lấy học bổng của sinh viên cụ thể
+router.get('/sinh-vien/:sinhVienId', async (req, res) => {
+  const { sinhVienId } = req.params;
+  const { hoc_ky, nam_hoc } = req.query;
+  try {
+    let sql = `
+      SELECT hb.*, sv.ma_sv, sv.ho_ten
+      FROM HocBong hb
+      JOIN SinhVien sv ON hb.sinh_vien_id = sv.id
+      WHERE hb.sinh_vien_id = ?
+    `;
+    const params = [sinhVienId];
+
+    if (hoc_ky && nam_hoc) {
+      sql += ` AND hb.hoc_ky = ? AND hb.nam_hoc = ?`;
+      params.push(hoc_ky, nam_hoc);
+    }
+
+    sql += ` ORDER BY hb.nam_hoc DESC, hb.hoc_ky DESC`;
+
+    const [rows] = await pool.query(sql, params);
+    res.json(rows);
+  } catch (err) {
+    console.error('Lỗi lấy học bổng sinh viên:', err);
+    res.status(500).json({ message: 'Lỗi lấy học bổng sinh viên' });
+  }
+});
+
 // 🗑️ 3. Xóa kết quả học bổng
 router.delete('/', async (req, res) => {
   const { hoc_ky, nam_hoc } = req.query;

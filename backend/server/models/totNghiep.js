@@ -20,29 +20,39 @@ export async function kiemTraDieuKienTotNghiep(sinhVienId) {
 
     const nganhId = svRows[0].nganh_id;
 
-    // 2. Tính tổng tín chỉ từ chương trình khung (chỉ tính môn bắt buộc)
-    const [tongRows] = await pool.execute(
-      `SELECT SUM(hp.so_tin_chi) as tongTinChiBatBuoc
+    // 2. Lấy danh sách tất cả môn bắt buộc từ chương trình khung
+    const [monBatBuocRows] = await pool.execute(
+      `SELECT ctk.hoc_phan_id, hp.ma_hoc_phan, hp.ten_hoc_phan, hp.so_tin_chi
        FROM ChuongTrinhKhung ctk
        JOIN HocPhan hp ON ctk.hoc_phan_id = hp.id
        WHERE ctk.nganh_id = ? AND ctk.loai_mon = 'BAT_BUOC'`,
       [nganhId]
     );
 
-    const tongTinChiBatBuoc = tongRows[0]?.tongTinChiBatBuoc || 0;
+    const tongSoMonBatBuoc = monBatBuocRows.length;
+    const tongTinChiBatBuoc = monBatBuocRows.reduce((sum, m) => sum + (m.so_tin_chi || 0), 0);
 
-    // 3. Tính tổng tín chỉ đã hoàn thành (môn đạt: điểm >= 4.0 và dat = 'Đạt')
-    const [hoanThanhRows] = await pool.execute(
-      `SELECT SUM(hp.so_tin_chi) as tinChiHoanThanh
-       FROM KetQuaHocTap kq
-       JOIN HocPhan hp ON kq.hoc_phan_id = hp.id
-       WHERE kq.sinh_vien_id = ? 
-         AND kq.diem_tong_ket >= 4.0
-         AND (kq.dat = 'Đạt' OR kq.dat = 1)`,
-      [sinhVienId]
-    );
+    // 3. Kiểm tra số môn bắt buộc đã hoàn thành (đạt)
+    const monBatBuocIds = monBatBuocRows.map(m => m.hoc_phan_id);
+    let soMonBatBuocHoanThanh = 0;
+    let tinChiHoanThanh = 0;
 
-    const tinChiHoanThanh = hoanThanhRows[0]?.tinChiHoanThanh || 0;
+    if (monBatBuocIds.length > 0) {
+      const placeholders = monBatBuocIds.map(() => '?').join(',');
+      const [hoanThanhRows] = await pool.execute(
+        `SELECT kq.hoc_phan_id, hp.so_tin_chi
+         FROM KetQuaHocTap kq
+         JOIN HocPhan hp ON kq.hoc_phan_id = hp.id
+         WHERE kq.sinh_vien_id = ? 
+           AND kq.hoc_phan_id IN (${placeholders})
+           AND kq.diem_tong_ket >= 4.0
+           AND (kq.dat = 'Đạt' OR kq.dat = 1)`,
+        [sinhVienId, ...monBatBuocIds]
+      );
+
+      soMonBatBuocHoanThanh = hoanThanhRows.length;
+      tinChiHoanThanh = hoanThanhRows.reduce((sum, m) => sum + (m.so_tin_chi || 0), 0);
+    }
 
     // 4. Tính tổng tín chỉ nợ (môn không đạt)
     const [noRows] = await pool.execute(
@@ -88,18 +98,19 @@ export async function kiemTraDieuKienTotNghiep(sinhVienId) {
     const coChungChiTiengAnh = chungChiTiengAnh !== null;
 
     // 8. Điều kiện tốt nghiệp:
-    // - Đã hoàn thành >= 90% tổng tín chỉ bắt buộc (hoặc >= tổng tín chỉ bắt buộc)
+    // - Đã hoàn thành TẤT CẢ môn bắt buộc (100% số môn bắt buộc)
     // - Điểm TB tích lũy >= 5.0
     // - Không còn môn nợ (hoặc chỉ còn <= 10% tổng tín chỉ nợ)
     // - Đã hoàn thành khóa luận/thực tập (nếu có trong chương trình)
     // - Đã có chứng chỉ tiếng Anh
 
-    const tyLeHoanThanh = tongTinChiBatBuoc > 0 
-      ? (tinChiHoanThanh / tongTinChiBatBuoc) * 100 
+    const tyLeHoanThanh = tongSoMonBatBuoc > 0 
+      ? (soMonBatBuocHoanThanh / tongSoMonBatBuoc) * 100 
       : 0;
 
     const duDieuKien = 
-      tyLeHoanThanh >= 90 && // Hoàn thành >= 90% tín chỉ bắt buộc
+      soMonBatBuocHoanThanh === tongSoMonBatBuoc && // Đã hoàn thành TẤT CẢ môn bắt buộc (100%)
+      tongSoMonBatBuoc > 0 && // Phải có ít nhất 1 môn bắt buộc
       diemTBTichLuy >= 5.0 && // Điểm TB tích lũy >= 5.0
       tongTinChiNoFromDTB <= (tongTinChiBatBuoc * 0.1) && // Nợ <= 10% tổng tín chỉ
       coChungChiTiengAnh; // Đã có chứng chỉ tiếng Anh
@@ -110,7 +121,9 @@ export async function kiemTraDieuKienTotNghiep(sinhVienId) {
       lyDo = 'Đủ điều kiện tốt nghiệp'
     } else {
       const reasons = []
-      if (tyLeHoanThanh < 90) reasons.push(`Hoàn thành ${tyLeHoanThanh.toFixed(2)}% (cần >= 90%)`)
+      if (soMonBatBuocHoanThanh < tongSoMonBatBuoc) {
+        reasons.push(`Đã hoàn thành ${soMonBatBuocHoanThanh}/${tongSoMonBatBuoc} môn bắt buộc (cần hoàn thành tất cả)`)
+      }
       if (diemTBTichLuy < 5.0) reasons.push(`Điểm TB: ${diemTBTichLuy} (cần >= 5.0)`)
       if (tongTinChiNoFromDTB > (tongTinChiBatBuoc * 0.1)) reasons.push(`Còn nợ ${tongTinChiNoFromDTB} tín chỉ`)
       if (!coChungChiTiengAnh) reasons.push('Chưa có chứng chỉ tiếng Anh')
@@ -119,6 +132,8 @@ export async function kiemTraDieuKienTotNghiep(sinhVienId) {
 
     return {
       sinh_vien_id: sinhVienId,
+      tongSoMonBatBuoc: Number(tongSoMonBatBuoc),
+      soMonBatBuocHoanThanh: Number(soMonBatBuocHoanThanh),
       tongTinChiBatBuoc: Number(tongTinChiBatBuoc),
       tinChiHoanThanh: Number(tinChiHoanThanh),
       tyLeHoanThanh: Number(tyLeHoanThanh.toFixed(2)),

@@ -277,6 +277,50 @@ export default function StudentLayout({ children, title = '' }) {
               <i className="bi bi-cash-coin me-2"></i> Tra cứu công nợ
             </Link>
           </li>
+          <li>
+            <Link
+              to="/diem-ren-luyen"
+              className={`nav-link ${
+                location.pathname.includes('/diem-ren-luyen')
+                  ? 'active'
+                  : 'text-white-50'
+              }`}
+              style={{
+                backgroundColor: location.pathname.includes('/diem-ren-luyen')
+                  ? '#1e6091'
+                  : 'transparent',
+                color: location.pathname.includes('/diem-ren-luyen')
+                  ? '#fff'
+                  : '#bcd0e8',
+                borderRadius: '8px',
+                transition: 'all 0.2s'
+              }}
+            >
+              <i className="bi bi-star me-2"></i> Điểm rèn luyện
+            </Link>
+          </li>
+          <li>
+            <Link
+              to="/hoc-bong"
+              className={`nav-link ${
+                location.pathname.includes('/hoc-bong')
+                  ? 'active'
+                  : 'text-white-50'
+              }`}
+              style={{
+                backgroundColor: location.pathname.includes('/hoc-bong')
+                  ? '#1e6091'
+                  : 'transparent',
+                color: location.pathname.includes('/hoc-bong')
+                  ? '#fff'
+                  : '#bcd0e8',
+                borderRadius: '8px',
+                transition: 'all 0.2s'
+              }}
+            >
+              <i className="bi bi-trophy me-2"></i> Học bổng
+            </Link>
+          </li>
           <li className="mb-2">
             <Link
               to="/yeu-cau-tu-van"

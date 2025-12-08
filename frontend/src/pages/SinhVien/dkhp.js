@@ -96,6 +96,7 @@ export default function DkhpPage() {
   // Dropdown chọn học kỳ, năm học
   const [selectedHocKy, setSelectedHocKy] = useState('HK1');
   const [selectedNamHoc, setSelectedNamHoc] = useState('2025-2026');
+  const [autoSetFromDot, setAutoSetFromDot] = useState(false); // Flag để tránh set lại nhiều lần
   
   // Filter checkbox
   const [hideConflictClasses, setHideConflictClasses] = useState(false);
@@ -137,6 +138,15 @@ const loadClassDetail = async (lop) => {
 };
 
 
+  // Tự động set học kỳ/năm học từ đợt đăng ký (chỉ 1 lần khi có đợt)
+  useEffect(() => {
+    if (dot && dot.hoc_ky && dot.nam_hoc && !autoSetFromDot) {
+      setSelectedHocKy(dot.hoc_ky);
+      setSelectedNamHoc(dot.nam_hoc);
+      setAutoSetFromDot(true);
+    }
+  }, [dot, autoSetFromDot]);
+
   // Load dữ liệu khi thay đổi học kỳ/năm học
   useEffect(() => {
     if (!sinhVienId) {
@@ -154,28 +164,13 @@ const loadClassDetail = async (lop) => {
         }
         setDot(d);
 
-        // Sử dụng học kỳ/năm học từ dropdown
-        const [avail, regs, pendResRaw] = await Promise.all([
+        // Sử dụng học kỳ/năm học từ dropdown (hoặc từ đợt nếu đã auto set)
+        const [avail, regs] = await Promise.all([
           apiFetch(`/api/dkhp/available?sinh_vien_id=${sinhVienId}&hoc_ky=${selectedHocKy}&nam_hoc=${selectedNamHoc}&dot_dang_ky_id=${d?.id || ''}`),
-          apiFetch(`/api/dkhp/my?sinh_vien_id=${sinhVienId}&hoc_ky=${selectedHocKy}&nam_hoc=${selectedNamHoc}&dot_dang_ky_id=${d?.id || ''}`),
-          apiFetch(`/api/dkhp/hp/pending?sinh_vien_id=${sinhVienId}&hoc_ky=${selectedHocKy}&nam_hoc=${selectedNamHoc}&dot_dang_ky_id=${d?.id || ''}`)
+          apiFetch(`/api/dkhp/my?sinh_vien_id=${sinhVienId}&hoc_ky=${selectedHocKy}&nam_hoc=${selectedNamHoc}&dot_dang_ky_id=${d?.id || ''}`)
         ]);
         setAvailable(avail);
         setRegistered(regs);
-        const items = normalizePendingList(pendResRaw);
-        setPendingHP(items);
-        if (pendResRaw.tong_tc !== undefined) {
-          setHpTotals({
-            tongTc: pendResRaw.tong_tc,
-            tongTcBatBuoc: pendResRaw.tong_tc_bat_buoc,
-            tongTcTuChon: pendResRaw.tong_tc_tu_chon
-          });
-        } else {
-          // fallback nếu backend cũ: tự tính từ danh sách đang có
-          const bb = items.filter(hp => hp.bat_buoc).reduce((s, hp) => s + (hp.tc || 0), 0);
-          const tc = items.filter(hp => !hp.bat_buoc).reduce((s, hp) => s + (hp.tc || 0), 0);
-          setHpTotals({ tongTc: bb + tc, tongTcBatBuoc: bb, tongTcTuChon: tc });
-        }
       } catch (err) {
         console.error(err);
         setMessage('Lỗi tải dữ liệu: ' + (err.message || 'Unknown error'));
@@ -190,7 +185,7 @@ const loadClassDetail = async (lop) => {
 
   // Load danh sách môn theo loại đăng ký
   useEffect(() => {
-    if (!sinhVienId) return; // Bỏ check dot để cho phép xem trước
+    if (!sinhVienId) return;
 
     const loadPending = async () => {
       try {
@@ -203,10 +198,8 @@ const loadClassDetail = async (lop) => {
           // Lấy danh sách môn cải thiện
           pendRes = await apiFetch(`/api/dkhp/mon-cai-thien?sinh_vien_id=${sinhVienId}&hoc_ky=${selectedHocKy}&nam_hoc=${selectedNamHoc}`);
         } else {
-          // HOC_MOI: Lấy môn chưa học (pending)
-          // Chú ý: API pending cũ cần dot_dang_ky_id, nhưng nếu xem trước thì có thể không cần hoặc API xử lý null
-          // Tuy nhiên trong dkhpController mới tôi thấy nó vẫn nhận dot_dang_ky_id optional
-          pendRes = await apiFetch(`/api/dkhp/hp/pending?sinh_vien_id=${sinhVienId}&hoc_ky=${selectedHocKy}&nam_hoc=${selectedNamHoc}&dot_dang_ky_id=${dot?.id || ''}`);
+          // HOC_MOI: Lấy TẤT CẢ môn của học kỳ (cho phép học vượt)
+          pendRes = await apiFetch(`/api/dkhp/all-courses?sinh_vien_id=${sinhVienId}&hoc_ky=${selectedHocKy}&nam_hoc=${selectedNamHoc}`);
         }
         const items = normalizePendingList(pendRes);
         setPendingHP(items);
@@ -232,7 +225,7 @@ const loadClassDetail = async (lop) => {
     };
 
     loadPending();
-  }, [sinhVienId, loaiDangKy, selectedHocKy, selectedNamHoc, dot]);
+  }, [sinhVienId, loaiDangKy, selectedHocKy, selectedNamHoc]);
 
   // Đăng ký
   const handleRegister = async (lhp) => {
@@ -275,14 +268,15 @@ const loadClassDetail = async (lop) => {
       );
       setRegistered(regs);
 
-      // Refresh danh sách môn pending (để bỏ môn vừa đăng ký)
+      // Refresh danh sách môn (HOC_MOI: lấy tất cả môn của học kỳ)
       let pend = [];
       if (loaiDangKy === 'HOC_LAI') {
         pend = await apiFetch(`/api/dkhp/mon-rot?sinh_vien_id=${sinhVienId}&hoc_ky=${selectedHocKy}&nam_hoc=${selectedNamHoc}`);
       } else if (loaiDangKy === 'HOC_CAI_THIEN') {
         pend = await apiFetch(`/api/dkhp/mon-cai-thien?sinh_vien_id=${sinhVienId}&hoc_ky=${selectedHocKy}&nam_hoc=${selectedNamHoc}`);
       } else {
-        pend = await apiFetch(`/api/dkhp/hp/pending?sinh_vien_id=${sinhVienId}&hoc_ky=${selectedHocKy}&nam_hoc=${selectedNamHoc}&dot_dang_ky_id=${dot?.id || ''}`);
+        // HOC_MOI: Lấy TẤT CẢ môn của học kỳ (cho phép học vượt)
+        pend = await apiFetch(`/api/dkhp/all-courses?sinh_vien_id=${sinhVienId}&hoc_ky=${selectedHocKy}&nam_hoc=${selectedNamHoc}`);
       }
       setPendingHP(normalizePendingList(pend));
 
@@ -328,14 +322,15 @@ const loadClassDetail = async (lop) => {
       setAvailable(avail);
       setRegistered(regs);
 
-      // Refresh danh sách môn pending (để môn xuất hiện lại sau khi hủy)
+      // Refresh danh sách môn (HOC_MOI: lấy tất cả môn của học kỳ)
       let pend = [];
       if (loaiDangKy === 'HOC_LAI') {
         pend = await apiFetch(`/api/dkhp/mon-rot?sinh_vien_id=${sinhVienId}&hoc_ky=${selectedHocKy}&nam_hoc=${selectedNamHoc}`);
       } else if (loaiDangKy === 'HOC_CAI_THIEN') {
         pend = await apiFetch(`/api/dkhp/mon-cai-thien?sinh_vien_id=${sinhVienId}&hoc_ky=${selectedHocKy}&nam_hoc=${selectedNamHoc}`);
       } else {
-        pend = await apiFetch(`/api/dkhp/hp/pending?sinh_vien_id=${sinhVienId}&hoc_ky=${selectedHocKy}&nam_hoc=${selectedNamHoc}&dot_dang_ky_id=${dot?.id || ''}`);
+        // HOC_MOI: Lấy TẤT CẢ môn của học kỳ (cho phép học vượt)
+        pend = await apiFetch(`/api/dkhp/all-courses?sinh_vien_id=${sinhVienId}&hoc_ky=${selectedHocKy}&nam_hoc=${selectedNamHoc}`);
       }
       setPendingHP(normalizePendingList(pend));
 
@@ -367,7 +362,21 @@ const loadClassDetail = async (lop) => {
   };
 
 
-  if (loading) return <div className="text-center p-5">Đang tải...</div>;
+  if (loading) {
+    return (
+      <StudentLayout title="Đăng ký học phần">
+        <div className="text-center p-5">
+          <div className="spinner-border text-primary" role="status" style={{ width: '3rem', height: '3rem' }}>
+            <span className="visually-hidden">Đang tải...</span>
+          </div>
+          <div className="mt-3">
+            <h5>Đang tải dữ liệu...</h5>
+            <p className="text-muted">Vui lòng đợi trong giây lát</p>
+          </div>
+        </div>
+      </StudentLayout>
+    );
+  }
   // đặt trước phần return:
   const getDaDangKy = (l) => {
     if (l.da_dang_ky != null) return l.da_dang_ky;           // API trả về trực tiếp

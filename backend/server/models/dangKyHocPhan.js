@@ -23,7 +23,7 @@ export async function listAvailableLHP({ sinh_vien_id, hoc_ky, nam_hoc, dot_dang
      WHERE d.sinh_vien_id = ? AND d.dot_dang_ky_id = ? AND d.trang_thai_dk <> 'HUY'`,
     [sinh_vien_id, dot_dang_ky_id || null]
   )
-  const registeredHPIds = registeredHP.map(r => r.hoc_phan_id)
+  const registeredHPIds = new Set(registeredHP.map(r => r.hoc_phan_id))
   
   // Lấy TẤT CẢ lớp học phần đang mở đăng ký trong kỳ
   const [lhps] = await pool.execute(
@@ -36,41 +36,109 @@ export async function listAvailableLHP({ sinh_vien_id, hoc_ky, nam_hoc, dot_dang
     [hoc_ky, nam_hoc]
   )
 
+  if (lhps.length === 0) return []
+
+  // Tối ưu: Gom tất cả kiểm tra xung đột lịch vào 1 query duy nhất
+  const lhpIds = lhps.map(l => l.id)
+  const conflictParams = [sinh_vien_id, ...lhpIds]
+  let conflictSql = `
+    SELECT DISTINCT b.lop_hoc_phan_id AS conflicted_lhp_id
+    FROM DangKyHocPhan d
+    JOIN LopHocPhan l2 ON l2.id = d.lop_hoc_phan_id
+    JOIN LichHoc a ON a.lop_hoc_phan_id = l2.id
+    JOIN LichHoc b ON b.lop_hoc_phan_id IN (${lhpIds.map(() => '?').join(',')})
+    WHERE d.sinh_vien_id = ?
+      AND d.trang_thai_dk <> 'HUY'
+      AND a.thu = b.thu
+      AND a.tiet_bat_dau <= b.tiet_ket_thuc
+      AND b.tiet_bat_dau <= a.tiet_ket_thuc
+  `
+  if (dot_dang_ky_id) {
+    conflictSql += ` AND d.dot_dang_ky_id = ?`
+    conflictParams.push(dot_dang_ky_id)
+  }
+  const [conflictRows] = await pool.execute(conflictSql, conflictParams)
+  const conflictedLhpIds = new Set(conflictRows.map(r => r.conflicted_lhp_id))
+
+  // Tối ưu: Gom tất cả kiểm tra điều kiện tiên quyết vào 1 query duy nhất
+  const uniqueHocPhanIds = [...new Set(lhps.map(l => l.hoc_phan_id))]
+  const prereqMap = new Map()
+  
+  try {
+    // Lấy tất cả luật điều kiện cho các học phần
+    const [allRules] = await pool.execute(
+      `SELECT * FROM DieuKienHocPhan WHERE hoc_phan_id IN (${uniqueHocPhanIds.map(() => '?').join(',')})`,
+      uniqueHocPhanIds
+    )
+    
+    // Lấy các HP SV đã qua
+    const [passed] = await pool.execute(
+      `SELECT DISTINCT hoc_phan_id FROM KetQuaHocTap
+       WHERE sinh_vien_id = ? AND (ket_qua = 'DAT' OR diem_tong_ket >= 5)`,
+      [sinh_vien_id]
+    )
+    const passedSet = new Set(passed.map(r => r.hoc_phan_id))
+
+    // Lấy các HP SV đang đăng ký cùng đợt (cho song hành)
+    const coRegParams = [sinh_vien_id]
+    let coRegSql = `
+      SELECT DISTINCT lhp.hoc_phan_id
+      FROM DangKyHocPhan d 
+      JOIN LopHocPhan lhp ON lhp.id = d.lop_hoc_phan_id
+      WHERE d.sinh_vien_id = ? AND d.trang_thai_dk <> 'HUY'
+    `
+    if (dot_dang_ky_id) {
+      coRegSql += ` AND d.dot_dang_ky_id = ?`
+      coRegParams.push(dot_dang_ky_id)
+    }
+    const [coRegs] = await pool.execute(coRegSql, coRegParams)
+    const coSet = new Set(coRegs.map(r => r.hoc_phan_id))
+
+    // Kiểm tra điều kiện cho từng học phần
+    for (const hpId of uniqueHocPhanIds) {
+      const rules = allRules.filter(r => r.hoc_phan_id === hpId)
+      if (rules.length === 0) {
+        prereqMap.set(hpId, true)
+        continue
+      }
+
+      let ok = true
+      for (const r of rules) {
+        if (r.loai === 'a' || r.loai === 'b') {
+          if (!passedSet.has(r.hoc_phan_lien_quan_id)) {
+            ok = false
+            break
+          }
+        } else if (r.loai === 'c') {
+          if (!passedSet.has(r.hoc_phan_lien_quan_id) && !coSet.has(r.hoc_phan_lien_quan_id)) {
+            ok = false
+            break
+          }
+        }
+      }
+      prereqMap.set(hpId, ok)
+    }
+  } catch (err) {
+    // Nếu có lỗi (bảng không tồn tại), coi như tất cả đều đạt
+    for (const hpId of uniqueHocPhanIds) {
+      prereqMap.set(hpId, true)
+    }
+  }
+
+  // Tạo kết quả
   const out = []
   for (const l of lhps) {
     const remain = (l.si_so_toi_da ?? 50) - (l.so_dk ?? 0)
-
-    // Check đã đăng ký học phần này chưa
-    const daCoHocPhan = registeredHPIds.includes(l.hoc_phan_id)
-
-    // check xung đột lịch với các lớp đã DK trong cùng đợt (nếu truyền vào), nếu không thì check với tất cả đang active của SV
-    const params = [l.id, sinh_vien_id]
-    let conflictSql =
-      `SELECT 1 FROM DangKyHocPhan d
-         JOIN LopHocPhan l2 ON l2.id = d.lop_hoc_phan_id
-         JOIN LichHoc a ON a.lop_hoc_phan_id = l2.id
-         JOIN LichHoc b ON b.lop_hoc_phan_id = ?
-       WHERE d.sinh_vien_id = ?
-         AND d.trang_thai_dk <> 'HUY'
-         AND a.thu = b.thu
-         AND a.tiet_bat_dau <= b.tiet_ket_thuc
-         AND b.tiet_bat_dau <= a.tiet_ket_thuc`
-    if (dot_dang_ky_id) {
-      conflictSql += ` AND d.dot_dang_ky_id = ?`
-      params.push(dot_dang_ky_id)
-    }
-    conflictSql += ` LIMIT 1`
-    const [conflictRows] = await pool.execute(conflictSql, params)
-
-    // check điều kiện (an toàn: nếu bảng điểm chưa có thì coi là đạt)
-    const prereqOk = await safeCheckPrereq({ sinh_vien_id, hoc_phan_id: l.hoc_phan_id, dot_dang_ky_id })
+    const daCoHocPhan = registeredHPIds.has(l.hoc_phan_id)
+    const xungDotLich = conflictedLhpIds.has(l.id)
+    const duDieuKien = prereqMap.get(l.hoc_phan_id) ?? true
 
     out.push({
       ...l,
       slot_con: remain,
-      xung_dot_lich: conflictRows.length > 0,
-      du_dieu_kien: prereqOk,
-      da_dang_ky_hoc_phan: daCoHocPhan // Thêm flag này
+      xung_dot_lich: xungDotLich,
+      du_dieu_kien: duDieuKien,
+      da_dang_ky_hoc_phan: daCoHocPhan
     })
   }
   return out
@@ -469,6 +537,73 @@ export async function listPendingCourses({ sinh_vien_id, hoc_ky, nam_hoc, dot_da
       ten_hoc_ky_ctdt: getTenHocKy(row.hoc_ky_ctdt),
       bat_buoc: row.loai_mon === 'BAT_BUOC'
     }))
+
+  return {
+    items,
+    tong_tc: tongTc,
+    tong_tc_bat_buoc: tongTcBatBuoc,
+    tong_tc_tu_chon: tongTcTuChon
+  }
+}
+
+// === LẤY TẤT CẢ MÔN CỦA HỌC KỲ (cho phép học vượt) ===
+// Hiển thị TẤT CẢ môn có lớp học phần mở đăng ký trong học kỳ/năm học đó
+// Bao gồm cả môn của các năm sau (học vượt)
+export async function listAllCoursesBySemester({ sinh_vien_id, hoc_ky, nam_hoc }) {
+  // Lấy thông tin ngành/khoa của sinh viên
+  const [svRows] = await pool.execute(
+    `SELECT nganh_id, khoa_id, khoa_hoc FROM SinhVien WHERE id = ?`,
+    [sinh_vien_id]
+  )
+  const sv = svRows[0]
+  if (!sv) return { items: [], tong_tc: 0, tong_tc_bat_buoc: 0, tong_tc_tu_chon: 0 }
+
+  // Lấy TẤT CẢ môn có lớp học phần mở đăng ký trong học kỳ/năm học đó
+  // LEFT JOIN với ChuongTrinhKhung để lấy thông tin loại môn (nếu có)
+  // Không filter theo học kỳ trong CTK để cho phép học vượt
+  let sql = `SELECT hp.id AS hoc_phan_id, hp.ma_hoc_phan, hp.ten_hoc_phan, hp.so_tin_chi AS tc,
+            COUNT(DISTINCT lhp.id)                   AS tong_so_lop,
+            SUM(CASE WHEN lhp.trang_thai_dk='MO_DK' THEN 1 ELSE 0 END)  AS so_lop_mo_dk,
+            -- Lấy học kỳ trong CTK (có thể là HK của năm sau - học vượt)
+            MAX(ctk.hoc_ky)                      AS hoc_ky_ctdt,
+            -- Loại môn: ưu tiên BAT_BUOC nếu có
+            CASE 
+              WHEN MAX(CASE WHEN ctk.loai_mon = 'BAT_BUOC' THEN 1 ELSE 0 END) = 1 
+              THEN 'BAT_BUOC'
+              WHEN MAX(ctk.loai_mon) IS NOT NULL
+              THEN MAX(ctk.loai_mon)
+              ELSE 'TU_CHON'
+            END                             AS loai_mon
+     FROM LopHocPhan lhp
+     JOIN HocPhan hp ON hp.id = lhp.hoc_phan_id
+     LEFT JOIN ChuongTrinhKhung ctk ON ctk.hoc_phan_id = hp.id 
+          AND (ctk.nganh_id = ? OR ctk.nganh_id IS NULL)
+    WHERE lhp.hoc_ky = ? AND lhp.nam_hoc = ?
+      AND (hp.nganh_id = ? OR hp.nganh_id IS NULL)
+      AND lhp.trang_thai_dk = 'MO_DK'`
+      
+  const params = [sv.nganh_id, hoc_ky, nam_hoc, sv.nganh_id]
+
+  sql += ` GROUP BY hp.id, hp.ma_hoc_phan, hp.ten_hoc_phan, hp.so_tin_chi
+           ORDER BY hp.ten_hoc_phan`
+
+  const [rows] = await pool.execute(sql, params)
+
+  // Tổng TC (tính từ tất cả môn, không phân biệt năm)
+  const tongTcBatBuoc = rows
+    .filter(r => r.loai_mon === 'BAT_BUOC')
+    .reduce((sum, r) => sum + (r.tc || 0), 0)
+  const tongTcTuChon = rows
+    .filter(r => r.loai_mon === 'TU_CHON' || !r.loai_mon)
+    .reduce((sum, r) => sum + (r.tc || 0), 0)
+  const tongTc = tongTcBatBuoc + tongTcTuChon
+
+  // Trả về TẤT CẢ môn (bao gồm cả môn của các năm sau - học vượt)
+  const items = rows.map(row => ({
+    ...row,
+    ten_hoc_ky_ctdt: row.hoc_ky_ctdt ? getTenHocKy(row.hoc_ky_ctdt) : '',
+    bat_buoc: row.loai_mon === 'BAT_BUOC'
+  }))
 
   return {
     items,
