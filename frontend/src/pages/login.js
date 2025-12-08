@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { login as apiLogin, saveAuth } from '../api'
+import { login as apiLogin, saveAuth, getRole, getToken } from '../api'
 import '../styles/Login.css' // ✅ thêm CSS riêng
 
 export default function Login() {
@@ -11,6 +11,22 @@ export default function Login() {
   const [news, setNews] = useState([])
   const [newsLoading, setNewsLoading] = useState(true)
   const navigate = useNavigate()
+
+  // Kiểm tra nếu đã đăng nhập thì redirect (chỉ khi reload page)
+  useEffect(() => {
+    const role = getRole()
+    const token = getToken()
+    
+    if (role && token) {
+      if (role === 'Quản trị') {
+        navigate('/admin', { replace: true })
+      } else if (role === 'Giảng viên') {
+        navigate('/teacher', { replace: true })
+      } else if (role === 'Sinh viên') {
+        navigate('/student', { replace: true })
+      }
+    }
+  }, [navigate])
 
   useEffect(() => {
     let mounted = true

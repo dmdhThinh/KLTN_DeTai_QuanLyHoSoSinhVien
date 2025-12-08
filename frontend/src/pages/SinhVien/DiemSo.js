@@ -5,7 +5,6 @@ import { getSinhVienId, apiFetch } from '../../api'
 
 import { getSinhVienById } from '../../api'
 import StudentLayout from '../../components/StudentLayout'
-import ChatBot from '../../components/ChatBot'
 import pdfMake from 'pdfmake/build/pdfmake'
 import * as pdfFonts from 'pdfmake/build/vfs_fonts'
 pdfMake.vfs = pdfFonts.vfs
@@ -126,7 +125,7 @@ export default function DiemSo() {
   })
 
   const content = [
-    { text: 'TRƯỜNG ĐẠI HỌC CÔNG NGHIỆP TP.HCM', alignment: 'center', style: 'header', margin: [0, 0, 0, 6] },
+    { text: 'TRƯỜNG ĐẠI HỌC PHƯƠNG NAM', alignment: 'center', style: 'header', margin: [0, 0, 0, 6] },
     { text: 'BẢNG ĐIỂM HỌC TẬP', alignment: 'center', style: 'title', margin: [0, 0, 0, 12] },
   ]
 
@@ -581,9 +580,6 @@ export default function DiemSo() {
       </div>
       </div>
       </div>
-      
-      {/* ⬇️ Chatbot */}
-      <ChatBot />
   </StudentLayout>
   )
 }

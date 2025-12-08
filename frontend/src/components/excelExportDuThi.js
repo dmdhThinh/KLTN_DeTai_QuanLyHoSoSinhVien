@@ -28,7 +28,7 @@ export async function exportDanhSachDuThiGK(sinhVienList, lopHocPhan, phong = ''
   // ===== HEADER =====
   worksheet.mergeCells(currentRow, 1, currentRow, 4);
   const leftHeader = worksheet.getCell(currentRow, 1);
-  leftHeader.value = 'BỘ CÔNG THƯƠNG\nTRƯỜNG ĐẠI HỌC CÔNG NGHIỆP TP.HCM';
+  leftHeader.value = 'BỘ CÔNG THƯƠNG\nTRƯỜNG ĐẠI HỌC PHƯƠNG NAM';
   leftHeader.font = { name: 'Times New Roman', size: 11, bold: true };
   leftHeader.alignment = { horizontal: 'center', vertical: 'middle', wrapText: true };
 
@@ -268,7 +268,7 @@ export async function exportDanhSachDuThiCK(sinhVienList, lopHocPhan, phong = ''
   // ===== HEADER =====
   worksheet.mergeCells(currentRow, 1, currentRow, 9);
   const leftHeader = worksheet.getCell(currentRow, 1);
-  leftHeader.value = 'BỘ CÔNG THƯƠNG\nTRƯỜNG ĐẠI HỌC CÔNG NGHIỆP TP.HCM';
+  leftHeader.value = 'BỘ CÔNG THƯƠNG\nTRƯỜNG ĐẠI HỌC PHƯƠNG NAM';
   leftHeader.font = { name: 'Times New Roman', size: 11, bold: true };
   leftHeader.alignment = { horizontal: 'center', vertical: 'middle', wrapText: true };
 

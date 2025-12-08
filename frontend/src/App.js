@@ -1,6 +1,7 @@
 // src/App.js
 import React from 'react'
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
+import { getRole } from './api'
 import Login from './pages/login'
 import StudentDashboard from './pages/SinhVien/StudentDashboard'
 import StudentDetail from './pages/SinhVien/StudentDetail'
@@ -86,13 +87,28 @@ import ThongBaoGiangVien from './pages/GiangVien/ThongBaoGiangVien.js'
 import ThongBaoChiTietGiangVien from './pages/GiangVien/ThongBaoChiTietGiangVien.js'
 
 
+// Component để redirect đến trang phù hợp với role
+function HomeRedirect() {
+  const role = getRole()
+  
+  if (role === 'Quản trị') {
+    return <Navigate to="/admin" replace />
+  } else if (role === 'Giảng viên') {
+    return <Navigate to="/teacher" replace />
+  } else if (role === 'Sinh viên') {
+    return <Navigate to="/student" replace />
+  } else {
+    return <Navigate to="/login" replace />
+  }
+}
+
 function App() {
   return (
     <BrowserRouter>
       <Routes>
         {/* Trang mặc định */}
         <Route path="/change-password" element={<ChangePassword />} />
-        <Route path="/" element={<Navigate to="/login" replace />} />
+        <Route path="/" element={<HomeRedirect />} />
         <Route path="/login" element={<Login />} />
 
         {/* Sinh viên */}

@@ -125,7 +125,7 @@ export async function exportDiemToExcel(sinhVienList, lopHocPhan, loaiBang) {
 
   worksheet.mergeCells(currentRow, 1, currentRow, half);
   const left2 = worksheet.getCell(currentRow, 1);
-  left2.value = 'TRƯỜNG ĐẠI HỌC CÔNG NGHIỆP TP.HCM';
+  left2.value = 'TRƯỜNG ĐẠI HỌC PHƯƠNG NAM';
   left2.font = { name: 'Times New Roman', size: 12, bold: true };
   left2.alignment = { horizontal: 'center', vertical: 'middle' };
 

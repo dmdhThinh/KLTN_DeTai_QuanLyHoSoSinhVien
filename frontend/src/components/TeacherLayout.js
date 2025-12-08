@@ -158,18 +158,7 @@ export default function TeacherLayout({ children, title = '', activeMenu = '' })
             Chức năng
           </div>
 
-          <li>
-            <a
-              href="/teacher/lop-covan"
-              className={`nav-link ${
-                location.pathname.includes('/lop-covan')
-                  ? 'active bg-success'
-                  : 'text-white-50'
-              }`}
-            >
-              <i className="bi bi-people me-2"></i> Lớp cố vấn
-            </a>
-          </li>
+          
 
           <li>
             <a

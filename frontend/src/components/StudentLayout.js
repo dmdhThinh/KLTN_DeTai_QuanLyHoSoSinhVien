@@ -12,6 +12,7 @@ import {
 } from '../api'
 import { Bell, MessageCircle } from 'lucide-react'
 import 'bootstrap-icons/font/bootstrap-icons.css'
+import ChatBot from './ChatBot'
 
 
 export default function StudentLayout({ children, title = '' }) {
@@ -491,6 +492,9 @@ export default function StudentLayout({ children, title = '' }) {
           {children}
         </div>
       </main>
+
+      {/* ⬇️ Chatbot - Hiển thị ở mọi trang sinh viên */}
+      <ChatBot />
     </div>
   )
 }
