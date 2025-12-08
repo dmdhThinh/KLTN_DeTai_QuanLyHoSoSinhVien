@@ -26,7 +26,7 @@ export default function HocBong() {
     <StudentLayout title="Học bổng">
       <div className="card shadow-sm">
         <div className="card-header bg-success text-white">
-          <strong>💰 HỌC BỔNG</strong>
+          <strong>HỌC BỔNG</strong>
         </div>
         <div className="card-body">
           {loading ? (

@@ -8,7 +8,6 @@ import StudentDetailModal from './StudentDetailModal' // ⬅️ thêm import mod
 import GradeChart from '../../components/GradeChart' // ⬅️ import biểu đồ
 import ProgressChart from '../../components/ProgressChart' // ⬅️ import biểu đồ tiến độ
 import EnrolledClassesCard from '../../components/EnrolledClassesCard' // ⬅️ import lớp học phần
-import ChatBot from '../../components/ChatBot' // ⬅️ import chatbot
 
 function StatCard({ title, value, variant, link }) {
   return (
@@ -253,9 +252,6 @@ export default function StudentDashboard() {
         studentId={studentId}
         onClose={() => setOpenDetail(false)}
       />
-
-      {/* ⬇️ Chatbot */}
-      <ChatBot />
     </StudentLayout>
   )
 }

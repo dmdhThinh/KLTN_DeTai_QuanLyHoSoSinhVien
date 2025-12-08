@@ -31,7 +31,7 @@ export default function DiemRenLuyen() {
     <StudentLayout title="Điểm rèn luyện">
       <div className="card shadow-sm">
         <div className="card-header bg-info text-white">
-          <strong>📊 ĐIỂM RÈN LUYỆN</strong>
+          <strong>ĐIỂM RÈN LUYỆN</strong>
         </div>
         <div className="card-body">
           {loading ? (
@@ -78,7 +78,7 @@ export default function DiemRenLuyen() {
                           className="btn btn-sm btn-outline-primary"
                           onClick={() => handleViewDetails(drl)}
                         >
-                          👁️ Xem chi tiết
+                          Xem chi tiết
                         </button>
                       </td>
                     </tr>
