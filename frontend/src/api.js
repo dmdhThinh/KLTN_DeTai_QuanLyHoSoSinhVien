@@ -17,6 +17,21 @@ const ROLE_KEYS = {
 const SV_ID_KEY = 'sinhVienId'
 const GV_ID_KEY = 'giangVienId'
 
+// 🧩 Kiểm tra token có còn hợp lệ (chưa hết hạn)
+function validateToken(token) {
+  if (!token) return false
+  try {
+    // JWT format: header.payload.signature
+    const payload = JSON.parse(atob(token.split('.')[1]))
+    const exp = payload.exp // Expiration time (seconds since epoch)
+    const now = Math.floor(Date.now() / 1000) // Current time in seconds
+    return exp > now // Token còn hợp lệ nếu exp > now
+  } catch (err) {
+    console.warn('⚠️ validateToken: Lỗi decode token', err)
+    return false
+  }
+}
+
 // 🧩 Lưu auth theo role
 export function saveAuth({ token, sinhVienId, giangVienId, role }) {
   if (!role || !token) return
@@ -70,13 +85,19 @@ export function clearAuth(role) {
   } catch (_) {}
 }
 
-// 🧩 Lấy token đúng role hiện tại
+// 🧩 Lấy token đúng role hiện tại (có validate)
 export function getToken() {
   // Ưu tiên lấy từ sessionStorage (tab hiện tại)
   const sessionRole = sessionStorage.getItem(SESSION_ROLE_KEY)
   if (sessionRole) {
     const token = localStorage.getItem(TOKEN_KEYS[sessionRole])
-    if (token) return token
+    if (token && validateToken(token)) {
+      return token
+    } else if (token && !validateToken(token)) {
+      // Token hết hạn, xóa nó
+      console.warn('⚠️ Token hết hạn, xóa token và role')
+      clearAuth(sessionRole)
+    }
   }
 
   // Fallback: tìm token từ localStorage (tab mới)
@@ -85,11 +106,17 @@ export function getToken() {
     const roleValue = localStorage.getItem(ROLE_KEYS[role])
     const token = localStorage.getItem(TOKEN_KEYS[role])
     if (roleValue && token) {
-      // Đồng bộ sessionStorage
-      if (!sessionRole) {
-        sessionStorage.setItem(SESSION_ROLE_KEY, roleValue)
+      if (validateToken(token)) {
+        // Đồng bộ sessionStorage
+        if (!sessionRole) {
+          sessionStorage.setItem(SESSION_ROLE_KEY, roleValue)
+        }
+        return token
+      } else {
+        // Token hết hạn, xóa nó
+        console.warn(`⚠️ Token của role ${role} hết hạn, xóa token và role`)
+        clearAuth(role)
       }
-      return token
     }
   }
 
@@ -98,20 +125,25 @@ export function getToken() {
 
 // 🧩 Lấy vai trò hiện tại (ưu tiên role_admin > role_gv > role_sv)
 
-// 🧩 Lấy vai trò hiện tại
+// 🧩 Lấy vai trò hiện tại (có validate token)
 export function getRole() {
   // Ưu tiên lấy theo session (mỗi tab riêng biệt)
   const sessionRole = sessionStorage.getItem(SESSION_ROLE_KEY)
   if (sessionRole) {
-    // Kiểm tra token có tồn tại không
+    // Kiểm tra token có tồn tại và còn hợp lệ không
     const token = localStorage.getItem(TOKEN_KEYS[sessionRole])
-    if (token) {
+    if (token && validateToken(token)) {
       console.log('✅ getRole: Lấy từ sessionStorage', sessionRole)
       return sessionRole
     }
-    // Nếu không có token, xóa sessionRole và tìm role khác
-    console.warn('⚠️ getRole: sessionRole không có token, xóa và tìm lại', sessionRole)
-    sessionStorage.removeItem(SESSION_ROLE_KEY)
+    // Nếu không có token hoặc token hết hạn, xóa sessionRole và tìm role khác
+    if (token && !validateToken(token)) {
+      console.warn('⚠️ getRole: Token hết hạn, xóa token và role', sessionRole)
+      clearAuth(sessionRole)
+    } else {
+      console.warn('⚠️ getRole: sessionRole không có token, xóa và tìm lại', sessionRole)
+      sessionStorage.removeItem(SESSION_ROLE_KEY)
+    }
   }
 
   // fallback nếu tab chưa lưu sessionRole (tab mới)
@@ -120,7 +152,7 @@ export function getRole() {
   for (const role of roles) {
     const roleValue = localStorage.getItem(ROLE_KEYS[role])
     const token = localStorage.getItem(TOKEN_KEYS[role])
-    if (roleValue && token) {
+    if (roleValue && token && validateToken(token)) {
       console.log('✅ getRole: Lấy từ localStorage (tab mới)', roleValue)
       // Đồng bộ sessionStorage
       sessionStorage.setItem(SESSION_ROLE_KEY, roleValue)
@@ -133,6 +165,10 @@ export function getRole() {
         if (gvId) sessionStorage.setItem(SESSION_ID_KEY, gvId)
       }
       return roleValue
+    } else if (roleValue && token && !validateToken(token)) {
+      // Token hết hạn, xóa nó
+      console.warn(`⚠️ getRole: Token của role ${role} hết hạn, xóa token và role`)
+      clearAuth(role)
     }
   }
 

@@ -1,7 +1,7 @@
 // src/App.js
-import React from 'react'
+import React, { useEffect } from 'react'
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
-import { getRole } from './api'
+import { getRole, getToken, clearAuth } from './api'
 import Login from './pages/login'
 import StudentDashboard from './pages/SinhVien/StudentDashboard'
 import StudentDetail from './pages/SinhVien/StudentDetail'
@@ -103,6 +103,19 @@ function HomeRedirect() {
 }
 
 function App() {
+  // Validate token khi app khởi động và clear nếu hết hạn
+  useEffect(() => {
+    const role = getRole()
+    const token = getToken()
+    
+    // Nếu có role nhưng không có token hợp lệ, clear auth
+    // (getRole() và getToken() đã tự động validate và clear, nhưng đảm bảo chắc chắn)
+    if (role && !token) {
+      console.warn('⚠️ App: Có role nhưng không có token hợp lệ, clear auth')
+      clearAuth(role)
+    }
+  }, [])
+
   return (
     <BrowserRouter>
       <Routes>
