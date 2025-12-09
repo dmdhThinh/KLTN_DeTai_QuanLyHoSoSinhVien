@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react'
 import { useLocation } from 'react-router-dom'
 import 'bootstrap-icons/font/bootstrap-icons.css'
-import { apiFetch } from '../api'
+import { apiFetch, clearAuth } from '../api'
 
 export default function AdminLayout({ children, title = '', activeMenu = '' }) {
   const location = useLocation()
@@ -126,13 +126,16 @@ export default function AdminLayout({ children, title = '', activeMenu = '' }) {
         </ul>
 
         <div className="border-top pt-3 mt-3">
-          <a
-            href="/login"
+          <button
+            onClick={() => {
+              clearAuth()
+              window.location.href = '/login'
+            }}
             className="btn btn-danger w-100 d-flex align-items-center justify-content-center fw-semibold"
             style={{ borderRadius: '8px' }}
           >
             <i className="bi bi-box-arrow-right me-2"></i> Đăng xuất
-          </a>
+          </button>
         </div>
 
       </aside>
