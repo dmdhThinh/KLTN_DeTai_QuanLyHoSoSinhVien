@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { login as apiLogin, saveAuth, getRole, getToken } from '../api'
+import 'bootstrap-icons/font/bootstrap-icons.css'
 import '../styles/Login.css' // ✅ thêm CSS riêng
 
 export default function Login() {
@@ -8,6 +9,7 @@ export default function Login() {
   const [password, setPassword] = useState('')
   const [message, setMessage] = useState('')
   const [loading, setLoading] = useState(false)
+  const [showPassword, setShowPassword] = useState(false)
   const [news, setNews] = useState([])
   const [newsLoading, setNewsLoading] = useState(true)
   const navigate = useNavigate()
@@ -80,8 +82,16 @@ export default function Login() {
     <div className="login-page">
       {/* Header với logo và text */}
       <div className="login-header">
-        <div className="logo-icon">🎓</div>
-        <h1 className="system-title">Quản lý hồ sơ sinh viên</h1>
+        <div className="logo-container">
+          <img 
+            src="/Logo.png" 
+            alt="Logo Đại học Phương Nam" 
+            className="login-logo"
+          />
+          <div className="school-info">
+            <h1 className="school-name">Trường Đại học Phương Nam</h1>
+          </div>
+        </div>
       </div>
 
       <div className="login-container">
@@ -122,21 +132,48 @@ export default function Login() {
 
           <form onSubmit={handleSubmit}>
             <label>Tên đăng nhập</label>
-            <input
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
-              required
-            />
-            <label>Mật khẩu</label>
-            <input
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-            />
+            <div className="input-wrapper">
+              <i className="bi bi-person input-icon"></i>
+              <input
+                type="text"
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                placeholder="Nhập tên đăng nhập"
+                required
+                disabled={loading}
+              />
+            </div>
 
-            <button type="submit" disabled={loading}>
-              {loading ? 'Đang đăng nhập...' : 'Đăng nhập'}
+            <label>Mật khẩu</label>
+            <div className="input-wrapper password-wrapper">
+              <i className="bi bi-lock input-icon"></i>
+              <input
+                type={showPassword ? 'text' : 'password'}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="Nhập mật khẩu"
+                required
+                disabled={loading}
+              />
+              <button
+                type="button"
+                className="password-toggle"
+                onClick={() => setShowPassword(!showPassword)}
+                disabled={loading}
+              >
+                <i className={showPassword ? 'bi bi-eye-slash' : 'bi bi-eye'}></i>
+              </button>
+            </div>
+
+            <button type="submit" disabled={loading} className="login-button">
+              {loading ? (
+                <>
+                  <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                  Đang đăng nhập...
+                </>
+              ) : (
+                'Đăng nhập'
+              )}
             </button>
           </form>
         </div>

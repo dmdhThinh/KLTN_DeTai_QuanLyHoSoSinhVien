@@ -1,80 +1,43 @@
-import React, { useEffect, useState, useRef } from 'react'
-import { useLocation, Link, useNavigate } from 'react-router-dom'
-import { getGiangVienId, getGiangVienById, apiFetch, getUnreadCountGiangVien, clearAuth } from '../api'
-import { Bell, MessageCircle } from 'lucide-react'
+import React, { useEffect, useState } from 'react'
+import { useLocation } from 'react-router-dom'
 import 'bootstrap-icons/font/bootstrap-icons.css'
+import { clearAuth } from '../api'
 
-export default function TeacherLayout({ children, title = '', activeMenu = '' }) {
+export default function TeacherLayout({ children, title = '', activeMenu = '', gvName = '' }) {
   const location = useLocation()
-  const navigate = useNavigate()
-  const [gv, setGv] = useState(null)
-  const [tuVanCount, setTuVanCount] = useState(0)
-  const [thongBaoCount, setThongBaoCount] = useState(0)
-  const [showMenu, setShowMenu] = useState(false)
-  const menuRef = useRef(null)
+  const [showUserMenu, setShowUserMenu] = useState(false)
+  const [searchQuery, setSearchQuery] = useState('')
+  const [showSearchResults, setShowSearchResults] = useState(false)
 
-  // Lấy thông tin giảng viên đang đăng nhập
-  useEffect(() => {
-    const id = getGiangVienId()
-    if (!id) return
+  // Menu items để tìm kiếm
+  const menuItems = [
+    { name: 'Tổng quan', path: '/teacher', icon: 'bi-house-door' },
+    { name: 'Thông tin cá nhân', path: '/teacher/detail', icon: 'bi-person' },
+    { name: 'Lớp học phần', path: '/teacher/lophocphan', icon: 'bi-collection' },
+    { name: 'Sinh viên trong lớp', path: '/teacher/sv-lop', icon: 'bi-people' },
+    { name: 'Lịch giảng dạy', path: '/teacher/lich', icon: 'bi-calendar-week' },
+    { name: 'Nhập điểm', path: '/teacher/nhapdiem', icon: 'bi-clipboard-check' },
+    { name: 'Tin tức', path: '/teacher/thong-bao', icon: 'bi-megaphone' },
+    { name: 'Yêu cầu tư vấn', path: '/teacher/yeu-cau-tu-van', icon: 'bi-chat-left-text' },
+    { name: 'Đổi mật khẩu', path: '/teacher/change-password', icon: 'bi-key' }
+  ]
 
-    getGiangVienById(id)
-      .then((res) => {
-        if (res) {
-          const name = res.hoTen || res.ho_ten || 'Giảng viên'
-          setGv({ ...res, hoTen: name })
-        }
-      })
-      .catch(() => setGv(null))
+  const filteredMenuItems = searchQuery
+    ? menuItems.filter(item => 
+        item.name.toLowerCase().includes(searchQuery.toLowerCase())
+      ).slice(0, 5)
+    : []
 
-    // Lấy số yêu cầu tư vấn mới
-    const fetchTuVanCount = () => {
-      apiFetch(`/api/yeu-cau-tu-van/giang-vien/${id}/count`)
-        .then((res) => setTuVanCount(res.count || 0))
-        .catch(() => setTuVanCount(0))
-    }
-    
-    // Lấy số thông báo chưa đọc
-    const fetchThongBaoCount = () => {
-      getUnreadCountGiangVien(id)
-        .then((res) => setThongBaoCount(res.count || 0))
-        .catch(() => setThongBaoCount(0))
-    }
-    
-    fetchTuVanCount()
-    fetchThongBaoCount()
-    
-    // Cập nhật mỗi 5 giây
-    const interval = setInterval(() => {
-      fetchTuVanCount()
-      fetchThongBaoCount()
-    }, 5000)
-    
-    // Expose refresh function globally for child components
-    window.refreshTuVanCount = fetchTuVanCount
-    window.refreshThongBaoCount = fetchThongBaoCount
-    
-    return () => {
-      clearInterval(interval)
-      delete window.refreshTuVanCount
-      delete window.refreshThongBaoCount
-    }
-  }, [])
+  const handleSearchChange = (e) => {
+    const value = e.target.value
+    setSearchQuery(value)
+    setShowSearchResults(value.length > 0)
+  }
 
-  // Đóng dropdown khi click ra ngoài
-  useEffect(() => {
-    const handleClickOutside = (e) => {
-      if (menuRef.current && !menuRef.current.contains(e.target)) {
-        setShowMenu(false)
-      }
-    }
-    document.addEventListener('mousedown', handleClickOutside)
-    return () => document.removeEventListener('mousedown', handleClickOutside)
-  }, [])
-
-  const handleLogout = () => {
-    clearAuth()
-    window.location.href = '/login'
+  const handleSearchItemClick = (path) => {
+    setSearchQuery('')
+    setShowSearchResults(false)
+    window.location.href = path
   }
 
   // Custom scrollbar styling
@@ -86,7 +49,6 @@ export default function TeacherLayout({ children, title = '', activeMenu = '' })
       }
       .teacher-scrollable-content::-webkit-scrollbar-track {
         background: #f1f1f1;
-        border-radius: 4px;
       }
       .teacher-scrollable-content::-webkit-scrollbar-thumb {
         background: #888;
@@ -107,26 +69,52 @@ export default function TeacherLayout({ children, title = '', activeMenu = '' })
         background: transparent;
       }
       .teacher-sidebar::-webkit-scrollbar-thumb {
-        background: rgba(255, 255, 255, 0.3);
+        background: rgba(0, 0, 0, 0.3);
         border-radius: 3px;
       }
       .teacher-sidebar::-webkit-scrollbar-thumb:hover {
-        background: rgba(255, 255, 255, 0.5);
+        background: rgba(0, 0, 0, 0.5);
+      }
+      .teacher-sidebar {
+        border-radius: 0 16px 16px 0;
+        box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+      }
+      .teacher-sidebar .nav-link {
+        color: #6c757d;
+        border-radius: 12px;
+        padding: 10px 12px;
+        transition: all 0.2s ease;
+      }
+      .teacher-sidebar .nav-link i {
+        color: #adb5bd;
+        transition: color 0.2s ease;
+      }
+      .teacher-sidebar .nav-link:hover {
+        background-color: #f8f9fa;
+        color: #495057;
+      }
+      .teacher-sidebar .nav-link:hover i {
+        color: #6c757d;
+      }
+      .teacher-sidebar .nav-link.active {
+        background: linear-gradient(135deg, #e7f3ff 0%, #d1ecf1 100%) !important;
+        color: #0d6efd !important;
+        font-weight: 500;
+        box-shadow: 0 2px 4px rgba(13, 110, 253, 0.15);
+      }
+      .teacher-sidebar .nav-link.active i {
+        color: #0d6efd !important;
       }
     `
     document.head.appendChild(style)
-    return () => {
-      if (document.head.contains(style)) {
-        document.head.removeChild(style)
-      }
-    }
+    return () => document.head.removeChild(style)
   }, [])
 
   return (
     <div className="d-flex" style={{ height: '100vh', overflow: 'hidden' }}>
       {/* Sidebar */}
       <aside
-        className="bg-dark text-white d-flex flex-column p-3 shadow teacher-sidebar"
+        className="bg-white text-dark d-flex flex-column p-3 shadow teacher-sidebar"
         style={{
           width: 250,
           height: '100vh',
@@ -134,229 +122,254 @@ export default function TeacherLayout({ children, title = '', activeMenu = '' })
           position: 'sticky',
           top: 0,
           left: 0,
-          flexShrink: 0,
+          flexShrink: 0
         }}
       >
-        <div className="d-flex align-items-center mb-4">
-          <i className="bi bi-mortarboard-fill fs-4 me-2 text-success"></i>
-          <span className="fs-5 fw-semibold">Giảng Viên</span>
+        <div className="d-flex flex-column align-items-center mb-4 pb-3" style={{ borderBottom: '1px solid #e9ecef' }}>
+          <img 
+            src="/Logo.png" 
+            alt="Logo Đại học Phương Nam" 
+            style={{ width: '70px', height: '70px', objectFit: 'contain', marginBottom: '12px' }}
+          />
+          <span className="fw-semibold text-center" style={{ fontSize: '12px', lineHeight: '1.4', color: '#495057' }}>
+            Trường Đại học Phương Nam
+          </span>
         </div>
 
-        <ul className="nav nav-pills flex-column gap-1 mb-auto">
+        <ul className="nav nav-pills flex-column gap-1 mb-auto" style={{ paddingTop: '8px' }}>
           <li>
-            <a
-              href="/teacher"
-              className={`nav-link ${
-                location.pathname === '/teacher' ? 'active bg-success' : 'text-white-50'
-              }`}
-            >
+            <a href="/teacher" className={`nav-link ${location.pathname === '/teacher' || activeMenu === 'overview' ? 'active' : ''}`}>
               <i className="bi bi-house-door me-2"></i> Tổng quan
             </a>
           </li>
-
-          <div className="text-uppercase small text-white-50 mt-3 mb-1 ps-3">
-            Chức năng
-          </div>
-
-          
-
           <li>
-            <a
-              href="/teacher/sv-lop"
-              className={`nav-link ${
-                location.pathname.includes('/sv-lop')
-                  ? 'active bg-success'
-                  : 'text-white-50'
-              }`}
-            >
-              <i className="bi bi-person-lines-fill me-2"></i> SV trong lớp
+            <a href="/teacher/detail" className={`nav-link ${location.pathname.includes('/teacher/detail') ? 'active' : ''}`}>
+              <i className="bi bi-person me-2"></i> Thông tin cá nhân
             </a>
           </li>
-
           <li>
-            <Link
-              to="/teacher/lophocphan"
-              className={`nav-link ${
-                (location.pathname.includes('/teacher/lophocphan') ||
-                  location.pathname.includes('/teacher/nhapdiem'))
-                  ? 'active bg-success'
-                  : 'text-white-50'
-              }`}
-            >
-              <i className="bi bi-pencil-square me-2"></i> Nhập điểm
-            </Link>
+            <a href="/teacher/lophocphan" className={`nav-link ${location.pathname.includes('/teacher/lophocphan') || activeMenu === 'lophocphan' ? 'active' : ''}`}>
+              <i className="bi bi-collection me-2"></i> Lớp học phần
+            </a>
           </li>
-
-          {/* ĐÃ THÊM LẠI: Lịch giảng dạy */}
           <li>
-            <Link
-              to="/teacher/lich"
-              className={`nav-link ${
-                location.pathname.includes('/teacher/lich')
-                  ? 'active bg-success'
-                  : 'text-white-50'
-              }`}
-            >
-              <i className="bi bi-calendar3 me-2"></i> Lịch giảng dạy
-            </Link>
+            <a href="/teacher/sv-lop" className={`nav-link ${location.pathname.includes('/teacher/sv-lop') || activeMenu === 'sv-lop' ? 'active' : ''}`}>
+              <i className="bi bi-people me-2"></i> Sinh viên trong lớp
+            </a>
           </li>
-
           <li>
-            <Link
-              to="/teacher/yeu-cau-tu-van"
-              className={`nav-link ${
-                location.pathname.includes('/yeu-cau-tu-van')
-                  ? 'active bg-success'
-                  : 'text-white-50'
-              }`}
-            >
-              <i className="bi bi-chat-dots me-2"></i> Yêu cầu tư vấn
-            </Link>
+            <a href="/teacher/lich" className={`nav-link ${location.pathname.includes('/teacher/lich') || activeMenu === 'lich' ? 'active' : ''}`}>
+              <i className="bi bi-calendar-week me-2"></i> Lịch giảng dạy
+            </a>
           </li>
-
           <li>
-            <Link
-              to="/teacher/thong-bao"
-              className={`nav-link ${
-                location.pathname.includes('/thong-bao')
-                  ? 'active bg-success'
-                  : 'text-white-50'
-              }`}
-            >
-              <i className="bi bi-bell me-2"></i> Thông báo
-            </Link>
+            <a href="/teacher/nhapdiem" className={`nav-link ${location.pathname.includes('/teacher/nhapdiem') ? 'active' : ''}`}>
+              <i className="bi bi-clipboard-check me-2"></i> Nhập điểm
+            </a>
+          </li>
+          <li>
+            <a href="/teacher/thong-bao" className={`nav-link ${location.pathname.includes('/teacher/thong-bao') ? 'active' : ''}`}>
+              <i className="bi bi-megaphone me-2"></i> Tin tức
+            </a>
+          </li>
+          <li>
+            <a href="/teacher/yeu-cau-tu-van" className={`nav-link ${location.pathname.includes('/teacher/yeu-cau-tu-van') ? 'active' : ''}`}>
+              <i className="bi bi-chat-left-text me-2"></i> Yêu cầu tư vấn
+            </a>
+          </li>
+          <li>
+            <a href="/teacher/change-password" className={`nav-link ${location.pathname === '/teacher/change-password' ? 'active' : ''}`}>
+              <i className="bi bi-key me-2"></i> Đổi mật khẩu
+            </a>
           </li>
         </ul>
 
         <div className="border-top pt-3 mt-3">
           <button
-            onClick={handleLogout}
+            onClick={() => {
+              clearAuth()
+              window.location.href = '/login'
+            }}
             className="btn btn-danger w-100 d-flex align-items-center justify-content-center fw-semibold"
             style={{ borderRadius: '8px' }}
           >
             <i className="bi bi-box-arrow-right me-2"></i> Đăng xuất
           </button>
         </div>
+
       </aside>
 
       {/* Main content */}
       <main className="flex-grow-1 d-flex flex-column" style={{ height: '100vh', overflow: 'hidden' }}>
         {/* Fixed Header */}
-        <div className="p-4 pb-3 bg-white shadow-sm" style={{ flexShrink: 0, zIndex: 100 }}>
-          <div className="d-flex justify-content-between align-items-center">
-            <h5 className="fw-semibold mb-0">{title}</h5>
-
-            {/* Tin tức + Tin nhắn + Thông tin GV */}
-            <div className="d-flex align-items-center gap-4" ref={menuRef}>
-              {/* Tin tức */}
-              <Link
-                to="/teacher/thong-bao"
-                className="position-relative text-secondary small d-flex align-items-center gap-1 iuh-hover-item text-decoration-none"
-              >
-                <Bell size={16} />
-                <span>Tin tức</span>
-                {thongBaoCount > 0 && (
-                  <span
-                    className="badge bg-danger position-absolute top-0 start-100 translate-middle rounded-pill"
-                    style={{ fontSize: 10 }}
-                  >
-                    {thongBaoCount}
-                  </span>
-                )}
-              </Link>
-
-              {/* Tin nhắn */}
-              <Link
-                to="/teacher/yeu-cau-tu-van"
-                className="position-relative text-secondary small d-flex align-items-center gap-1 iuh-hover-item text-decoration-none"
-              >
-                <MessageCircle size={16} />
-                <span>Tin nhắn</span>
-                {tuVanCount > 0 && (
-                  <span
-                    className="badge bg-danger position-absolute top-0 start-100 translate-middle rounded-pill"
-                    style={{ fontSize: 10 }}
-                  >
-                    {tuVanCount}
-                  </span>
-                )}
-              </Link>
-
-              {/* Dropdown thông tin giảng viên */}
-              <div className="text-muted small dropdown">
-                Xin chào,{' '}
-                <b
-                  className="text-primary"
-                  onClick={() => setShowMenu((prev) => !prev)}
-                  style={{ cursor: 'pointer' }}
+        <div className="bg-white" style={{ 
+          flexShrink: 0, 
+          zIndex: 100,
+          height: '64px',
+          padding: '0 24px',
+          display: 'flex',
+          alignItems: 'center',
+          boxShadow: '0 2px 8px rgba(0, 0, 0, 0.08)'
+        }}>
+        <div className="d-flex justify-content-between align-items-center w-100">
+          <h4 className="fw-bold mb-0" style={{ fontSize: '20px', color: '#343a40' }}>{title}</h4>
+          <div className="d-flex align-items-center gap-3">
+            {/* Search Box */}
+            <div className="position-relative" style={{ width: '280px' }}>
+              <i 
+                className="bi bi-search position-absolute" 
+                style={{ 
+                  left: '14px', 
+                  top: '50%', 
+                  transform: 'translateY(-50%)',
+                  color: '#6c757d',
+                  fontSize: '14px',
+                  zIndex: 1,
+                  pointerEvents: 'none'
+                }}
+              ></i>
+              <input
+                type="text"
+                className="form-control"
+                placeholder="Tìm kiếm menu..."
+                value={searchQuery}
+                onChange={handleSearchChange}
+                onFocus={() => searchQuery && setShowSearchResults(true)}
+                onBlur={() => setTimeout(() => setShowSearchResults(false), 200)}
+                style={{ 
+                  borderRadius: '24px',
+                  paddingLeft: '40px',
+                  paddingRight: '16px',
+                  border: '1px solid #e9ecef',
+                  fontSize: '14px',
+                  height: '38px'
+                }}
+              />
+              
+              {/* Search Results Dropdown */}
+              {showSearchResults && filteredMenuItems.length > 0 && (
+                <div 
+                  className="position-absolute end-0 mt-2 bg-white rounded-3 shadow-lg border"
+                  style={{
+                    width: '100%',
+                    maxHeight: '300px',
+                    overflowY: 'auto',
+                    zIndex: 1000,
+                    padding: '8px',
+                    boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)'
+                  }}
                 >
-                  {gv?.hoTen || 'Giảng viên'}
-                </b>
-                {showMenu && (
-                  <div
-                    className="student-dropdown-menu shadow-lg border-0 rounded-3 bg-white position-absolute end-0 mt-2"
-                    style={{
-                      zIndex: 9999,
-                      minWidth: '220px',
-                      animation: 'fadeInDown 0.2s ease-out',
-                    }}
-                  >
-                    <button
-                      className="student-dropdown-item"
-                      onClick={() => {
-                        setShowMenu(false)
-                        navigate('/teacher/detail')
+                  {filteredMenuItems.map((item, index) => (
+                    <div
+                      key={index}
+                      className="d-flex align-items-center gap-2 px-3 py-2 text-decoration-none text-dark rounded-2"
+                      style={{ 
+                        cursor: 'pointer',
+                        transition: 'background-color 0.2s'
                       }}
-                    >
-                      <i className="bi bi-person-circle me-2" style={{ fontSize: '16px' }}></i>
-                      <span>Thông tin cá nhân</span>
-                    </button>
-                    <div className="dropdown-divider mx-2"></div>
-                    <button
-                      className="student-dropdown-item"
-                      onClick={() => {
-                        setShowMenu(false)
-                        navigate('/teacher/change-password')
+                      onMouseDown={(e) => {
+                        e.preventDefault()
+                        handleSearchItemClick(item.path)
                       }}
+                      onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#f8f9fa'}
+                      onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
                     >
-                      <i className="bi bi-shield-lock me-2" style={{ fontSize: '16px' }}></i>
-                      <span>Đổi mật khẩu</span>
-                    </button>
-                    <div className="dropdown-divider mx-2"></div>
-                    <button
-                      className="student-dropdown-item student-dropdown-item-danger"
-                      onClick={handleLogout}
-                    >
-                      <i className="bi bi-box-arrow-right me-2" style={{ fontSize: '16px' }}></i>
-                      <span>Đăng xuất</span>
-                    </button>
-                  </div>
-                )}
-              </div>
-              <div
-                className="rounded-circle bg-light border d-flex align-items-center justify-content-center overflow-hidden"
-                style={{ width: 40, height: 40, cursor: 'pointer' }}
-                onClick={() => setShowMenu((prev) => !prev)}
+                      <i className={`bi ${item.icon}`} style={{ width: '20px', color: '#6c757d' }}></i>
+                      <span style={{ fontSize: '14px' }}>{item.name}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+            
+            {/* User Info */}
+            <div className="position-relative">
+              <div 
+                className="d-flex align-items-center gap-2 px-3 py-2 rounded-pill"
+                style={{ 
+                  cursor: 'pointer',
+                  transition: 'background-color 0.2s',
+                  backgroundColor: showUserMenu ? '#f8f9fa' : 'transparent'
+                }}
+                onClick={() => setShowUserMenu(!showUserMenu)}
+                onMouseEnter={(e) => !showUserMenu && (e.currentTarget.style.backgroundColor = '#f8f9fa')}
+                onMouseLeave={(e) => !showUserMenu && (e.currentTarget.style.backgroundColor = 'transparent')}
               >
-                {gv?.anh_the || gv?.anhThe ? (
-                  <img
-                    src={gv.anh_the || gv.anhThe}
-                    alt="Avatar"
-                    style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                  />
-                ) : (
-                  <i className="bi bi-person-circle text-secondary" style={{ fontSize: '28px' }}></i>
-                )}
+                <div className="text-muted small me-2">
+                  Xin chào, <b style={{ color: '#495057' }}>{gvName || 'Giảng viên'}</b>
+                </div>
+                <div
+                  className="rounded-circle d-flex align-items-center justify-content-center"
+                  style={{ 
+                    width: '40px', 
+                    height: '40px',
+                    background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                    color: 'white',
+                    fontSize: '16px',
+                    fontWeight: '600',
+                    flexShrink: 0
+                  }}
+                >
+                  {gvName ? gvName.charAt(0).toUpperCase() : 'G'}
+                </div>
+                <i className={`bi bi-chevron-down ms-1`} style={{ fontSize: '12px', color: '#6c757d', transition: 'transform 0.2s', transform: showUserMenu ? 'rotate(180deg)' : 'rotate(0deg)' }}></i>
               </div>
+              
+              {/* Dropdown Menu */}
+              {showUserMenu && (
+                <div 
+                  className="position-absolute end-0 mt-2 bg-white rounded-3 shadow-lg border"
+                  style={{
+                    minWidth: '200px',
+                    zIndex: 1000,
+                    padding: '8px',
+                    boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)'
+                  }}
+                  onMouseLeave={() => setShowUserMenu(false)}
+                >
+                  <a 
+                    href="/teacher/detail" 
+                    className="d-flex align-items-center gap-2 px-3 py-2 text-decoration-none text-dark rounded-2"
+                    style={{ transition: 'background-color 0.2s' }}
+                    onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#f8f9fa'}
+                    onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+                  >
+                    <i className="bi bi-person" style={{ width: '20px' }}></i>
+                    <span style={{ fontSize: '14px' }}>Thông tin cá nhân</span>
+                  </a>
+                  <a 
+                    href="/teacher/change-password" 
+                    className="d-flex align-items-center gap-2 px-3 py-2 text-decoration-none text-dark rounded-2"
+                    style={{ transition: 'background-color 0.2s' }}
+                    onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#f8f9fa'}
+                    onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+                  >
+                    <i className="bi bi-key" style={{ width: '20px' }}></i>
+                    <span style={{ fontSize: '14px' }}>Đổi mật khẩu</span>
+                  </a>
+                  <hr className="my-1" style={{ margin: '4px 0' }} />
+                  <button
+                    onClick={() => {
+                      clearAuth()
+                      window.location.href = '/login'
+                    }}
+                    className="w-100 d-flex align-items-center gap-2 px-3 py-2 border-0 bg-transparent text-danger rounded-2"
+                    style={{ transition: 'background-color 0.2s', fontSize: '14px' }}
+                    onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#fff5f5'}
+                    onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+                  >
+                    <i className="bi bi-box-arrow-right" style={{ width: '20px' }}></i>
+                    <span>Đăng xuất</span>
+                  </button>
+                </div>
+              )}
             </div>
           </div>
         </div>
+        </div>
 
         {/* Scrollable Content Area */}
-        <div
-          className="flex-grow-1 p-4 pt-3 teacher-scrollable-content"
-          style={{ overflowY: 'auto', overflowX: 'hidden', background: '#f8f9fa' }}
-        >
+        <div className="flex-grow-1 p-4 pt-3 teacher-scrollable-content" style={{ overflowY: 'auto', overflowX: 'hidden', background: '#f8f9fa' }}>
           {children}
         </div>
       </main>

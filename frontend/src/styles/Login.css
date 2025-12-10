@@ -5,9 +5,11 @@
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    background: linear-gradient(135deg, #6fd6ff, #90a7ff);
+    background: linear-gradient(135deg, #7dd3fc, #93c5fd);
     font-family: 'Segoe UI', sans-serif;
     padding: 20px;
+    position: relative;
+    overflow: hidden;
 }
 
 /* 🎯 Header với logo và title */
@@ -15,30 +17,62 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 24px;
-    margin-bottom: 40px;
+    margin-bottom: 24px;
     animation: fadeInDown 0.8s ease forwards;
+    width: 100%;
 }
 
-.login-header .logo-icon {
-    font-size: 80px;
-    line-height: 1;
-    filter: drop-shadow(0 4px 12px rgba(79, 70, 229, 0.3));
+.login-header .logo-container {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    background: rgba(255, 255, 255, 0.95);
+    padding: 16px 32px;
+    border-radius: 20px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.login-header .logo-container:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.2);
+}
+
+.login-header .login-logo {
+    width: 100px;
+    height: 100px;
+    object-fit: contain;
+    filter: drop-shadow(0 4px 12px rgba(79, 70, 229, 0.2));
     transition: transform 0.3s ease;
 }
 
-.login-header .logo-icon:hover {
-    transform: scale(1.1) rotate(5deg);
+.login-header .logo-container:hover .login-logo {
+    transform: scale(1.05);
+}
+
+.login-header .school-info {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.login-header .school-name {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    font-size: 1.8rem;
+    font-weight: 700;
+    color: #1e3a8a;
+    margin: 0;
+    letter-spacing: 0.5px;
+    line-height: 1.2;
 }
 
 .login-header .system-title {
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    font-size: 2.5rem;
-    font-weight: 700;
-    color: #4f46e5;
+    font-size: 1.1rem;
+    font-weight: 500;
+    color: #4b5563;
     margin: 0;
-    letter-spacing: 0.5px;
-    text-transform: uppercase;
+    letter-spacing: 0.3px;
 }
 
 @keyframes fadeInDown {
@@ -59,15 +93,15 @@
     max-width: 1200px;
     align-items: flex-start;
     justify-content: space-between;
-    gap: 60px;
+    gap: 24px;
 }
 
 /* 📰 bên trái: danh sách tin */
 .news-panel {
-    flex: 2;
+    flex: 0 0 60%;
     background: rgba(255, 255, 255, 0.96);
     border-radius: 16px;
-    padding: 28px;
+    padding: 20px;
     box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12);
     display: flex;
     flex-direction: column;
@@ -79,7 +113,7 @@
     font-size: 1.4rem;
     font-weight: 700;
     color: #1e3a8a;
-    margin-bottom: 16px;
+    margin-bottom: 12px;
 }
 
 .news-list {
@@ -128,10 +162,10 @@
 
 /* 🔐 bên phải: form đăng nhập */
 .login-form {
-    flex: 1;
+    flex: 0 0 40%;
     background: rgba(255, 255, 255, 0.96);
     border-radius: 16px;
-    padding: 32px 36px;
+    padding: 24px 28px;
     box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12);
     display: flex;
     flex-direction: column;
@@ -141,14 +175,14 @@
 .login-form h2 {
     font-weight: 700;
     color: #1e3a8a;
-    margin-bottom: 20px;
+    margin-bottom: 16px;
 }
 
 .login-form form {
     width: 100%;
     display: flex;
     flex-direction: column;
-    gap: 12px;
+    gap: 10px;
 }
 
 .login-form label {
@@ -157,38 +191,148 @@
     color: #374151;
 }
 
+.login-form .input-wrapper {
+    position: relative;
+    width: 100%;
+}
+
+.login-form .input-icon {
+    position: absolute;
+    left: 14px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #6b7280;
+    font-size: 18px;
+    z-index: 1;
+    pointer-events: none;
+}
+
 .login-form input {
-    border: 1px solid #d1d5db;
+    width: 100%;
+    border: 1px solid #e5e7eb;
     border-radius: 8px;
-    padding: 10px;
+    padding: 12px 14px 12px 44px;
     outline: none;
     transition: all 0.2s;
+    font-size: 14px;
+    box-sizing: border-box;
+    background-color: #fff;
+}
+
+.login-form .password-wrapper input {
+    padding-right: 44px;
 }
 
 .login-form input:focus {
-    border-color: #4f46e5;
-    box-shadow: 0 0 0 2px rgba(79, 70, 229, 0.15);
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
 }
 
-.login-form button {
-    margin-top: 6px;
+.login-form input:focus + .input-icon,
+.login-form input:focus ~ .input-icon {
+    color: #3b82f6;
+}
+
+.login-form input:disabled {
+    background-color: #f3f4f6;
+    cursor: not-allowed;
+    border-color: #e5e7eb;
+}
+
+.login-form .password-toggle {
+    position: absolute;
+    right: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    color: #6b7280;
+    cursor: pointer;
+    padding: 4px 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: color 0.2s;
+    z-index: 1;
+}
+
+.login-form .password-toggle:hover {
+    color: #4f46e5;
+}
+
+.login-form .password-toggle:disabled {
+    cursor: not-allowed;
+    opacity: 0.5;
+}
+
+.login-form .form-options {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    margin-top: 4px;
+    margin-bottom: 8px;
+}
+
+.login-form .remember-me {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    font-size: 14px;
+    color: #4b5563;
+    user-select: none;
+}
+
+.login-form .remember-me input[type="checkbox"] {
+    width: 16px;
+    height: 16px;
+    cursor: pointer;
+    accent-color: #4f46e5;
+}
+
+.login-form .remember-me input[type="checkbox"]:disabled {
+    cursor: not-allowed;
+}
+
+.login-form .login-button {
+    margin-top: 8px;
+    width: 100%;
     background: linear-gradient(to right, #4f46e5, #06b6d4);
     color: #fff;
     font-weight: 600;
     border: none;
     border-radius: 8px;
-    padding: 10px;
+    padding: 12px;
     cursor: pointer;
-    transition: opacity 0.2s;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 15px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
-.login-form button:hover {
-    opacity: 0.9;
+.login-form .login-button:hover:not(:disabled) {
+    transform: translateY(-1px);
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.15);
 }
 
-.login-form button:disabled {
+.login-form .login-button:active:not(:disabled) {
+    transform: translateY(0);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.login-form .login-button:disabled {
     opacity: 0.7;
     cursor: not-allowed;
+    transform: none;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.login-form .login-button .spinner-border-sm {
+    width: 1rem;
+    height: 1rem;
+    border-width: 0.15em;
 }
 
 .alert {
@@ -249,18 +393,27 @@
 /* 📱 responsive */
 @media (max-width: 992px) {
     .login-header {
-        flex-direction: column;
-        gap: 16px;
         margin-bottom: 30px;
     }
 
-    .login-header .logo-icon {
-        font-size: 60px;
+    .login-header .logo-container {
+        flex-direction: column;
+        gap: 16px;
+        padding: 20px 30px;
+        text-align: center;
+    }
+
+    .login-header .login-logo {
+        width: 80px;
+        height: 80px;
+    }
+
+    .login-header .school-name {
+        font-size: 1.5rem;
     }
 
     .login-header .system-title {
-        font-size: 1.8rem;
-        text-align: center;
+        font-size: 1rem;
     }
 
     .login-container {
@@ -276,11 +429,21 @@
 }
 
 @media (max-width: 576px) {
-    .login-header .logo-icon {
-        font-size: 50px;
+    .login-header .logo-container {
+        padding: 16px 20px;
+        gap: 12px;
+    }
+
+    .login-header .login-logo {
+        width: 70px;
+        height: 70px;
+    }
+
+    .login-header .school-name {
+        font-size: 1.2rem;
     }
 
     .login-header .system-title {
-        font-size: 1.5rem;
+        font-size: 0.9rem;
     }
 }

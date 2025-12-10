@@ -3,9 +3,9 @@ import React, { useState, useEffect } from 'react'
 import AdminLayout from '../../components/AdminLayout'
 import axios from 'axios'
 import { 
-  BarChart, Bar, PieChart, Pie, Cell, 
+  BarChart, Bar, PieChart, Pie, Cell, LineChart, Line,
   XAxis, YAxis, CartesianGrid, Tooltip, 
-  Legend, ResponsiveContainer 
+  Legend, ResponsiveContainer, Area, AreaChart
 } from 'recharts'
 import { Users, GraduationCap, BookOpen, School } from 'lucide-react'
 
@@ -57,6 +57,7 @@ export default function AdminDashboard() {
   const [selectedSemester, setSelectedSemester] = useState(currentSemester)
   const [selectedYear, setSelectedYear] = useState(currentYear)
   const [viewMode, setViewMode] = useState('khoa') // 'khoa' hoặc 'nganh'
+  const [showTooltip, setShowTooltip] = useState(false)
 
   useEffect(() => {
     fetchStatistics()
@@ -114,7 +115,7 @@ export default function AdminDashboard() {
           </div>
           <div className="col-lg-3 col-md-6">
             <StatCard 
-              title="Số khóa học" 
+              title="Tổng số học phần" 
               value={stats?.totalCourses} 
               icon={BookOpen}
               color="#FFBB28"
@@ -122,7 +123,7 @@ export default function AdminDashboard() {
           </div>
           <div className="col-lg-3 col-md-6">
             <StatCard 
-              title="Số lớp học phần" 
+              title="Tổng số lớp học phần" 
               value={stats?.totalClasses} 
               icon={School}
               color="#FF8042"
@@ -130,13 +131,115 @@ export default function AdminDashboard() {
           </div>
         </div>
 
+        {/* Thống kê nhanh */}
+        <div className="row g-4 mb-4">
+          <div className="col-lg-12">
+            <div className="card shadow-sm h-100">
+              <div className="card-header bg-white">
+                <h6 className="mb-0">Thống kê nhanh</h6>
+              </div>
+              <div className="card-body">
+                <div className="row g-3">
+                  <div className="col-6">
+                    <div className="p-3 bg-light rounded">
+                      <div className="text-muted small mb-1">Số lớp đang mở</div>
+                      <div className="fs-4 fw-bold text-primary">
+                        {stats?.totalClasses || 0}
+                      </div>
+                    </div>
+                  </div>
+                  <div className="col-6">
+                    <div className="p-3 bg-light rounded">
+                      <div className="text-muted small mb-1">Số sinh viên đã đăng ký học phần</div>
+                      <div className="fs-4 fw-bold text-success">
+                        {stats?.studentsByClass?.reduce((sum, item) => sum + (item.students || 0), 0) || 0}
+                      </div>
+                    </div>
+                  </div>
+                  <div className="col-6">
+                    <div className="p-3 bg-light rounded">
+                      <div className="text-muted small mb-1">Số khoa</div>
+                      <div className="fs-4 fw-bold text-info">
+                        {stats?.studentsByFaculty?.length || 0}
+                      </div>
+                    </div>
+                  </div>
+                  <div className="col-6">
+                    <div className="p-3 bg-light rounded position-relative">
+                      <div className="d-flex align-items-center gap-2 mb-1">
+                        <div className="text-muted small">Tỷ lệ tốt nghiệp trung bình</div>
+                        <div className="position-relative">
+                          <i 
+                            className="bi bi-info-circle text-primary" 
+                            style={{ fontSize: '16px', cursor: 'help' }}
+                            onMouseEnter={() => setShowTooltip(true)}
+                            onMouseLeave={() => setShowTooltip(false)}
+                          ></i>
+                          {showTooltip && (
+                            <div 
+                              className="position-absolute bg-dark text-white p-2 rounded shadow-lg"
+                              style={{
+                                width: '280px',
+                                fontSize: '12px',
+                                zIndex: 1000,
+                                bottom: '100%',
+                                left: '50%',
+                                transform: 'translateX(-50%)',
+                                marginBottom: '8px',
+                                lineHeight: '1.5',
+                                animation: 'fadeIn 0.2s ease-in'
+                              }}
+                              onMouseEnter={() => setShowTooltip(true)}
+                              onMouseLeave={() => setShowTooltip(false)}
+                            >
+                              <div className="fw-semibold mb-1">Giải thích:</div>
+                              <div>Tỷ lệ trung bình của tất cả các khóa học.</div>
+                              <div className="mt-1">Ví dụ: <strong>25%</strong> nghĩa là trung bình <strong>25% sinh viên</strong> trong mỗi khóa đã tốt nghiệp.</div>
+                              <div 
+                                className="position-absolute"
+                                style={{
+                                  bottom: '-6px',
+                                  left: '50%',
+                                  transform: 'translateX(-50%)',
+                                  width: 0,
+                                  height: 0,
+                                  borderLeft: '6px solid transparent',
+                                  borderRight: '6px solid transparent',
+                                  borderTop: '6px solid #212529'
+                                }}
+                              ></div>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                      <div className="fs-4 fw-bold text-warning">
+                        {stats?.totNghiepTheoKhoa?.length > 0 
+                          ? (() => {
+                              const validItems = stats.totNghiepTheoKhoa.filter(item => item.tyLe != null && !isNaN(item.tyLe))
+                              if (validItems.length === 0) return '0%'
+                              const avg = validItems.reduce((sum, item) => sum + Number(item.tyLe), 0) / validItems.length
+                              return `${avg.toFixed(1)}%`
+                            })()
+                          : '0%'}
+                      </div>
+                      <div className="text-muted" style={{ fontSize: '11px', marginTop: '4px' }}>
+                        Trung bình của {stats?.totNghiepTheoKhoa?.filter(item => item.tyLe != null && !isNaN(item.tyLe)).length || 0} khóa học
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
         {/* Biểu đồ */}
         <div className="row g-4">
-          {/* Biểu đồ cột - Số sinh viên theo lớp học phần */}
+          {/* Biểu đồ cột - Top lớp học phần có nhiều sinh viên nhất */}
           <div className="col-lg-7">
             <div className="card shadow-sm">
               <div className="card-header bg-white d-flex justify-content-between align-items-center flex-wrap gap-2">
-                <h6 className="mb-0">Số sinh viên đăng ký theo lớp học phần</h6>
+                <h6 className="mb-0">Top 10 lớp học phần có nhiều sinh viên nhất</h6>
                 <div className="d-flex gap-2">
                   <select 
                     className="form-select form-select-sm" 
@@ -176,24 +279,38 @@ export default function AdminDashboard() {
                       (!selectedSemester || item.semester === selectedSemester) &&
                       (!selectedYear || item.academicYear === selectedYear)
                     )
-                    .sort((a, b) => a.students - b.students)
-                    .slice(0, 10);
+                    .sort((a, b) => b.students - a.students)
+                    .slice(0, 10)
+                    .map((item, index) => ({
+                      ...item,
+                      shortName: item.courseName?.length > 30 
+                        ? item.courseName.substring(0, 30) + '...' 
+                        : item.courseName
+                    }));
                   
                   return filteredData.length > 0 ? (
-                  <ResponsiveContainer width="100%" height={300}>
-                    <BarChart data={filteredData}>
+                  <ResponsiveContainer width="100%" height={350}>
+                    <BarChart data={filteredData} layout="vertical">
                       <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis 
-                        dataKey="classCode" 
-                        angle={0} 
-                        textAnchor="middle" 
-                        height={60}
-                        style={{ fontSize: '12px' }}
+                      <XAxis type="number" />
+                      <YAxis 
+                        dataKey="shortName" 
+                        type="category" 
+                        width={200}
+                        style={{ fontSize: '11px' }}
                       />
-                      <YAxis />
-                      <Tooltip />
-                      
-                      <Bar dataKey="students">
+                      <Tooltip 
+                        formatter={(value, name, props) => [
+                          `${value} sinh viên`,
+                          props.payload.courseName
+                        ]}
+                        contentStyle={{ 
+                          backgroundColor: 'rgba(255, 255, 255, 0.95)',
+                          border: '1px solid #ccc',
+                          borderRadius: '4px'
+                        }}
+                      />
+                      <Bar dataKey="students" radius={[0, 8, 8, 0]}>
                         {filteredData.map((entry, index) => (
                           <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                         ))}
@@ -219,7 +336,7 @@ export default function AdminDashboard() {
           {/* Biểu đồ - Tỷ lệ tốt nghiệp theo khóa/ngành */}
           <div className="col-lg-5">
             <div className="card shadow-sm">
-              <div className="card-header bg-white d-flex justify-content-between align-items-center">
+              <div className="card-header bg-white d-flex justify-content-between align-items-center flex-wrap gap-2">
                 <h6 className="mb-0">Tỷ lệ tốt nghiệp</h6>
                 <div className="btn-group btn-group-sm" role="group">
                   <button
@@ -241,23 +358,38 @@ export default function AdminDashboard() {
               <div className="card-body">
                 {viewMode === 'khoa' ? (
                   stats?.totNghiepTheoKhoa?.length > 0 ? (
-                    <ResponsiveContainer width="100%" height={300}>
+                    <ResponsiveContainer width="100%" height={350}>
                       <BarChart 
                         data={stats.totNghiepTheoKhoa}
                         layout="vertical"
                       >
-                        <CartesianGrid strokeDasharray="3 3" />
-                        <XAxis type="number" domain={[0, 100]} unit="%" />
-                        <YAxis dataKey="khoaHoc" type="category" width={80} />
+                        <CartesianGrid strokeDasharray="3 3" stroke="#e0e0e0" />
+                        <XAxis 
+                          type="number" 
+                          domain={[0, 100]} 
+                          unit="%" 
+                          tick={{ fontSize: 12 }}
+                        />
+                        <YAxis 
+                          dataKey="khoaHoc" 
+                          type="category" 
+                          width={60}
+                          tick={{ fontSize: 12 }}
+                        />
                         <Tooltip 
                           formatter={(value, name, props) => {
                             return [
-                              `${value}% (${props.payload.daTotNghiep}/${props.payload.tongSo} SV)`,
+                              `${value}% (${props.payload.daTotNghiep}/${props.payload.tongSo} sinh viên)`,
                               'Tỷ lệ tốt nghiệp'
                             ];
                           }}
+                          contentStyle={{ 
+                            backgroundColor: 'rgba(255, 255, 255, 0.95)',
+                            border: '1px solid #ccc',
+                            borderRadius: '4px'
+                          }}
                         />
-                        <Bar dataKey="tyLe" fill="#0088FE">
+                        <Bar dataKey="tyLe" radius={[0, 8, 8, 0]}>
                           {stats.totNghiepTheoKhoa.map((entry, index) => (
                             <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                           ))}
@@ -272,29 +404,40 @@ export default function AdminDashboard() {
                   )
                 ) : (
                   stats?.totNghiepTheoNganh?.length > 0 ? (
-                    <ResponsiveContainer width="100%" height={300}>
+                    <ResponsiveContainer width="100%" height={350}>
                       <BarChart 
-                        data={stats.totNghiepTheoNganh}
+                        data={stats.totNghiepTheoNganh.slice(0, 8)}
                         layout="vertical"
                       >
-                        <CartesianGrid strokeDasharray="3 3" />
-                        <XAxis type="number" domain={[0, 100]} unit="%" />
+                        <CartesianGrid strokeDasharray="3 3" stroke="#e0e0e0" />
+                        <XAxis 
+                          type="number" 
+                          domain={[0, 100]} 
+                          unit="%" 
+                          tick={{ fontSize: 12 }}
+                        />
                         <YAxis 
                           dataKey="tenNganh" 
                           type="category" 
-                          width={120}
+                          width={100}
                           style={{ fontSize: '11px' }}
+                          tick={{ fontSize: 11 }}
                         />
                         <Tooltip 
                           formatter={(value, name, props) => {
                             return [
-                              `${value}% (${props.payload.daTotNghiep}/${props.payload.tongSo} SV)`,
+                              `${value}% (${props.payload.daTotNghiep}/${props.payload.tongSo} sinh viên)`,
                               'Tỷ lệ tốt nghiệp'
                             ];
                           }}
+                          contentStyle={{ 
+                            backgroundColor: 'rgba(255, 255, 255, 0.95)',
+                            border: '1px solid #ccc',
+                            borderRadius: '4px'
+                          }}
                         />
-                        <Bar dataKey="tyLe" fill="#00C49F">
-                          {stats.totNghiepTheoNganh.map((entry, index) => (
+                        <Bar dataKey="tyLe" radius={[0, 8, 8, 0]}>
+                          {stats.totNghiepTheoNganh.slice(0, 8).map((entry, index) => (
                             <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                           ))}
                         </Bar>
