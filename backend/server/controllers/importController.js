@@ -26,10 +26,17 @@ export async function importStudents(req, res) {
   try {
     if (!req.file) return res.status(400).json({ message: 'Vui lòng chọn file CSV hoặc Excel.' })
 
-    const workbook = xlsx.read(req.file.buffer, { type: 'buffer' })
+    // ✅ 读取 Excel 文件，使用 defval 确保空单元格返回 null
+    const workbook = xlsx.read(req.file.buffer, { type: 'buffer', cellDates: true })
     const sheet = workbook.Sheets[workbook.SheetNames[0]]
-    const rows = xlsx.utils.sheet_to_json(sheet)
+    // ✅ 使用 defval: null 确保空值被正确处理
+    const rows = xlsx.utils.sheet_to_json(sheet, { defval: null, raw: false })
     if (!rows.length) return res.status(400).json({ message: 'File không có dữ liệu.' })
+    
+    // ✅ 调试：记录第一行的列名（仅在开发环境）
+    if (process.env.NODE_ENV !== 'production' && rows.length > 0) {
+      console.log('📋 Các cột trong file:', Object.keys(rows[0]))
+    }
 
     const errors = []
     let added = 0
@@ -203,13 +210,23 @@ export async function downloadTemplate(req, res) {
       }
     ]
 
-    const ws = xlsx.utils.json_to_sheet(data)
+    // ✅ 定义列的顺序，确保模板文件列顺序一致
+    const columnOrder = [
+      'Mã SV', 'Họ tên', 'CCCD', 'Ngày sinh', 'Giới tính', 'Email', 'Số điện thoại', 'Địa chỉ',
+      'Khóa học', 'Khoa', 'Ngành', 'Lớp',
+      'Họ tên cha', 'CCCD cha', 'Ngày sinh cha', 'Nghề nghiệp cha', 'SĐT cha', 'Email cha', 'Địa chỉ cha',
+      'Họ tên mẹ', 'CCCD mẹ', 'Ngày sinh mẹ', 'Nghề nghiệp mẹ', 'SĐT mẹ', 'Email mẹ', 'Địa chỉ mẹ'
+    ]
+    const ws = xlsx.utils.json_to_sheet(data, { header: columnOrder })
     const wb = xlsx.utils.book_new()
     xlsx.utils.book_append_sheet(wb, ws, 'MauNhapSinhVien')
 
     const buffer = xlsx.write(wb, { type: 'buffer', bookType: 'xlsx' })
-    res.setHeader('Content-Disposition', 'attachment; filename="MauNhapSinhVien.xlsx"')
+    // ✅ 使用 UTF-8 编码文件名，兼容所有部署环境（Vercel, Render, etc.）
+    const filename = 'MauNhapSinhVien.xlsx'
+    res.setHeader('Content-Disposition', `attachment; filename="${filename}"; filename*=UTF-8''${encodeURIComponent(filename)}`)
     res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+    res.setHeader('Content-Length', buffer.length)
     res.send(buffer)
   } catch (err) {
     console.error('❌ Lỗi tạo file mẫu:', err)

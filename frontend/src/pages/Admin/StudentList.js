@@ -166,8 +166,19 @@ export default function StudentList() {
         method: 'POST',
         body: formData
       })
-      const data = await res.json()
-      if (!res.ok) throw new Error(data.message || 'Import thất bại')
+
+      // Một số môi trường deploy trả về trang HTML hoặc body rỗng khi lỗi,
+      // nên đọc text trước rồi cố parse JSON để tránh "Unexpected end of JSON input".
+      const text = await res.text()
+      let data = null
+      try {
+        data = text ? JSON.parse(text) : null
+      } catch (_) {
+        // giữ text gốc để hiển thị
+      }
+      if (!res.ok) {
+        throw new Error(data?.message || text || 'Import thất bại')
+      }
 
       setImportResult(data)
       loadStudents()
