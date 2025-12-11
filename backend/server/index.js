@@ -50,7 +50,7 @@ const __dirname = path.dirname(__filename)
 
 // CORS configuration - cho phép origin từ environment variable hoặc tất cả trong development
 const corsOptions = {
-  origin: process.env.CORS_ORIGIN || (process.env.NODE_ENV === 'production' ? false : true),
+  origin: process.env.CORS_ORIGIN || (process.env.NODE_ENV === 'production' ? '*' : true),
   credentials: true,
   optionsSuccessStatus: 200
 }
