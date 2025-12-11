@@ -367,7 +367,6 @@ export const remove = async (req, res) => {
     await conn.query('DELETE FROM KeHoachHocTap WHERE sinh_vien_id = ?', [studentId])
     await conn.query('DELETE FROM KetQuaHocTap WHERE sinh_vien_id = ?', [studentId])
     await conn.query('DELETE FROM RenLuyen WHERE sinh_vien_id = ?', [studentId])
-    await conn.query('DELETE FROM ThamGiaHoatDong WHERE sinh_vien_id = ?', [studentId])
 
     // Xóa sinh viên (các bảng có ON DELETE CASCADE sẽ tự xóa)
     await conn.query('DELETE FROM SinhVien WHERE id = ?', [studentId])
@@ -413,7 +412,6 @@ export const removeMany = async (req, res) => {
     await conn.query('DELETE FROM KeHoachHocTap WHERE sinh_vien_id IN (?)', [ids])
     await conn.query('DELETE FROM KetQuaHocTap WHERE sinh_vien_id IN (?)', [ids])
     await conn.query('DELETE FROM RenLuyen WHERE sinh_vien_id IN (?)', [ids])
-    await conn.query('DELETE FROM ThamGiaHoatDong WHERE sinh_vien_id IN (?)', [ids])
 
     // xoá sinh viên (các bảng có ON DELETE CASCADE như NguoiThan sẽ tự xoá)
     await conn.query('DELETE FROM SinhVien WHERE id IN (?)', [ids])

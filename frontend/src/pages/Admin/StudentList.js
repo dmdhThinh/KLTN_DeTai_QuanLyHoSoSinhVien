@@ -5,6 +5,9 @@ import AdminLayout from '../../components/AdminLayout'
 import { apiFetch } from '../../api'
 import { ConfirmModal, AlertModal } from '../../components/Modal'
 
+// Lấy API_BASE từ environment variable
+const API_BASE = process.env.REACT_APP_API_BASE || ''
+
 export default function StudentList() {
   const navigate = useNavigate()
   const [students, setStudents] = useState([])
@@ -162,7 +165,9 @@ export default function StudentList() {
     formData.append('file', file)
 
     try {
-      const res = await fetch('/api/import/students', {
+      // ✅ Sử dụng API_BASE để hỗ trợ cả development và production
+      const apiUrl = `${API_BASE}/api/import/students`
+      const res = await fetch(apiUrl, {
         method: 'POST',
         body: formData
       })
@@ -194,7 +199,9 @@ export default function StudentList() {
 
   const handleDownloadTemplate = async () => {
     try {
-      const response = await fetch('/api/import/students/template')
+      // ✅ Sử dụng API_BASE để hỗ trợ cả development và production
+      const apiUrl = `${API_BASE}/api/import/students/template`
+      const response = await fetch(apiUrl)
       if (!response.ok) throw new Error('Không thể tải file mẫu')
       const blob = await response.blob()
       const url = window.URL.createObjectURL(blob)
