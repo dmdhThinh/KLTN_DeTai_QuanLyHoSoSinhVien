@@ -19,7 +19,7 @@ import lichAdminRoutes from './routes/lichAdmin.js'
 import lichNghiRoutes from './routes/lichNghi.js'
 import lophocphanRoutes from './routes/lopHocPhan.js'
 
-import hocphanRoutes from './routes/hocphan.js'
+import hocphanRoutes from './routes/hocPhan.js'
 
 import importGiangVienRoutes from './routes/importGiangVien.js'
 import importDiemRenLuyenRoutes from './routes/importDiemRenLuyen.js'
@@ -48,7 +48,13 @@ const app = express()
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
 
-app.use(cors())
+// CORS configuration - cho phép origin từ environment variable hoặc tất cả trong development
+const corsOptions = {
+  origin: process.env.CORS_ORIGIN || (process.env.NODE_ENV === 'production' ? false : true),
+  credentials: true,
+  optionsSuccessStatus: 200
+}
+app.use(cors(corsOptions))
 app.use(express.json())
 
 // ✅ 1️⃣ Cấu hình truy cập file tĩnh (ảnh, video, file đính kèm, ...)
