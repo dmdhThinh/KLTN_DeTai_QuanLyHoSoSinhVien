@@ -5,6 +5,8 @@ import AdminLayout from '../../components/AdminLayout'
 import '../../styles/Admin/StudentForm.css'
 import { AlertModal } from '../../components/Modal'
 
+const API_BASE = process.env.REACT_APP_API_BASE || ''
+
 function CenterError({ message, onClose }) {
   if (!message) return null
   return (
@@ -231,7 +233,7 @@ const onSubmit = async (e) => {
   
   try {
     // Kiểm tra trùng lặp mã SV, SĐT, Email
-    const checkUrl = `${process.env.REACT_APP_API_URL || 'http://localhost:8080'}/api/sinhviens/check-duplicate?ma_sv=${encodeURIComponent(form.ma_sv)}&so_dien_thoai=${encodeURIComponent(form.so_dien_thoai)}&email=${encodeURIComponent(form.email)}`;
+    const checkUrl = `${API_BASE}/api/sinhviens/check-duplicate?ma_sv=${encodeURIComponent(form.ma_sv)}&so_dien_thoai=${encodeURIComponent(form.so_dien_thoai)}&email=${encodeURIComponent(form.email)}`
     
     const checkRes = await fetch(checkUrl);
     const checkData = await checkRes.json();
@@ -321,7 +323,7 @@ const onSubmit = async (e) => {
         formData.append('photo', photoFile);
         formData.append('ma_sv', form.ma_sv);
         
-        const res = await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:8080'}/api/sinhviens/${newStudentId}/upload-photo`, {
+        const res = await fetch(`${API_BASE}/api/sinhviens/${newStudentId}/upload-photo`, {
           method: 'POST',
           body: formData
         });

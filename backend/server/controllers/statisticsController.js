@@ -32,6 +32,8 @@ export const getStatistics = async (req, res) => {
         sv.khoa_hoc as khoaHoc,
         COUNT(DISTINCT sv.id) as tongSo,
         COUNT(DISTINCT CASE WHEN hstn.trang_thai = 'DA_TOT_NGHIEP' THEN sv.id END) as daTotNghiep,
+        COUNT(DISTINCT CASE WHEN hstn.trang_thai = 'DU_DIEU_KIEN' THEN sv.id END) as duDieuKien,
+        COUNT(DISTINCT CASE WHEN hstn.trang_thai = 'KHONG_DU_DIEU_KIEN' THEN sv.id END) as khongDuDieuKien,
         CASE 
           WHEN COUNT(DISTINCT sv.id) > 0 
           THEN ROUND((COUNT(DISTINCT CASE WHEN hstn.trang_thai = 'DA_TOT_NGHIEP' THEN sv.id END) * 100.0 / COUNT(DISTINCT sv.id)), 2)
@@ -50,6 +52,8 @@ export const getStatistics = async (req, res) => {
         n.ten_nganh as tenNganh,
         COUNT(DISTINCT sv.id) as tongSo,
         COUNT(DISTINCT CASE WHEN hstn.trang_thai = 'DA_TOT_NGHIEP' THEN sv.id END) as daTotNghiep,
+        COUNT(DISTINCT CASE WHEN hstn.trang_thai = 'DU_DIEU_KIEN' THEN sv.id END) as duDieuKien,
+        COUNT(DISTINCT CASE WHEN hstn.trang_thai = 'KHONG_DU_DIEU_KIEN' THEN sv.id END) as khongDuDieuKien,
         CASE 
           WHEN COUNT(DISTINCT sv.id) > 0 
           THEN ROUND((COUNT(DISTINCT CASE WHEN hstn.trang_thai = 'DA_TOT_NGHIEP' THEN sv.id END) * 100.0 / COUNT(DISTINCT sv.id)), 2)

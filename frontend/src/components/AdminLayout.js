@@ -418,19 +418,6 @@ export default function AdminLayout({ children, title = '', activeMenu = '' }) {
           </div>
         </ul>
 
-        <div className="border-top pt-3 mt-3">
-          <button
-            onClick={() => {
-              clearAuth()
-              window.location.href = '/login'
-            }}
-            className="btn btn-danger w-100 d-flex align-items-center justify-content-center fw-semibold"
-            style={{ borderRadius: '8px' }}
-          >
-            <i className="bi bi-box-arrow-right me-2"></i> Đăng xuất
-          </button>
-        </div>
-
       </aside>
 
       {/* Main content */}
@@ -515,6 +502,27 @@ export default function AdminLayout({ children, title = '', activeMenu = '' }) {
                 </div>
               )}
             </div>
+            <a 
+              href="/admin/tu-van"
+              className="d-flex align-items-center gap-2 px-3 py-2 text-decoration-none rounded-pill"
+              style={{ 
+                backgroundColor: '#f8f9fa',
+                color: '#495057',
+                border: '1px solid #e9ecef',
+                transition: 'background-color 0.2s, border-color 0.2s'
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.backgroundColor = '#eef2ff'
+                e.currentTarget.style.borderColor = '#dfe3eb'
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.backgroundColor = '#f8f9fa'
+                e.currentTarget.style.borderColor = '#e9ecef'
+              }}
+            >
+              <i className="bi bi-chat-dots" style={{ fontSize: '18px', color: '#6c757d' }}></i>
+              <span className="fw-semibold" style={{ fontSize: '14px' }}>Tin nhắn</span>
+            </a>
             
             {/* User Info */}
             <div className="position-relative">

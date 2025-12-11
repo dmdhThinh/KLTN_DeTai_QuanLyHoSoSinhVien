@@ -75,6 +75,21 @@ export default function AdminDashboard() {
   const [viewMode, setViewMode] = useState('khoa') // 'khoa' hoặc 'nganh'
   const [showTooltip, setShowTooltip] = useState(false)
 
+  const renderTotNghiepTooltip = ({ active, payload, label }) => {
+    if (!active || !payload || !payload.length) return null
+    const data = payload[0]?.payload || {}
+    const title = viewMode === 'khoa' ? `Khóa ${data.khoaHoc || ''}` : data.tenNganh
+    return (
+      <div className="bg-white p-3 shadow-sm border rounded" style={{ minWidth: '220px' }}>
+        <div className="fw-semibold mb-1">{title}</div>
+        <div className="small text-muted mb-2">Tỷ lệ tốt nghiệp: {data.tyLe ?? 0}%</div>
+        <div className="small">Đã tốt nghiệp: {data.daTotNghiep ?? 0}/{data.tongSo ?? 0}</div>
+        <div className="small">Đủ điều kiện: {data.duDieuKien ?? 0}</div>
+        <div className="small">Không đủ điều kiện: {data.khongDuDieuKien ?? 0}</div>
+      </div>
+    )
+  }
+
   useEffect(() => {
     fetchStatistics()
   }, [])
@@ -392,19 +407,7 @@ export default function AdminDashboard() {
                           width={60}
                           tick={{ fontSize: 12 }}
                         />
-                        <Tooltip 
-                          formatter={(value, name, props) => {
-                            return [
-                              `${value}% (${props.payload.daTotNghiep}/${props.payload.tongSo} sinh viên)`,
-                              'Tỷ lệ tốt nghiệp'
-                            ];
-                          }}
-                          contentStyle={{ 
-                            backgroundColor: 'rgba(255, 255, 255, 0.95)',
-                            border: '1px solid #ccc',
-                            borderRadius: '4px'
-                          }}
-                        />
+                        <Tooltip content={renderTotNghiepTooltip} />
                         <Bar dataKey="tyLe" radius={[0, 8, 8, 0]}>
                           {stats.totNghiepTheoKhoa.map((entry, index) => (
                             <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
@@ -439,19 +442,7 @@ export default function AdminDashboard() {
                           style={{ fontSize: '11px' }}
                           tick={{ fontSize: 11 }}
                         />
-                        <Tooltip 
-                          formatter={(value, name, props) => {
-                            return [
-                              `${value}% (${props.payload.daTotNghiep}/${props.payload.tongSo} sinh viên)`,
-                              'Tỷ lệ tốt nghiệp'
-                            ];
-                          }}
-                          contentStyle={{ 
-                            backgroundColor: 'rgba(255, 255, 255, 0.95)',
-                            border: '1px solid #ccc',
-                            borderRadius: '4px'
-                          }}
-                        />
+                        <Tooltip content={renderTotNghiepTooltip} />
                         <Bar dataKey="tyLe" radius={[0, 8, 8, 0]}>
                           {stats.totNghiepTheoNganh.slice(0, 8).map((entry, index) => (
                             <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />

@@ -3,6 +3,8 @@ import { useParams, useNavigate } from 'react-router-dom'
 import AdminLayout from '../../components/AdminLayout'
 import { ConfirmModal } from '../../components/Modal'
 
+const API_BASE = process.env.REACT_APP_API_BASE || ''
+
 export default function EditThongBao() {
   const { id } = useParams()
   const navigate = useNavigate()
@@ -25,7 +27,7 @@ export default function EditThongBao() {
   const [deleteFile, setDeleteFile] = useState(false)
 
   useEffect(() => {
-    fetch(`/api/thongbao/${id}`)
+    fetch(`${API_BASE}/api/thongbao/${id}`)
       .then((res) => res.json())
       .then((data) => {
         setTieuDe(data.tieu_de)
@@ -65,7 +67,7 @@ export default function EditThongBao() {
     if (tep) formData.append('tep_dinh_kem', tep)
 
     try {
-      const res = await fetch(`/api/thongbao/${id}`, {
+      const res = await fetch(`${API_BASE}/api/thongbao/${id}`, {
         method: 'PUT',
         body: formData
       })
@@ -112,7 +114,7 @@ export default function EditThongBao() {
                 {existingImages.map((url, i) => {
                   const imgUrl = url.startsWith('http') 
                     ? url 
-                    : `${process.env.REACT_APP_API_URL || 'http://localhost:8080'}/${url.replace(/\\/g, '/')}`
+                    : `${API_BASE}/${url.replace(/\\/g, '/')}`
                   return (
                     <div key={i} className="position-relative">
                       <img
@@ -157,7 +159,7 @@ export default function EditThongBao() {
                   style={{ maxWidth: 400, maxHeight: 300 }}
                   src={existingVideo.startsWith('http') 
                     ? existingVideo 
-                    : `${process.env.REACT_APP_API_URL || 'http://localhost:8080'}/${existingVideo.replace(/\\/g, '/')}`}
+                    : `${API_BASE}/${existingVideo.replace(/\\/g, '/')}`}
                 />
                 <button
                   type="button"
@@ -190,7 +192,7 @@ export default function EditThongBao() {
           {existingFile && !deleteFile && (() => {
             const fileUrl = existingFile.startsWith('http') 
               ? existingFile 
-              : `${process.env.REACT_APP_API_URL || 'http://localhost:8080'}/${existingFile.replace(/\\/g, '/')}`
+              : `${API_BASE}/${existingFile.replace(/\\/g, '/')}`
             
             // Lấy extension từ URL
             const urlParts = fileUrl.split('/')

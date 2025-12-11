@@ -5,6 +5,8 @@ import { getGiangVienId, markThongBaoAsReadGiangVien } from '../../api'
 import { PhotoProvider, PhotoView } from 'react-photo-view'
 import 'react-photo-view/dist/react-photo-view.css'
 
+const API_BASE = process.env.REACT_APP_API_BASE || ''
+
 export default function ThongBaoChiTietGiangVien() {
   const { id } = useParams()
   const navigate = useNavigate()
@@ -15,8 +17,8 @@ export default function ThongBaoChiTietGiangVien() {
     setLoading(true)
     try {
       const url = forceRefresh 
-        ? `${process.env.REACT_APP_API_URL || 'http://localhost:8080'}/api/thongbao/${id}?_t=${Date.now()}`
-        : `${process.env.REACT_APP_API_URL || 'http://localhost:8080'}/api/thongbao/${id}`
+        ? `${API_BASE}/api/thongbao/${id}?_t=${Date.now()}`
+        : `${API_BASE}/api/thongbao/${id}`
       
       const res = await fetch(url)
       const data = await res.json()
@@ -135,7 +137,7 @@ export default function ThongBaoChiTietGiangVien() {
                     <small className="text-muted">Nhấn để tải xuống</small>
                   </div>
                   <a
-                    href={`${process.env.REACT_APP_API_URL || 'http://localhost:8080'}/api/thongbao/${tin.id}/download`}
+                    href={`${API_BASE}/api/thongbao/${tin.id}/download`}
                     className="btn btn-primary"
                     download
                   >
@@ -166,7 +168,7 @@ export default function ThongBaoChiTietGiangVien() {
                     {tin.hinh_anh.map((url, i) => {
                       const imgUrl = url.startsWith('http') 
                         ? url 
-                        : `${process.env.REACT_APP_API_URL || 'http://localhost:8080'}/${url.replace(/\\/g, '/')}`
+                        : `${API_BASE}/${url.replace(/\\/g, '/')}`
                       return (
                         <div key={i} className="col-md-4">
                           <PhotoView src={imgUrl}>
@@ -215,7 +217,7 @@ export default function ThongBaoChiTietGiangVien() {
                   }}
                   src={tin.video.startsWith('http') 
                     ? tin.video 
-                    : `${process.env.REACT_APP_API_URL || 'http://localhost:8080'}/${tin.video.replace(/\\/g, '/')}`}
+                    : `${API_BASE}/${tin.video.replace(/\\/g, '/')}`}
                 >
                   Trình duyệt của bạn không hỗ trợ video.
                 </video>

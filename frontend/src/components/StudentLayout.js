@@ -21,7 +21,6 @@ export default function StudentLayout({ children, title = '' }) {
     { name: 'Điểm rèn luyện', path: '/diem-ren-luyen', icon: 'bi-award' },
     { name: 'Học bổng', path: '/hoc-bong', icon: 'bi-trophy' },
     { name: 'Tin tức', path: '/student/thongbao', icon: 'bi-megaphone' },
-    { name: 'Yêu cầu tư vấn', path: '/yeu-cau-tu-van', icon: 'bi-chat-left-text' },
     { name: 'Đổi mật khẩu', path: '/student/change-password', icon: 'bi-key' }
   ]
 
@@ -191,29 +190,11 @@ export default function StudentLayout({ children, title = '' }) {
             </a>
           </li>
           <li>
-            <a href="/yeu-cau-tu-van" className={`nav-link ${location.pathname === '/yeu-cau-tu-van' ? 'active' : ''}`}>
-              <i className="bi bi-chat-left-text me-2"></i> Yêu cầu tư vấn
-            </a>
-          </li>
-          <li>
             <a href="/student/change-password" className={`nav-link ${location.pathname === '/student/change-password' ? 'active' : ''}`}>
               <i className="bi bi-key me-2"></i> Đổi mật khẩu
             </a>
           </li>
         </ul>
-
-        <div className="border-top pt-3 mt-3">
-          <button
-            onClick={() => {
-              clearAuth()
-              window.location.href = '/login'
-            }}
-            className="btn btn-danger w-100 d-flex align-items-center justify-content-center fw-semibold"
-            style={{ borderRadius: '8px' }}
-          >
-            <i className="bi bi-box-arrow-right me-2"></i> Đăng xuất
-          </button>
-        </div>
 
       </aside>
 
@@ -299,7 +280,28 @@ export default function StudentLayout({ children, title = '' }) {
                 </div>
               )}
             </div>
-            
+            <a 
+              href="/yeu-cau-tu-van"
+              className="d-flex align-items-center gap-2 px-3 py-2 text-decoration-none rounded-pill"
+              style={{ 
+                backgroundColor: '#f8f9fa',
+                color: '#495057',
+                border: '1px solid #e9ecef',
+                transition: 'background-color 0.2s, border-color 0.2s'
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.backgroundColor = '#eef2ff'
+                e.currentTarget.style.borderColor = '#dfe3eb'
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.backgroundColor = '#f8f9fa'
+                e.currentTarget.style.borderColor = '#e9ecef'
+              }}
+            >
+              <i className="bi bi-chat-dots" style={{ fontSize: '18px', color: '#6c757d' }}></i>
+              <span className="fw-semibold" style={{ fontSize: '14px' }}>Tin nhắn</span>
+            </a>
+
             {/* User Info */}
             <div className="position-relative">
               <div 

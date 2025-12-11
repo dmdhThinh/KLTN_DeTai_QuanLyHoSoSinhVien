@@ -3,6 +3,8 @@ import React, { useEffect, useState } from 'react'
 import AdminLayout from '../../components/AdminLayout'
 import { ConfirmModal } from '../../components/Modal'
 
+const API_BASE = process.env.REACT_APP_API_BASE || ''
+
 export default function ThongBaoList() {
   const [list, setList] = useState([])
   const [search, setSearch] = useState('')
@@ -13,7 +15,7 @@ export default function ThongBaoList() {
   }, [])
 
 const loadData = () => {
-   fetch(`/api/thongbao`)
+   fetch(`${API_BASE}/api/thongbao`)
      .then((res) => res.json())
      .then((data) => {
        if (Array.isArray(data)) setList(data)
@@ -27,7 +29,7 @@ const loadData = () => {
      show: true,
      message: 'Bạn có chắc muốn xóa thông báo này?',
      onConfirm: async () => {
-       await fetch(`/api/thongbao/${id}`, { method: 'DELETE' })
+      await fetch(`${API_BASE}/api/thongbao/${id}`, { method: 'DELETE' })
        loadData()
      }
    })

@@ -5,7 +5,8 @@
   "main": "server/index.js",
   "scripts": {
     "dev": "nodemon server/index.js",
-    "start": "node server/index.js"
+    "start": "node server/index.js",
+    "fix-schedules": "node scripts/fix_schedule_conflicts.js"
   },
   "dependencies": {
     "aws-sdk": "^2.1692.0",

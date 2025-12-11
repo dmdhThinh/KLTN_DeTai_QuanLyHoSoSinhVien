@@ -155,7 +155,8 @@ export default function EditStudent() {
         formData.append('photo', photoFile)
         formData.append('ma_sv', form.ma_sv)
         
-        const res = await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:8080'}/api/sinhviens/${id}/upload-photo`, {
+        const API_BASE = process.env.REACT_APP_API_BASE || ''
+        const res = await fetch(`${API_BASE}/api/sinhviens/${id}/upload-photo`, {
           method: 'POST',
           body: formData
         })

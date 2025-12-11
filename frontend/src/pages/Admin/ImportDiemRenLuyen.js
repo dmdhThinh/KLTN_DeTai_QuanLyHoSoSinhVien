@@ -3,6 +3,8 @@ import AdminLayout from '../../components/AdminLayout'
 import { apiFetch } from '../../api'
 import { AlertModal, ConfirmModal } from '../../components/Modal'
 
+const API_BASE = process.env.REACT_APP_API_BASE || ''
+
 export default function ImportDiemRenLuyen() {
   const [importResult, setImportResult] = useState(null)
   const [loading, setLoading] = useState(false)
@@ -27,7 +29,7 @@ export default function ImportDiemRenLuyen() {
     try {
       // Gọi trực tiếp API fetch mà không qua apiFetch để gửi formData
       // Vì apiFetch thường mặc định JSON
-      const res = await fetch('http://localhost:8080/api/import/training-scores', {
+      const res = await fetch(`${API_BASE}/api/import/training-scores`, {
         method: 'POST',
         body: formData,
       })
@@ -50,7 +52,7 @@ export default function ImportDiemRenLuyen() {
 
   const handleDownloadTemplate = async () => {
     try {
-      const response = await fetch('http://localhost:8080/api/import/training-scores/template')
+      const response = await fetch(`${API_BASE}/api/import/training-scores/template`)
       if (!response.ok) throw new Error('Không thể tải file mẫu')
       const blob = await response.blob()
       const url = window.URL.createObjectURL(blob)

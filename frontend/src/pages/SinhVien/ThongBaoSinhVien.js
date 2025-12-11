@@ -3,6 +3,8 @@ import React, { useEffect, useState } from 'react'
 import StudentLayout from '../../components/StudentLayout'
 import { getSinhVienId, markThongBaoAsRead } from '../../api'
 
+const API_BASE = process.env.REACT_APP_API_BASE || ''
+
 export default function ThongBaoSinhVien() {
   const [list, setList] = useState([])
   const [loading, setLoading] = useState(true)
@@ -14,7 +16,7 @@ export default function ThongBaoSinhVien() {
     try {
       const svId = getSinhVienId()
       // Gửi sinhVienId để backend lấy trạng thái đọc
-      const res = await fetch(`/api/thongbao?sinhVienId=${svId}&_t=${Date.now()}`)
+      const res = await fetch(`${API_BASE}/api/thongbao?sinhVienId=${svId}&_t=${Date.now()}`)
       const data = await res.json()
       setList(Array.isArray(data) ? data : [])
     } catch {

@@ -3,6 +3,8 @@ import React, { useEffect, useState } from 'react'
 import TeacherLayout from '../../components/TeacherLayout'
 import { getGiangVienId, markThongBaoAsReadGiangVien } from '../../api'
 
+const API_BASE = process.env.REACT_APP_API_BASE || ''
+
 export default function ThongBaoGiangVien() {
   const [list, setList] = useState([])
   const [loading, setLoading] = useState(true)
@@ -13,7 +15,7 @@ export default function ThongBaoGiangVien() {
     setError('')
     try {
       const gvId = getGiangVienId()
-      const res = await fetch(`/api/thongbao?giangVienId=${gvId}&_t=${Date.now()}`)
+      const res = await fetch(`${API_BASE}/api/thongbao?giangVienId=${gvId}&_t=${Date.now()}`)
       const data = await res.json()
       setList(Array.isArray(data) ? data : [])
     } catch {

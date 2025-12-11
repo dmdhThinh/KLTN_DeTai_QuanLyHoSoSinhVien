@@ -5,6 +5,8 @@ import { getThongBaoById, getSinhVienId, markThongBaoAsRead } from '../../api'
 import { PhotoProvider, PhotoView } from 'react-photo-view'
 import 'react-photo-view/dist/react-photo-view.css'
 
+const API_BASE = process.env.REACT_APP_API_BASE || ''
+
 export default function ThongBaoChiTiet() {
   const { id } = useParams()
   const navigate = useNavigate()
@@ -16,8 +18,8 @@ export default function ThongBaoChiTiet() {
     try {
       // Thêm timestamp để bypass cache nếu cần
       const url = forceRefresh 
-        ? `${process.env.REACT_APP_API_URL || 'http://localhost:8080'}/api/thongbao/${id}?_t=${Date.now()}`
-        : `${process.env.REACT_APP_API_URL || 'http://localhost:8080'}/api/thongbao/${id}`
+        ? `${API_BASE}/api/thongbao/${id}?_t=${Date.now()}`
+        : `${API_BASE}/api/thongbao/${id}`
       
       const res = await fetch(url)
       const data = await res.json()
@@ -93,7 +95,7 @@ export default function ThongBaoChiTiet() {
               </span>{' '}
               (
               <a
-                href={`${process.env.REACT_APP_API_URL || 'http://localhost:8080'}/api/thongbao/${tin.id}/download`}
+                href={`${API_BASE}/api/thongbao/${tin.id}/download`}
                 className="text-primary text-decoration-underline"
               >
                 tải tại đây
@@ -119,7 +121,7 @@ export default function ThongBaoChiTiet() {
                   {tin.hinh_anh.map((url, i) => {
                     const imgUrl = url.startsWith('http') 
                       ? url 
-                      : `${process.env.REACT_APP_API_URL || 'http://localhost:8080'}/${url.replace(/\\/g, '/')}`
+                      : `${API_BASE}/${url.replace(/\\/g, '/')}`
                     return (
                     <PhotoView
                       key={i}
@@ -165,7 +167,7 @@ export default function ThongBaoChiTiet() {
                 style={{ maxHeight: 480, animation: 'fadeIn 0.6s ease' }}
                 src={tin.video.startsWith('http') 
                   ? tin.video 
-                  : `${process.env.REACT_APP_API_URL || 'http://localhost:8080'}/${tin.video.replace(/\\/g, '/')}`}
+                  : `${API_BASE}/${tin.video.replace(/\\/g, '/')}`}
               >
                 Trình duyệt của bạn không hỗ trợ video.
               </video>

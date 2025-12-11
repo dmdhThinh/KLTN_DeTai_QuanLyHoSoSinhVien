@@ -3,6 +3,8 @@ import AdminLayout from '../../components/AdminLayout'
 import { apiFetch } from '../../api'
 import { AlertModal } from '../../components/Modal'
 
+const API_BASE = process.env.REACT_APP_API_BASE || ''
+
 export default function ImportChungChiTiengAnh() {
   const [importResult, setImportResult] = useState(null)
   const [loading, setLoading] = useState(false)
@@ -20,7 +22,7 @@ export default function ImportChungChiTiengAnh() {
     formData.append('file', file)
 
     try {
-      const res = await fetch('http://localhost:8080/api/import/english-certificate', {
+      const res = await fetch(`${API_BASE}/api/import/english-certificate`, {
         method: 'POST',
         body: formData,
       })
@@ -47,7 +49,7 @@ export default function ImportChungChiTiengAnh() {
 
   const handleDownloadTemplate = async () => {
     try {
-      const response = await fetch('http://localhost:8080/api/import/english-certificate/template')
+      const response = await fetch(`${API_BASE}/api/import/english-certificate/template`)
       if (!response.ok) throw new Error('Không thể tải file mẫu')
       const blob = await response.blob()
       const url = window.URL.createObjectURL(blob)

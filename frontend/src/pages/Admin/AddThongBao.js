@@ -3,6 +3,8 @@ import React, { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import AdminLayout from '../../components/AdminLayout'
 
+const API_BASE = process.env.REACT_APP_API_BASE || ''
+
 export default function AddThongBao() {
   const [tieuDe, setTieuDe] = useState('')
   const [noiDung, setNoiDung] = useState('')
@@ -29,7 +31,7 @@ export default function AddThongBao() {
     if (tep) formData.append('tep_dinh_kem', tep)
 
     try {
-      const res = await fetch('/api/thongbao', {
+      const res = await fetch(`${API_BASE}/api/thongbao`, {
         method: 'POST',
         body: formData
       })

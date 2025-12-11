@@ -3,6 +3,8 @@ import { useNavigate, useParams } from 'react-router-dom'
 import AdminLayout from '../../components/AdminLayout'
 import { apiFetch } from '../../api'
 
+const API_BASE = process.env.REACT_APP_API_BASE || ''
+
 export default function EditGiangVien() {
   const { id } = useParams()
   const navigate = useNavigate()
@@ -91,7 +93,7 @@ export default function EditGiangVien() {
         const formData = new FormData()
         formData.append('photo', photoFile)
         
-        const uploadRes = await fetch(`http://localhost:8080/api/giangviens/${id}/upload-photo`, {
+        const uploadRes = await fetch(`${API_BASE}/api/giangviens/${id}/upload-photo`, {
           method: 'POST',
           body: formData
         })
