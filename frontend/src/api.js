@@ -216,12 +216,14 @@ export function getGiangVienId() {
 // 🧠 Fetch API — luôn dùng token tương ứng role hiện tại
 export async function apiFetch(path, options = {}) {
   const token = getToken()
+  // Nếu path đã là full URL thì dùng trực tiếp, nếu không thì prepend API_BASE
+  const fullPath = path.startsWith('http') ? path : `${API_BASE}${path}`
   const headers = { 
     'Content-Type': 'application/json',
     ...(token && !options.headers?.Authorization ? { 'Authorization': `Bearer ${token}` } : {}),
     ...(options.headers || {})
   }
-  const res = await fetch(path, { ...options, headers })
+  const res = await fetch(fullPath, { ...options, headers })
   if (!res.ok) {
     // Xử lý 401/403 - token không hợp lệ hoặc hết hạn
     if (res.status === 401 || res.status === 403) {
@@ -244,7 +246,8 @@ export async function apiFetch(path, options = {}) {
 
 // === Login, get info, CRUD ===
 export async function login(username, password) {
-  const res = await fetch('/api/auth/login', {
+  const loginPath = `${API_BASE}/api/auth/login`
+  const res = await fetch(loginPath, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ username, password }),
@@ -270,17 +273,17 @@ export async function createSinhVien(payload) {
 }
 // ================== TIN TỨC / THÔNG BÁO ===================
 export async function getUnreadCount(sinhVienId) {
-  const res = await fetch(`/api/thongbao-dadoc/${sinhVienId}`)
+  const res = await fetch(`${API_BASE}/api/thongbao-dadoc/${sinhVienId}`)
   return res.json()
 }
 
 export async function getThongBaoById(id) {
-  const res = await fetch(`/api/thongbao/${id}`)
+  const res = await fetch(`${API_BASE}/api/thongbao/${id}`)
   return res.json()
 }
 
 export async function markThongBaoAsRead(sinhVienId, thongBaoId) {
-  const res = await fetch('/api/thongbao-dadoc/read', {
+  const res = await fetch(`${API_BASE}/api/thongbao-dadoc/read`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ sinhVienId, thongBaoId })
@@ -290,12 +293,12 @@ export async function markThongBaoAsRead(sinhVienId, thongBaoId) {
 
 // Giảng viên
 export async function getUnreadCountGiangVien(giangVienId) {
-  const res = await fetch(`/api/thongbao-dadoc/giangvien/${giangVienId}`)
+  const res = await fetch(`${API_BASE}/api/thongbao-dadoc/giangvien/${giangVienId}`)
   return res.json()
 }
 
 export async function markThongBaoAsReadGiangVien(giangVienId, thongBaoId) {
-  const res = await fetch('/api/thongbao-dadoc/giangvien/read', {
+  const res = await fetch(`${API_BASE}/api/thongbao-dadoc/giangvien/read`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ giangVienId, thongBaoId })

@@ -34,7 +34,7 @@ export default function Login() {
     let mounted = true
     ;(async () => {
       try {
-        const res = await fetch('/api/thongbao')
+        const res = await fetch(`${process.env.REACT_APP_API_BASE || ''}/api/thongbao`)
         const data = await res.json()
         if (mounted) setNews(Array.isArray(data) ? data.slice(0, 10) : [])
       } catch {
