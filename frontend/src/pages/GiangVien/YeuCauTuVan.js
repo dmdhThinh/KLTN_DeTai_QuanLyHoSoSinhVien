@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react'
 import TeacherLayout from '../../components/TeacherLayout'
 import { apiFetch, getGiangVienId } from '../../api'
-import dayjs from 'dayjs'
+import { formatVNTime, formatChatTime } from '../../utils/dayjs'
 
 export default function YeuCauTuVanGiangVien() {
   const giangVienId = getGiangVienId()
@@ -111,6 +111,40 @@ export default function YeuCauTuVanGiangVien() {
     }
   }
 
+  // Auto scroll xuống cuối khi có tin nhắn mới
+  useEffect(() => {
+    if (showResponseModal && tinNhanList.length > 0) {
+      const messageContainer = document.getElementById('messageContainer')
+      if (messageContainer) {
+        setTimeout(() => {
+          messageContainer.scrollTop = messageContainer.scrollHeight
+        }, 100)
+      }
+    }
+  }, [tinNhanList, showResponseModal])
+
+  // ✅ Auto-refresh conversation khi modal đang mở để nhận tin nhắn mới
+  useEffect(() => {
+    if (!showResponseModal || !selectedYeuCau) return
+
+    const loadMessages = async () => {
+      try {
+        const messages = await apiFetch(`/api/tin-nhan-tu-van/${selectedYeuCau.id}`)
+        setTinNhanList(messages.data || [])
+      } catch (error) {
+        console.error('Lỗi load tin nhắn:', error)
+      }
+    }
+
+    // Load ngay lập tức
+    loadMessages()
+
+    // Auto-refresh mỗi 3 giây khi modal đang mở
+    const interval = setInterval(loadMessages, 3000)
+
+    return () => clearInterval(interval)
+  }, [showResponseModal, selectedYeuCau?.id])
+
   // Gửi tin nhắn trong conversation
   const handleGuiTinNhan = async (e) => {
     e.preventDefault()
@@ -121,6 +155,10 @@ export default function YeuCauTuVanGiangVien() {
       return
     }
 
+    // Lưu nội dung tin nhắn để hiển thị ngay (optimistic update)
+    const tinNhanTam = tinNhanMoi.trim()
+    setTinNhanMoi('') // Xóa input ngay để UX tốt hơn
+
     try {
       await apiFetch('/api/tin-nhan-tu-van', {
         method: 'POST',
@@ -128,14 +166,16 @@ export default function YeuCauTuVanGiangVien() {
         body: JSON.stringify({
           yeu_cau_id: selectedYeuCau.id,
           nguoi_gui: 'GIANG_VIEN',
-          noi_dung: tinNhanMoi
+          noi_dung: tinNhanTam
         })
       })
 
-      // Reload conversation
+      // ✅ Reload conversation để lấy tin nhắn mới từ server
       const messages = await apiFetch(`/api/tin-nhan-tu-van/${selectedYeuCau.id}`)
       setTinNhanList(messages.data || [])
-      setTinNhanMoi('')
+      
+      // ✅ Đảm bảo modal vẫn mở và scroll xuống cuối
+      setShowResponseModal(true)
       
       // Reload danh sách
       loadData(false)
@@ -144,8 +184,18 @@ export default function YeuCauTuVanGiangVien() {
       if (window.refreshTuVanCount) {
         setTimeout(() => window.refreshTuVanCount(), 500)
       }
+      
+      // Scroll xuống cuối sau khi tin nhắn được thêm
+      setTimeout(() => {
+        const messageContainer = document.getElementById('messageContainer')
+        if (messageContainer) {
+          messageContainer.scrollTop = messageContainer.scrollHeight
+        }
+      }, 200)
     } catch (error) {
       console.error('Lỗi gửi tin nhắn:', error)
+      // Nếu lỗi, khôi phục lại input
+      setTinNhanMoi(tinNhanTam)
       setNotification({ show: true, message: 'Lỗi khi gửi tin nhắn', type: 'error' })
       setTimeout(() => setNotification({ show: false, message: '', type: '' }), 3000)
     }
@@ -362,7 +412,7 @@ export default function YeuCauTuVanGiangVien() {
                               </span>
                             )}
                           </td>
-                          <td>{dayjs(yc.thoi_gian_gui).format('DD/MM/YYYY HH:mm')}</td>
+                          <td>{formatVNTime(yc.thoi_gian_gui)}</td>
                           <td>{renderStatusBadge(yc.trang_thai)}</td>
                           <td>
                             <div className="btn-group btn-group-sm">
@@ -478,7 +528,7 @@ export default function YeuCauTuVanGiangVien() {
                                   {tn.nguoi_gui === 'GIANG_VIEN' ? 'Bạn' : selectedYeuCau.ten_sinh_vien}
                                 </div>
                                 <div className="text-muted" style={{ fontSize: '0.75rem' }}>
-                                  {dayjs(tn.thoi_gian_gui).format('HH:mm - DD/MM/YYYY')}
+                                  {formatChatTime(tn.thoi_gian_gui)}
                                 </div>
                               </div>
                             </div>
@@ -513,23 +563,14 @@ export default function YeuCauTuVanGiangVien() {
                       <div className="input-group">
                         <input
                           type="text"
-                          className="form-control border-0 shadow-sm"
-                          placeholder="Nhập tin nhắn của bạn..."
+                          className="form-control"
+                          placeholder="Nhập tin nhắn phản hồi..."
                           value={tinNhanMoi}
                           onChange={(e) => setTinNhanMoi(e.target.value)}
-                          style={{ 
-                            borderRadius: '24px',
-                            padding: '12px 20px',
-                            fontSize: '0.95rem'
-                          }}
                         />
-                        <button 
-                          type="submit" 
-                          className="btn btn-success ms-2 rounded-circle d-flex align-items-center justify-content-center"
-                          style={{ width: '48px', height: '48px' }}
-                          disabled={!tinNhanMoi.trim()}
-                        >
-                          <i className="bi bi-send-fill"></i>
+                        <button type="submit" className="btn btn-success" disabled={!tinNhanMoi.trim()}>
+                          <i className="bi bi-send me-1"></i>
+                          Gửi
                         </button>
                       </div>
                     </form>
@@ -584,7 +625,7 @@ export default function YeuCauTuVanGiangVien() {
                   </div>
                   <div className="col-md-6">
                     <strong>Thời gian gửi:</strong>
-                    <div>{dayjs(selectedYeuCau.thoi_gian_gui).format('DD/MM/YYYY HH:mm')}</div>
+                    <div>{formatVNTime(selectedYeuCau.thoi_gian_gui)}</div>
                   </div>
                 </div>
 
@@ -608,7 +649,7 @@ export default function YeuCauTuVanGiangVien() {
                     <div className="mb-3">
                       <strong>Phản hồi:</strong>
                       <div className="text-muted small">
-                        {dayjs(selectedYeuCau.thoi_gian_phan_hoi).format('DD/MM/YYYY HH:mm')}
+                        {formatVNTime(selectedYeuCau.thoi_gian_phan_hoi)}
                       </div>
                       <div className="mt-2 p-3 bg-success bg-opacity-10 rounded border border-success" style={{ whiteSpace: 'pre-wrap' }}>
                         {selectedYeuCau.phan_hoi}

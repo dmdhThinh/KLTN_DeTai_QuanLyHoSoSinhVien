@@ -9,6 +9,8 @@ export default function StudentLayout({ children, title = '' }) {
   const [searchQuery, setSearchQuery] = useState('')
   const [showSearchResults, setShowSearchResults] = useState(false)
   const [studentName, setStudentName] = useState('Sinh viên')
+  const [studentData, setStudentData] = useState(null)
+  const [avatarError, setAvatarError] = useState(false)
   const [unreadCount, setUnreadCount] = useState(0)
   const [unreadMessageCount, setUnreadMessageCount] = useState(0)
 
@@ -23,8 +25,12 @@ export default function StudentLayout({ children, title = '' }) {
             getUnreadMessageCount(id).catch(() => 0)
           ])
 
-          if (studentData && studentData.hoTen) {
-            setStudentName(studentData.hoTen)
+          if (studentData) {
+            if (studentData.hoTen) {
+              setStudentName(studentData.hoTen)
+            }
+            setStudentData(studentData) // Lưu toàn bộ thông tin sinh viên để dùng cho avatar
+            setAvatarError(false) // Reset avatar error khi load lại data
           }
 
           // Handle unread news count
@@ -397,20 +403,40 @@ export default function StudentLayout({ children, title = '' }) {
                 <div className="text-muted small me-2">
                   Xin chào, <b style={{ color: '#495057' }}>{studentName}</b>
                 </div>
-                <div
-                  className="rounded-circle d-flex align-items-center justify-content-center"
-                  style={{ 
-                    width: '40px', 
-                    height: '40px',
-                    background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                    color: 'white',
-                    fontSize: '16px',
-                    fontWeight: '600',
-                    flexShrink: 0
-                  }}
-                >
-                  S
-                </div>
+                {studentData?.anhThe && !avatarError ? (
+                  <img
+                    src={studentData.anhThe}
+                    alt="Ảnh đại diện"
+                    className="rounded-circle"
+                    style={{ 
+                      width: '40px', 
+                      height: '40px',
+                      objectFit: 'cover',
+                      flexShrink: 0,
+                      border: '2px solid white',
+                      boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+                    }}
+                    onError={() => {
+                      // Nếu ảnh lỗi, set state để hiển thị chữ cái
+                      setAvatarError(true)
+                    }}
+                  />
+                ) : (
+                  <div
+                    className="rounded-circle d-flex align-items-center justify-content-center"
+                    style={{ 
+                      width: '40px', 
+                      height: '40px',
+                      background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                      color: 'white',
+                      fontSize: '16px',
+                      fontWeight: '600',
+                      flexShrink: 0
+                    }}
+                  >
+                    {studentData?.hoTen ? studentData.hoTen.charAt(0).toUpperCase() : 'S'}
+                  </div>
+                )}
                 <i className={`bi bi-chevron-down ms-1`} style={{ fontSize: '12px', color: '#6c757d', transition: 'transform 0.2s', transform: showUserMenu ? 'rotate(180deg)' : 'rotate(0deg)' }}></i>
               </div>
               

@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react'
 import AdminLayout from '../../components/AdminLayout'
 import { apiFetch } from '../../api'
-import dayjs from 'dayjs'
+import { formatVNTime, formatChatTime } from '../../utils/dayjs'
 
 export default function YeuCauTuVanAdmin() {
   const [yeuCauList, setYeuCauList] = useState([])
@@ -76,6 +76,40 @@ export default function YeuCauTuVanAdmin() {
     }
   }
 
+  // Auto scroll xuống cuối khi có tin nhắn mới
+  useEffect(() => {
+    if (showDetailModal && tinNhanList.length > 0) {
+      const messageContainer = document.getElementById('messageContainer')
+      if (messageContainer) {
+        setTimeout(() => {
+          messageContainer.scrollTop = messageContainer.scrollHeight
+        }, 100)
+      }
+    }
+  }, [tinNhanList, showDetailModal])
+
+  // ✅ Auto-refresh conversation khi modal đang mở để nhận tin nhắn mới
+  useEffect(() => {
+    if (!showDetailModal || !selectedYeuCau) return
+
+    const loadMessages = async () => {
+      try {
+        const response = await apiFetch(`/api/tin-nhan-tu-van/${selectedYeuCau.id}`)
+        setTinNhanList(response.data || [])
+      } catch (error) {
+        console.error('Lỗi load tin nhắn:', error)
+      }
+    }
+
+    // Load ngay lập tức
+    loadMessages()
+
+    // Auto-refresh mỗi 3 giây khi modal đang mở
+    const interval = setInterval(loadMessages, 3000)
+
+    return () => clearInterval(interval)
+  }, [showDetailModal, selectedYeuCau?.id])
+
   // Gửi tin nhắn phản hồi
   const handleGuiTinNhan = async (e) => {
     e.preventDefault()
@@ -86,6 +120,10 @@ export default function YeuCauTuVanAdmin() {
       return
     }
 
+    // Lưu nội dung tin nhắn để hiển thị ngay (optimistic update)
+    const tinNhanTam = tinNhanMoi.trim()
+    setTinNhanMoi('') // Xóa input ngay để UX tốt hơn
+
     try {
       await apiFetch('/api/tin-nhan-tu-van', {
         method: 'POST',
@@ -93,19 +131,31 @@ export default function YeuCauTuVanAdmin() {
         body: JSON.stringify({
           yeu_cau_id: selectedYeuCau.id,
           nguoi_gui: 'ADMIN',
-          noi_dung: tinNhanMoi
+          noi_dung: tinNhanTam
         })
       })
 
-      // Reload tin nhắn
+      // ✅ Reload tin nhắn để lấy tin nhắn mới từ server
       const response = await apiFetch(`/api/tin-nhan-tu-van/${selectedYeuCau.id}`)
       setTinNhanList(response.data || [])
-      setTinNhanMoi('')
+      
+      // ✅ Đảm bảo modal vẫn mở và scroll xuống cuối
+      setShowDetailModal(true)
       
       // Refresh danh sách
       loadData(false)
+      
+      // Scroll xuống cuối sau khi tin nhắn được thêm
+      setTimeout(() => {
+        const messageContainer = document.getElementById('messageContainer')
+        if (messageContainer) {
+          messageContainer.scrollTop = messageContainer.scrollHeight
+        }
+      }, 200)
     } catch (error) {
       console.error('Lỗi gửi tin nhắn:', error)
+      // Nếu lỗi, khôi phục lại input
+      setTinNhanMoi(tinNhanTam)
       setNotification({ show: true, message: 'Lỗi khi gửi tin nhắn', type: 'error' })
       setTimeout(() => setNotification({ show: false, message: '', type: '' }), 3000)
     }
@@ -208,7 +258,7 @@ export default function YeuCauTuVanAdmin() {
                         )}
                       </td>
                       <td>
-                        <small>{dayjs(yc.thoi_gian_gui).format('DD/MM/YYYY HH:mm')}</small>
+                        <small>{formatVNTime(yc.thoi_gian_gui)}</small>
                       </td>
                       <td>{renderStatusBadge(yc.trang_thai)}</td>
                       <td className="text-center">
@@ -267,7 +317,7 @@ export default function YeuCauTuVanAdmin() {
                           <strong>Lớp:</strong> {selectedYeuCau.ten_lop || '-'}
                         </p>
                         <p className="mb-2">
-                          <strong>Thời gian:</strong> {dayjs(selectedYeuCau.thoi_gian_gui).format('DD/MM/YYYY HH:mm')}
+                          <strong>Thời gian:</strong> {formatVNTime(selectedYeuCau.thoi_gian_gui)}
                         </p>
                       </div>
                     </div>
@@ -317,7 +367,7 @@ export default function YeuCauTuVanAdmin() {
                               {tn.noi_dung}
                             </div>
                             <div className={`small text-muted mt-1 ${isAdmin ? 'text-end' : ''}`}>
-                              {dayjs(tn.thoi_gian_gui).format('DD/MM/YYYY HH:mm')}
+                              {formatVNTime(tn.thoi_gian_gui)}
                             </div>
                           </div>
 
