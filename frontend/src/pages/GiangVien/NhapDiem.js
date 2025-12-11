@@ -17,6 +17,13 @@ function NhapDiem() {
   const [showConfirm, setShowConfirm] = useState(false); // Modal xác nhận
   const [viewMode, setViewMode] = useState('input');
   const [showExportMenu, setShowExportMenu] = useState(false);
+
+  // Nếu không có lopHocPhanId (truy cập trực tiếp /teacher/nhapdiem), điều hướng về danh sách lớp học phần
+  useEffect(() => {
+    if (!lopHocPhanId) {
+      navigate('/teacher/lophocphan', { replace: true });
+    }
+  }, [lopHocPhanId, navigate]);
   // Load thông tin lớp học phần và danh sách sinh viên
   const loadData = async () => {
     if (!lopHocPhanId) return;

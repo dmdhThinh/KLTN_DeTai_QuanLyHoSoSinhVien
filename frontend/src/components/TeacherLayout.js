@@ -1,25 +1,61 @@
 import React, { useEffect, useState } from 'react'
 import { useLocation } from 'react-router-dom'
 import 'bootstrap-icons/font/bootstrap-icons.css'
-import { clearAuth } from '../api'
+import { clearAuth, getGiangVienId, getUnreadCountGiangVien, getUnreadMessageCountGiangVien } from '../api'
 
 export default function TeacherLayout({ children, title = '', activeMenu = '', gvName = '' }) {
   const location = useLocation()
   const [showUserMenu, setShowUserMenu] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
   const [showSearchResults, setShowSearchResults] = useState(false)
+  const [unreadCount, setUnreadCount] = useState(0)
+  const [unreadMessageCount, setUnreadMessageCount] = useState(0)
+
+  useEffect(() => {
+    const fetchTeacherData = async () => {
+      try {
+        const id = getGiangVienId()
+        if (id) {
+          const [unreadData, unreadMsgData] = await Promise.all([
+            getUnreadCountGiangVien(id).catch(() => 0),
+            getUnreadMessageCountGiangVien(id).catch(() => 0)
+          ])
+
+          // Handle unread news count
+          if (unreadData) {
+             if (typeof unreadData === 'number') {
+               setUnreadCount(unreadData)
+             } else if (unreadData.count !== undefined) {
+               setUnreadCount(unreadData.count)
+             } else if (Array.isArray(unreadData)) {
+                setUnreadCount(unreadData.length)
+             }
+           }
+
+           // Handle unread message count
+           if (typeof unreadMsgData === 'number') {
+             setUnreadMessageCount(unreadMsgData)
+           }
+        }
+      } catch (error) {
+        console.error('Error fetching teacher data:', error)
+      }
+    }
+    fetchTeacherData()
+
+    // Expose refresh function
+    window.refreshTuVanCount = fetchTeacherData
+  }, [])
+
 
   // Menu items để tìm kiếm
   const menuItems = [
     { name: 'Tổng quan', path: '/teacher', icon: 'bi-house-door' },
-    { name: 'Thông tin cá nhân', path: '/teacher/detail', icon: 'bi-person' },
     { name: 'Lớp học phần', path: '/teacher/lophocphan', icon: 'bi-collection' },
     { name: 'Sinh viên trong lớp', path: '/teacher/sv-lop', icon: 'bi-people' },
     { name: 'Lịch giảng dạy', path: '/teacher/lich', icon: 'bi-calendar-week' },
     { name: 'Nhập điểm', path: '/teacher/nhapdiem', icon: 'bi-clipboard-check' },
-    { name: 'Tin tức', path: '/teacher/thong-bao', icon: 'bi-megaphone' },
-    { name: 'Yêu cầu tư vấn', path: '/teacher/yeu-cau-tu-van', icon: 'bi-chat-left-text' },
-    { name: 'Đổi mật khẩu', path: '/teacher/change-password', icon: 'bi-key' }
+
   ]
 
   const filteredMenuItems = searchQuery
@@ -143,11 +179,6 @@ export default function TeacherLayout({ children, title = '', activeMenu = '', g
             </a>
           </li>
           <li>
-            <a href="/teacher/detail" className={`nav-link ${location.pathname.includes('/teacher/detail') ? 'active' : ''}`}>
-              <i className="bi bi-person me-2"></i> Thông tin cá nhân
-            </a>
-          </li>
-          <li>
             <a href="/teacher/lophocphan" className={`nav-link ${location.pathname.includes('/teacher/lophocphan') || activeMenu === 'lophocphan' ? 'active' : ''}`}>
               <i className="bi bi-collection me-2"></i> Lớp học phần
             </a>
@@ -162,21 +193,7 @@ export default function TeacherLayout({ children, title = '', activeMenu = '', g
               <i className="bi bi-calendar-week me-2"></i> Lịch giảng dạy
             </a>
           </li>
-          <li>
-            <a href="/teacher/nhapdiem" className={`nav-link ${location.pathname.includes('/teacher/nhapdiem') ? 'active' : ''}`}>
-              <i className="bi bi-clipboard-check me-2"></i> Nhập điểm
-            </a>
-          </li>
-          <li>
-            <a href="/teacher/thong-bao" className={`nav-link ${location.pathname.includes('/teacher/thong-bao') ? 'active' : ''}`}>
-              <i className="bi bi-megaphone me-2"></i> Tin tức
-            </a>
-          </li>
-          <li>
-            <a href="/teacher/change-password" className={`nav-link ${location.pathname === '/teacher/change-password' ? 'active' : ''}`}>
-              <i className="bi bi-key me-2"></i> Đổi mật khẩu
-            </a>
-          </li>
+
         </ul>
 
       </aside>
@@ -265,7 +282,7 @@ export default function TeacherLayout({ children, title = '', activeMenu = '', g
             </div>
             <a 
               href="/teacher/yeu-cau-tu-van"
-              className="d-flex align-items-center gap-2 px-3 py-2 text-decoration-none rounded-pill"
+              className="d-flex align-items-center gap-2 px-3 py-2 text-decoration-none rounded-pill position-relative"
               style={{ 
                 backgroundColor: '#f8f9fa',
                 color: '#495057',
@@ -281,8 +298,61 @@ export default function TeacherLayout({ children, title = '', activeMenu = '', g
                 e.currentTarget.style.borderColor = '#e9ecef'
               }}
             >
-              <i className="bi bi-chat-dots" style={{ fontSize: '18px', color: '#6c757d' }}></i>
+              <div className="position-relative">
+                <i className="bi bi-chat-dots" style={{ fontSize: '18px', color: '#6c757d' }}></i>
+                {unreadMessageCount > 0 && (
+                  <span 
+                    className="position-absolute translate-middle badge rounded-pill bg-danger"
+                    style={{
+                      top: '-5px',
+                      right: '-10px',
+                      fontSize: '10px',
+                      padding: '4px 6px',
+                      border: '2px solid white'
+                    }}
+                  >
+                    {unreadMessageCount > 99 ? '99+' : unreadMessageCount}
+                  </span>
+                )}
+              </div>
               <span className="fw-semibold" style={{ fontSize: '14px' }}>Tin nhắn</span>
+            </a>
+            <a 
+              href="/teacher/thong-bao"
+              className="d-flex align-items-center gap-2 px-3 py-2 text-decoration-none rounded-pill position-relative"
+              style={{ 
+                backgroundColor: '#f8f9fa',
+                color: '#495057',
+                border: '1px solid #e9ecef',
+                transition: 'background-color 0.2s, border-color 0.2s'
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.backgroundColor = '#fff4e6'
+                e.currentTarget.style.borderColor = '#ffe8cc'
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.backgroundColor = '#f8f9fa'
+                e.currentTarget.style.borderColor = '#e9ecef'
+              }}
+            >
+              <div className="position-relative">
+                <i className="bi bi-megaphone" style={{ fontSize: '18px', color: '#fd7e14' }}></i>
+                {unreadCount > 0 && (
+                  <span 
+                    className="position-absolute translate-middle badge rounded-pill bg-danger"
+                    style={{
+                      top: '-5px',
+                      right: '-10px',
+                      fontSize: '10px',
+                      padding: '4px 6px',
+                      border: '2px solid white'
+                    }}
+                  >
+                    {unreadCount > 99 ? '99+' : unreadCount}
+                  </span>
+                )}
+              </div>
+              <span className="fw-semibold" style={{ fontSize: '14px' }}>Tin tức</span>
             </a>
             
             {/* User Info */}

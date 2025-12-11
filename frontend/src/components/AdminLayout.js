@@ -28,7 +28,6 @@ export default function AdminLayout({ children, title = '', activeMenu = '' }) {
   // Menu items để tìm kiếm
   const menuItems = [
     { name: 'Tổng quan', path: '/admin', icon: 'bi-house-door' },
-    { name: 'Yêu cầu tư vấn', path: '/admin/tu-van', icon: 'bi-chat-left-text' },
     { name: 'Quản lý tài khoản', path: '/admin/accounts', icon: 'bi-person-gear' },
     { name: 'Sinh viên', path: '/admin/students', icon: 'bi-people' },
     { name: 'Giảng viên', path: '/admin/teachers', icon: 'bi-person-badge' },
@@ -83,6 +82,10 @@ export default function AdminLayout({ children, title = '', activeMenu = '' }) {
 
     // Auto-refresh mỗi 10 giây
     const interval = setInterval(loadBadgeCount, 10000)
+    
+    // Expose refresh function
+    window.refreshTuVanCount = loadBadgeCount
+    
     return () => clearInterval(interval)
   }, [])
 
@@ -278,14 +281,6 @@ export default function AdminLayout({ children, title = '', activeMenu = '' }) {
             </a>
           </li>
 
-          <li>
-            <a href="/admin/tu-van" className={`nav-link ${location.pathname.includes('/tu-van') ? 'active' : ''} d-flex justify-content-between align-items-center`}>
-              <span><i className="bi bi-chat-left-text me-2"></i> Yêu cầu tư vấn</span>
-              {badgeCount > 0 && (
-                <span className="badge bg-danger rounded-pill" style={{ fontSize: '10px' }}>{badgeCount}</span>
-              )}
-            </a>
-          </li>
 
           {/* Accordion Menu */}
           <div className="accordion accordion-flush" id="adminMenuAccordion" style={{ marginTop: '8px' }}>
@@ -504,7 +499,7 @@ export default function AdminLayout({ children, title = '', activeMenu = '' }) {
             </div>
             <a 
               href="/admin/tu-van"
-              className="d-flex align-items-center gap-2 px-3 py-2 text-decoration-none rounded-pill"
+              className="d-flex align-items-center gap-2 px-3 py-2 text-decoration-none rounded-pill position-relative"
               style={{ 
                 backgroundColor: '#f8f9fa',
                 color: '#495057',
@@ -520,7 +515,23 @@ export default function AdminLayout({ children, title = '', activeMenu = '' }) {
                 e.currentTarget.style.borderColor = '#e9ecef'
               }}
             >
-              <i className="bi bi-chat-dots" style={{ fontSize: '18px', color: '#6c757d' }}></i>
+              <div className="position-relative">
+                <i className="bi bi-chat-dots" style={{ fontSize: '18px', color: '#6c757d' }}></i>
+                {badgeCount > 0 && (
+                  <span 
+                    className="position-absolute translate-middle badge rounded-pill bg-danger"
+                    style={{
+                      top: '-5px',
+                      right: '-10px',
+                      fontSize: '10px',
+                      padding: '4px 6px',
+                      border: '2px solid white'
+                    }}
+                  >
+                    {badgeCount > 99 ? '99+' : badgeCount}
+                  </span>
+                )}
+              </div>
               <span className="fw-semibold" style={{ fontSize: '14px' }}>Tin nhắn</span>
             </a>
             

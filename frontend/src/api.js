@@ -305,3 +305,26 @@ export async function markThongBaoAsReadGiangVien(giangVienId, thongBaoId) {
   })
   return res.json()
 }
+
+// Yêu cầu tư vấn - Tin nhắn chưa đọc (Giảng viên)
+export async function getUnreadMessageCountGiangVien(giangVienId) {
+  try {
+    const res = await apiFetch(`/api/yeu-cau-tu-van/giang-vien/${giangVienId}`)
+    const list = res.data || []
+    return list.reduce((acc, item) => acc + (item.so_tin_chua_doc_gv || 0), 0)
+  } catch (err) {
+    console.error('Error fetching unread message count (GV):', err)
+    return 0
+  }
+}
+
+export async function getUnreadMessageCount(sinhVienId) {
+  try {
+    const res = await apiFetch(`/api/yeu-cau-tu-van/sinh-vien/${sinhVienId}`)
+    const list = res.data || []
+    return list.reduce((acc, item) => acc + (item.so_tin_chua_doc_sv || 0), 0)
+  } catch (err) {
+    console.error('Error fetching unread message count:', err)
+    return 0
+  }
+}

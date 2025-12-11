@@ -1,27 +1,68 @@
 import React, { useEffect, useState } from 'react'
 import { useLocation } from 'react-router-dom'
 import 'bootstrap-icons/font/bootstrap-icons.css'
-import { clearAuth } from '../api'
+import { clearAuth, getSinhVienById, getSinhVienId, getUnreadCount, getUnreadMessageCount } from '../api'
 
 export default function StudentLayout({ children, title = '' }) {
   const location = useLocation()
   const [showUserMenu, setShowUserMenu] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
   const [showSearchResults, setShowSearchResults] = useState(false)
+  const [studentName, setStudentName] = useState('Sinh viên')
+  const [unreadCount, setUnreadCount] = useState(0)
+  const [unreadMessageCount, setUnreadMessageCount] = useState(0)
+
+  useEffect(() => {
+    const fetchStudentData = async () => {
+      try {
+        const id = getSinhVienId()
+        if (id) {
+          const [studentData, unreadData, unreadMsgData] = await Promise.all([
+            getSinhVienById(id).catch(() => null),
+            getUnreadCount(id).catch(() => 0),
+            getUnreadMessageCount(id).catch(() => 0)
+          ])
+
+          if (studentData && studentData.hoTen) {
+            setStudentName(studentData.hoTen)
+          }
+
+          // Handle unread news count
+          if (unreadData) {
+            if (typeof unreadData === 'number') {
+              setUnreadCount(unreadData)
+            } else if (unreadData.count !== undefined) {
+              setUnreadCount(unreadData.count)
+            } else if (Array.isArray(unreadData)) {
+               setUnreadCount(unreadData.length)
+            }
+          }
+
+          // Handle unread message count
+          if (typeof unreadMsgData === 'number') {
+            setUnreadMessageCount(unreadMsgData)
+          }
+        }
+      } catch (error) {
+        console.error('Error fetching student data:', error)
+      }
+    }
+    fetchStudentData()
+
+    // Expose refresh function to global window so other components can call it
+    window.refreshTuVanCount = fetchStudentData
+  }, [])
 
   // Menu items để tìm kiếm
   const menuItems = [
     { name: 'Tổng quan', path: '/student', icon: 'bi-house-door' },
-    { name: 'Thông tin cá nhân', path: '/student/detail', icon: 'bi-person' },
     { name: 'Lịch học lịch thi', path: '/lich', icon: 'bi-calendar-week' },
     { name: 'Kết quả học tập', path: '/diemso', icon: 'bi-journal-text' },
     { name: 'Chương trình khung', path: '/chuongtrinhkhung', icon: 'bi-diagram-3' },
     { name: 'Đăng ký học phần', path: '/dkhp', icon: 'bi-calendar-check' },
     { name: 'Công nợ', path: '/congno', icon: 'bi-cash-coin' },
     { name: 'Điểm rèn luyện', path: '/diem-ren-luyen', icon: 'bi-award' },
-    { name: 'Học bổng', path: '/hoc-bong', icon: 'bi-trophy' },
-    { name: 'Tin tức', path: '/student/thongbao', icon: 'bi-megaphone' },
-    { name: 'Đổi mật khẩu', path: '/student/change-password', icon: 'bi-key' }
+    { name: 'Học bổng', path: '/hoc-bong', icon: 'bi-trophy' }
   ]
 
   const filteredMenuItems = searchQuery
@@ -145,11 +186,6 @@ export default function StudentLayout({ children, title = '' }) {
             </a>
           </li>
           <li>
-            <a href="/student/detail" className={`nav-link ${location.pathname.includes('/student/detail') ? 'active' : ''}`}>
-              <i className="bi bi-person me-2"></i> Thông tin cá nhân
-            </a>
-          </li>
-          <li>
             <a href="/lich" className={`nav-link ${location.pathname === '/lich' ? 'active' : ''}`}>
               <i className="bi bi-calendar-week me-2"></i> Lịch học lịch thi
             </a>
@@ -182,16 +218,6 @@ export default function StudentLayout({ children, title = '' }) {
           <li>
             <a href="/hoc-bong" className={`nav-link ${location.pathname === '/hoc-bong' ? 'active' : ''}`}>
               <i className="bi bi-trophy me-2"></i> Học bổng
-            </a>
-          </li>
-          <li>
-            <a href="/student/thongbao" className={`nav-link ${location.pathname.includes('/student/thongbao') ? 'active' : ''}`}>
-              <i className="bi bi-megaphone me-2"></i> Tin tức
-            </a>
-          </li>
-          <li>
-            <a href="/student/change-password" className={`nav-link ${location.pathname === '/student/change-password' ? 'active' : ''}`}>
-              <i className="bi bi-key me-2"></i> Đổi mật khẩu
             </a>
           </li>
         </ul>
@@ -282,7 +308,7 @@ export default function StudentLayout({ children, title = '' }) {
             </div>
             <a 
               href="/yeu-cau-tu-van"
-              className="d-flex align-items-center gap-2 px-3 py-2 text-decoration-none rounded-pill"
+              className="d-flex align-items-center gap-2 px-3 py-2 text-decoration-none rounded-pill position-relative"
               style={{ 
                 backgroundColor: '#f8f9fa',
                 color: '#495057',
@@ -298,8 +324,61 @@ export default function StudentLayout({ children, title = '' }) {
                 e.currentTarget.style.borderColor = '#e9ecef'
               }}
             >
-              <i className="bi bi-chat-dots" style={{ fontSize: '18px', color: '#6c757d' }}></i>
+              <div className="position-relative">
+                <i className="bi bi-chat-dots" style={{ fontSize: '18px', color: '#6c757d' }}></i>
+                {unreadMessageCount > 0 && (
+                  <span 
+                    className="position-absolute translate-middle badge rounded-pill bg-danger"
+                    style={{
+                      top: '-5px',
+                      right: '-10px',
+                      fontSize: '10px',
+                      padding: '4px 6px',
+                      border: '2px solid white'
+                    }}
+                  >
+                    {unreadMessageCount > 99 ? '99+' : unreadMessageCount}
+                  </span>
+                )}
+              </div>
               <span className="fw-semibold" style={{ fontSize: '14px' }}>Tin nhắn</span>
+            </a>
+            <a 
+              href="/student/thongbao"
+              className="d-flex align-items-center gap-2 px-3 py-2 text-decoration-none rounded-pill position-relative"
+              style={{ 
+                backgroundColor: '#f8f9fa',
+                color: '#495057',
+                border: '1px solid #e9ecef',
+                transition: 'background-color 0.2s, border-color 0.2s'
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.backgroundColor = '#fff4e6'
+                e.currentTarget.style.borderColor = '#ffe8cc'
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.backgroundColor = '#f8f9fa'
+                e.currentTarget.style.borderColor = '#e9ecef'
+              }}
+            >
+              <div className="position-relative">
+                <i className="bi bi-megaphone" style={{ fontSize: '18px', color: '#fd7e14' }}></i>
+                {unreadCount > 0 && (
+                  <span 
+                    className="position-absolute translate-middle badge rounded-pill bg-danger"
+                    style={{
+                      top: '-5px',
+                      right: '-10px',
+                      fontSize: '10px',
+                      padding: '4px 6px',
+                      border: '2px solid white'
+                    }}
+                  >
+                    {unreadCount > 99 ? '99+' : unreadCount}
+                  </span>
+                )}
+              </div>
+              <span className="fw-semibold" style={{ fontSize: '14px' }}>Tin tức</span>
             </a>
 
             {/* User Info */}
@@ -316,7 +395,7 @@ export default function StudentLayout({ children, title = '' }) {
                 onMouseLeave={(e) => !showUserMenu && (e.currentTarget.style.backgroundColor = 'transparent')}
               >
                 <div className="text-muted small me-2">
-                  Xin chào, <b style={{ color: '#495057' }}>Sinh viên</b>
+                  Xin chào, <b style={{ color: '#495057' }}>{studentName}</b>
                 </div>
                 <div
                   className="rounded-circle d-flex align-items-center justify-content-center"
