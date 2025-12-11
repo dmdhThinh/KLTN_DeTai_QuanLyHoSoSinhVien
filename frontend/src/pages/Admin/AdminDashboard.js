@@ -2,6 +2,21 @@
 import React, { useState, useEffect } from 'react'
 import AdminLayout from '../../components/AdminLayout'
 import axios from 'axios'
+
+// Configure axios base URL and interceptors
+const API_BASE = process.env.REACT_APP_API_BASE || ''
+axios.defaults.baseURL = API_BASE
+
+// Add Authorization header to all requests
+axios.interceptors.request.use((config) => {
+  const token = localStorage.getItem('token_admin') || 
+                localStorage.getItem('token_gv') || 
+                localStorage.getItem('token_sv')
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`
+  }
+  return config
+})
 import { 
   BarChart, Bar, PieChart, Pie, Cell, LineChart, Line,
   XAxis, YAxis, CartesianGrid, Tooltip, 
