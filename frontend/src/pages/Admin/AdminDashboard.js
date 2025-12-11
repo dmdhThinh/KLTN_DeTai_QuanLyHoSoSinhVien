@@ -3,6 +3,13 @@ import React, { useState, useEffect } from 'react'
 import AdminLayout from '../../components/AdminLayout'
 import axios from 'axios'
 
+import { 
+  BarChart, Bar, PieChart, Pie, Cell, LineChart, Line,
+  XAxis, YAxis, CartesianGrid, Tooltip, 
+  Legend, ResponsiveContainer, Area, AreaChart
+} from 'recharts'
+import { Users, GraduationCap, BookOpen, School } from 'lucide-react'
+
 // Configure axios base URL and interceptors
 const API_BASE = process.env.REACT_APP_API_BASE || ''
 axios.defaults.baseURL = API_BASE
@@ -17,12 +24,6 @@ axios.interceptors.request.use((config) => {
   }
   return config
 })
-import { 
-  BarChart, Bar, PieChart, Pie, Cell, LineChart, Line,
-  XAxis, YAxis, CartesianGrid, Tooltip, 
-  Legend, ResponsiveContainer, Area, AreaChart
-} from 'recharts'
-import { Users, GraduationCap, BookOpen, School } from 'lucide-react'
 
 function StatCard({ title, value, icon: Icon, color, trend }) {
   return (
