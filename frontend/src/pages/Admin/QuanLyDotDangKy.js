@@ -81,7 +81,7 @@ function QuanLyDotDangKy() {
   const handleDelete = (id) => {
     setConfirmModal({
       show: true,
-      message: '⚠️ Xác nhận XÓA đợt đăng ký này?',
+      message: 'Xác nhận XÓA đợt đăng ký này?',
       onConfirm: async () => {
         try {
           await apiFetch(`/api/dot-dang-ky/${id}`, {

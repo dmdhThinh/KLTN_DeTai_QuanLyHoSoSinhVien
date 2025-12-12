@@ -553,7 +553,7 @@ export default function QuanLyHocPhi() {
           <div className="modal-dialog modal-dialog-centered">
             <div className="modal-content">
               <div className="modal-header bg-warning text-dark">
-                <h5 className="modal-title">⚠️ {confirmAction.title}</h5>
+                <h5 className="modal-title">{confirmAction.title}</h5>
                 <button type="button" className="btn-close" onClick={() => setConfirmAction(null)}></button>
               </div>
               <div className="modal-body">

@@ -235,7 +235,7 @@ export default function XetHocBong() {
       <div className="card shadow-sm">
         <div className="card-header bg-white d-flex justify-content-between align-items-center">
           <h5 className="mb-0">
-            {saved ? '✅ Danh sách đã lưu' : '⚠️ Danh sách dự kiến (Chưa lưu)'}
+            {saved ? '✅ Danh sách đã lưu' : 'Danh sách dự kiến (Chưa lưu)'}
           </h5>
         </div>
         <div className="table-responsive">

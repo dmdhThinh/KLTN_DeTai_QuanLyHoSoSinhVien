@@ -309,7 +309,7 @@ export async function demYeuCauMoiCuaAdmin() {
 }
 
 /**
- * ⚠️ DEPRECATED: Các function cũ đã được thay thế bởi hệ thống conversation thread
+ * DEPRECATED: Các function cũ đã được thay thế bởi hệ thống conversation thread
  * Sử dụng tinNhanTuVan.danhDauDaDocTinNhan() thay thế
  * 
  * OLD API: 

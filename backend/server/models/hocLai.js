@@ -3,6 +3,7 @@ import { pool } from '../config/db.js'
 // Lấy danh sách môn KHÔNG ĐẠT (để học lại)
 // Loại bỏ các môn đã đăng ký trong HỌC KỲ + NĂM HỌC đang xem
 // CHỈ LẤY CÁC MÔN CÙNG HỌC KỲ VỚI HỌC KỲ ĐANG ĐĂNG KÝ
+// Lưu ý: Môn rớt có thể có điểm >= 4.0 nhưng vẫn rớt do quy tắc bắt buộc (GK < 1 hoặc CK < 3)
 export async function getMonKhongDat(sinhVienId, hocKy, namHoc) {
   let query = `
     SELECT DISTINCT
@@ -17,16 +18,12 @@ export async function getMonKhongDat(sinhVienId, hocKy, namHoc) {
     FROM KetQuaHocTap kq
     JOIN HocPhan hp ON kq.hoc_phan_id = hp.id
     WHERE kq.sinh_vien_id = ?
-      AND kq.dat = 'Không đạt'
-      AND kq.diem_tong_ket < 4.0`
+      AND kq.dat = 'Không đạt'`
   
   const params = [sinhVienId]
   
-  // Lọc theo học kỲ tương ứng (nếu đang đăng ký HK1 thì chỉ lấy môn rớp ở HK1)
-  if (hocKy) {
-    query += ` AND kq.hoc_ky = ?`
-    params.push(hocKy)
-  }
+  // BỎ filter theo học kỳ - cho phép học lại môn rớt ở BẤT KỲ HỌC KỲ NÀO
+  // (Sinh viên có thể học lại môn rớt ở HK1 trong HK2, hoặc bất kỳ học kỳ nào)
   
   // Loại bỏ các môn đã đăng ký trong cùng HỌC KỲ + NĂM HỌC
   if (hocKy && namHoc) {

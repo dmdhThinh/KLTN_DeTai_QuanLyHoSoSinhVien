@@ -55,7 +55,7 @@ export default function TeacherLayout({ children, title = '', activeMenu = '', g
     { name: 'Sinh viên trong lớp', path: '/teacher/sv-lop', icon: 'bi-people' },
     { name: 'Lịch giảng dạy', path: '/teacher/lich', icon: 'bi-calendar-week' },
     { name: 'Nhập điểm', path: '/teacher/nhapdiem', icon: 'bi-clipboard-check' },
-
+    { name: 'Yêu cầu tư vấn', path: '/teacher/yeu-cau-tu-van', icon: 'bi-question-circle' }
   ]
 
   const filteredMenuItems = searchQuery
@@ -180,7 +180,7 @@ export default function TeacherLayout({ children, title = '', activeMenu = '', g
           </li>
           <li>
             <a href="/teacher/lophocphan" className={`nav-link ${location.pathname.includes('/teacher/lophocphan') || activeMenu === 'lophocphan' ? 'active' : ''}`}>
-              <i className="bi bi-collection me-2"></i> Lớp học phần
+              <i className="bi bi-collection me-2"></i> Nhập điểm
             </a>
           </li>
           <li>
@@ -193,7 +193,11 @@ export default function TeacherLayout({ children, title = '', activeMenu = '', g
               <i className="bi bi-calendar-week me-2"></i> Lịch giảng dạy
             </a>
           </li>
-
+          <li>
+            <a href="/teacher/yeu-cau-tu-van" className={`nav-link ${location.pathname.includes('/teacher/yeu-cau-tu-van') || activeMenu === 'yeu-cau-tu-van' ? 'active' : ''}`}>
+              <i className="bi bi-question-circle me-2"></i> Yêu cầu tư vấn
+            </a>
+          </li>
         </ul>
 
       </aside>

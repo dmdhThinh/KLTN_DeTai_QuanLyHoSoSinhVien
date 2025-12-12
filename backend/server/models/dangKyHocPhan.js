@@ -62,22 +62,70 @@ export async function listAvailableLHP({ sinh_vien_id, hoc_ky, nam_hoc, dot_dang
 
   // Tối ưu: Gom tất cả kiểm tra điều kiện tiên quyết vào 1 query duy nhất
   const uniqueHocPhanIds = [...new Set(lhps.map(l => l.hoc_phan_id))]
-  const prereqMap = new Map()
+  const prereqMap = new Map() // Map<hoc_phan_id, { ok: boolean, missingPrereqs: [], missingTcCondition: null }>
+  
+  // Lấy thông tin ngành của sinh viên
+  const [svRows] = await pool.execute(
+    `SELECT nganh_id FROM SinhVien WHERE id = ?`,
+    [sinh_vien_id]
+  )
+  const nganhId = svRows[0]?.nganh_id
   
   try {
-    // Lấy tất cả luật điều kiện cho các học phần
+    // Lấy tất cả luật điều kiện cho các học phần kèm thông tin học phần
+    // LEFT JOIN để lấy cả các record chỉ có điều kiện số tín chỉ (hoc_phan_lien_quan_id = NULL)
     const [allRules] = await pool.execute(
-      `SELECT * FROM DieuKienHocPhan WHERE hoc_phan_id IN (${uniqueHocPhanIds.map(() => '?').join(',')})`,
+      `SELECT dk.*, hp.ma_hoc_phan, hp.ten_hoc_phan
+       FROM DieuKienHocPhan dk
+       LEFT JOIN HocPhan hp ON hp.id = dk.hoc_phan_lien_quan_id
+       WHERE dk.hoc_phan_id IN (${uniqueHocPhanIds.map(() => '?').join(',')})`,
       uniqueHocPhanIds
     )
     
-    // Lấy các HP SV đã qua
-    const [passed] = await pool.execute(
-      `SELECT DISTINCT hoc_phan_id FROM KetQuaHocTap
-       WHERE sinh_vien_id = ? AND (ket_qua = 'DAT' OR diem_tong_ket >= 5)`,
+    // Lấy điều kiện số tín chỉ bắt buộc cho các học phần
+    const [tcConditions] = await pool.execute(
+      `SELECT hoc_phan_id, MAX(so_tc_bat_buoc_toi_thieu) AS so_tc_bat_buoc_toi_thieu
+       FROM DieuKienHocPhan
+       WHERE hoc_phan_id IN (${uniqueHocPhanIds.map(() => '?').join(',')})
+         AND so_tc_bat_buoc_toi_thieu IS NOT NULL
+       GROUP BY hoc_phan_id`,
+      uniqueHocPhanIds
+    )
+    const tcConditionMap = new Map(tcConditions.map(tc => [tc.hoc_phan_id, tc.so_tc_bat_buoc_toi_thieu]))
+    
+    // Tính tổng số tín chỉ bắt buộc mà sinh viên đã học (nếu có môn cần điều kiện TC)
+    let tongTcBatBuoc = 0
+    if (tcConditionMap.size > 0 && nganhId) {
+      const [tcRows] = await pool.execute(
+        `SELECT COALESCE(SUM(hp.so_tin_chi), 0) AS tong_tc_bat_buoc
+         FROM DangKyHocPhan dk
+         JOIN LopHocPhan lhp ON lhp.id = dk.lop_hoc_phan_id
+         JOIN HocPhan hp ON hp.id = lhp.hoc_phan_id
+         JOIN ChuongTrinhKhung ctk ON ctk.hoc_phan_id = hp.id
+         WHERE dk.sinh_vien_id = ?
+           AND ctk.nganh_id = ?
+           AND ctk.loai_mon = 'BAT_BUOC'
+           AND dk.trang_thai_dk <> 'HUY'`,
+        [sinh_vien_id, nganhId]
+      )
+      tongTcBatBuoc = tcRows[0]?.tong_tc_bat_buoc || 0
+    }
+    
+    // Lấy các HP SV đã học (không cần đạt, chỉ cần đã đăng ký hoặc có điểm)
+    const [registered] = await pool.execute(
+      `SELECT DISTINCT hoc_phan_id FROM DangKyHocPhan
+       WHERE sinh_vien_id = ? AND trang_thai_dk <> 'HUY'`,
       [sinh_vien_id]
     )
-    const passedSet = new Set(passed.map(r => r.hoc_phan_id))
+    const [hasScore] = await pool.execute(
+      `SELECT DISTINCT hoc_phan_id FROM KetQuaHocTap
+       WHERE sinh_vien_id = ?`,
+      [sinh_vien_id]
+    )
+    const studiedSet = new Set([
+      ...registered.map(r => r.hoc_phan_id),
+      ...hasScore.map(r => r.hoc_phan_id)
+    ])
 
     // Lấy các HP SV đang đăng ký cùng đợt (cho song hành)
     const coRegParams = [sinh_vien_id]
@@ -94,34 +142,64 @@ export async function listAvailableLHP({ sinh_vien_id, hoc_ky, nam_hoc, dot_dang
     const [coRegs] = await pool.execute(coRegSql, coRegParams)
     const coSet = new Set(coRegs.map(r => r.hoc_phan_id))
 
-    // Kiểm tra điều kiện cho từng học phần
+    // Kiểm tra điều kiện cho từng học phần và thu thập môn còn thiếu
     for (const hpId of uniqueHocPhanIds) {
       const rules = allRules.filter(r => r.hoc_phan_id === hpId)
-      if (rules.length === 0) {
-        prereqMap.set(hpId, true)
+      const soTcBatBuocToiThieu = tcConditionMap.get(hpId) || null
+      
+      if (rules.length === 0 && !soTcBatBuocToiThieu) {
+        prereqMap.set(hpId, { ok: true, missingPrereqs: [], missingTcCondition: null })
         continue
       }
 
-      let ok = true
+      const missingPrereqs = []
       for (const r of rules) {
+        // Bỏ qua các record chỉ có điều kiện số tín chỉ (hoc_phan_lien_quan_id = NULL)
+        if (!r.hoc_phan_lien_quan_id) {
+          continue
+        }
+        
+        let isSatisfied = false
+        
         if (r.loai === 'a' || r.loai === 'b') {
-          if (!passedSet.has(r.hoc_phan_lien_quan_id)) {
-            ok = false
-            break
-          }
+          // Học trước (a) hoặc Tiên quyết (b): chỉ cần đã học (đã đăng ký hoặc có điểm)
+          isSatisfied = studiedSet.has(r.hoc_phan_lien_quan_id)
         } else if (r.loai === 'c') {
-          if (!passedSet.has(r.hoc_phan_lien_quan_id) && !coSet.has(r.hoc_phan_lien_quan_id)) {
-            ok = false
-            break
-          }
+          // Song hành (c): đã học HOẶC đang đăng ký cùng đợt
+          isSatisfied = studiedSet.has(r.hoc_phan_lien_quan_id) || coSet.has(r.hoc_phan_lien_quan_id)
+        }
+        
+        if (!isSatisfied) {
+          const loaiText = r.loai === 'a' ? 'Học trước' : r.loai === 'b' ? 'Tiên quyết' : 'Song hành'
+          missingPrereqs.push({
+            ma_hoc_phan: r.ma_hoc_phan,
+            ten_hoc_phan: r.ten_hoc_phan,
+            loai: r.loai,
+            loai_text: loaiText
+          })
         }
       }
-      prereqMap.set(hpId, ok)
+      
+      // Kiểm tra điều kiện số tín chỉ bắt buộc
+      let missingTcCondition = null
+      if (soTcBatBuocToiThieu && tongTcBatBuoc < soTcBatBuocToiThieu) {
+        missingTcCondition = {
+          so_tc_bat_buoc_toi_thieu: soTcBatBuocToiThieu,
+          tong_tc_bat_buoc_hien_tai: tongTcBatBuoc,
+          con_thieu: soTcBatBuocToiThieu - tongTcBatBuoc
+        }
+      }
+      
+      prereqMap.set(hpId, {
+        ok: missingPrereqs.length === 0 && !missingTcCondition,
+        missingPrereqs,
+        missingTcCondition
+      })
     }
   } catch (err) {
     // Nếu có lỗi (bảng không tồn tại), coi như tất cả đều đạt
     for (const hpId of uniqueHocPhanIds) {
-      prereqMap.set(hpId, true)
+      prereqMap.set(hpId, { ok: true, missingPrereqs: [], missingTcCondition: null })
     }
   }
 
@@ -131,13 +209,16 @@ export async function listAvailableLHP({ sinh_vien_id, hoc_ky, nam_hoc, dot_dang
     const remain = (l.si_so_toi_da ?? 50) - (l.so_dk ?? 0)
     const daCoHocPhan = registeredHPIds.has(l.hoc_phan_id)
     const xungDotLich = conflictedLhpIds.has(l.id)
-    const duDieuKien = prereqMap.get(l.hoc_phan_id) ?? true
+    const prereqInfo = prereqMap.get(l.hoc_phan_id) || { ok: true, missingPrereqs: [], missingTcCondition: null }
+    const duDieuKien = prereqInfo.ok
 
     out.push({
       ...l,
       slot_con: remain,
       xung_dot_lich: xungDotLich,
       du_dieu_kien: duDieuKien,
+      missing_prereqs: prereqInfo.missingPrereqs, // Thêm danh sách môn cần học trước
+      missing_tc_condition: prereqInfo.missingTcCondition, // Thêm thông tin điều kiện số tín chỉ
       da_dang_ky_hoc_phan: daCoHocPhan
     })
   }
@@ -159,8 +240,9 @@ export async function listMyRegistrations({ sinh_vien_id, dot_dang_ky_id, hoc_ky
        JOIN HocPhan hp ON hp.id = lhp.hoc_phan_id
        LEFT JOIN HocPhi hocphi ON hocphi.dang_ky_id = d.id
       WHERE d.sinh_vien_id = ? AND d.trang_thai_dk <> 'HUY'`
+  // Khi có dot_dang_ky_id, vẫn hiển thị cả các bản ghi có dot_dang_ky_id = NULL (do admin thêm vào khi không có đợt)
   if (dot_dang_ky_id) {
-    sql += ` AND d.dot_dang_ky_id = ?`
+    sql += ` AND (d.dot_dang_ky_id = ? OR d.dot_dang_ky_id IS NULL)`
     params.push(dot_dang_ky_id)
   }
   // Filter theo học kỳ và năm học nếu có
@@ -255,9 +337,40 @@ export async function registerLHP({
     )
     if (conflictRows.length) throw bizError('Trùng lịch với lớp đã đăng ký')
 
-    // 5) Tiên quyết/song hành
-    const prereqOk = await safeCheckPrereq({ conn, sinh_vien_id, hoc_phan_id: lhp.hoc_phan_id, dot_dang_ky_id: dot.id })
-    if (!prereqOk) throw bizError('Chưa thỏa điều kiện tiên quyết/học trước/song hành')
+    // 5) Tiên quyết/song hành và điều kiện số tín chỉ
+    console.log(`\n🔍 [ĐĂNG KÝ] Kiểm tra điều kiện tiên quyết cho lớp học phần ID: ${lop_hoc_phan_id}`)
+    console.log(`   - Học phần ID: ${lhp.hoc_phan_id}`)
+    console.log(`   - Tên học phần: ${lhp.ten_hoc_phan}`)
+    console.log(`   - Sinh viên ID: ${sinh_vien_id}`)
+    console.log(`   - Đợt đăng ký ID: ${dot.id}`)
+    
+    const prereqResult = await safeCheckPrereq({ conn, sinh_vien_id, hoc_phan_id: lhp.hoc_phan_id, dot_dang_ky_id: dot.id })
+    
+    console.log(`   - Kết quả kiểm tra: ${prereqResult.ok ? '✅ Đủ điều kiện' : '❌ Thiếu điều kiện'}`)
+    
+    if (!prereqResult.ok) {
+      const errorMessages = []
+      
+      // Thông báo về môn còn thiếu
+      if (prereqResult.missingPrereqs && prereqResult.missingPrereqs.length > 0) {
+        const missingList = prereqResult.missingPrereqs.map(m => 
+          `${m.ten_hoc_phan} (${m.ma_hoc_phan}) - ${m.loai_text}`
+        ).join(', ')
+        errorMessages.push(`Cần hoàn thành: ${missingList}`)
+        console.log(`   - Môn còn thiếu: ${missingList}`)
+      }
+      
+      // Thông báo về số tín chỉ còn thiếu
+      if (prereqResult.missingTcCondition) {
+        const tcMsg = `Bạn cần ít nhất ${prereqResult.missingTcCondition.so_tc_bat_buoc_toi_thieu} tín chỉ bắt buộc. Hiện tại bạn có ${prereqResult.missingTcCondition.tong_tc_bat_buoc_hien_tai} TC, còn thiếu ${prereqResult.missingTcCondition.con_thieu} TC.`
+        errorMessages.push(tcMsg)
+        console.log(`   - ${tcMsg}`)
+      }
+      
+      throw bizError(`Bạn chưa đủ điều kiện đăng ký môn này. ${errorMessages.join(' ')}`)
+    }
+    
+    console.log(`   ✅ Đủ điều kiện, cho phép đăng ký\n`)
 
     // 6) Chống trùng đăng ký trong cùng đợt
     const [dup] = await conn.execute(
@@ -390,46 +503,170 @@ async function safeCheckPrereq({ conn, sinh_vien_id, hoc_phan_id, dot_dang_ky_id
   // Nếu thiếu bảng KetQuaHocTap trong DB của bạn → coi như đạt điều kiện (tránh vỡ API)
   try {
     return await checkPrereq({ conn, sinh_vien_id, hoc_phan_id, dot_dang_ky_id })
-  } catch {
-    return true
+  } catch (err) {
+    // Log lỗi để debug
+    console.error('❌ Lỗi kiểm tra điều kiện tiên quyết:', err)
+    // Chỉ bỏ qua nếu là lỗi bảng không tồn tại, còn lại throw lại
+    if (err.code === 'ER_NO_SUCH_TABLE' || err.message?.includes('doesn\'t exist')) {
+      console.warn('Bảng không tồn tại, bỏ qua kiểm tra điều kiện tiên quyết')
+      return { ok: true, missingPrereqs: [] }
+    }
+    // Các lỗi khác throw lại
+    throw err
   }
 }
 
 async function checkPrereq({ conn, sinh_vien_id, hoc_phan_id, dot_dang_ky_id }) {
   const ex = conn || pool
 
-  // Lấy luật điều kiện
-  const [rules] = await ex.execute(
-    `SELECT * FROM DieuKienHocPhan WHERE hoc_phan_id = ?`,
-    [hoc_phan_id]
-  )
-  if (!rules.length) return true
-
-  // Các HP SV đã qua
-  const [passed] = await ex.execute(
-    `SELECT DISTINCT hoc_phan_id FROM KetQuaHocTap
-      WHERE sinh_vien_id = ? AND (ket_qua = 'DAT' OR diem_tong_ket >= 5)`,
+  // Lấy thông tin ngành của sinh viên
+  const [svRows] = await ex.execute(
+    `SELECT nganh_id FROM SinhVien WHERE id = ?`,
     [sinh_vien_id]
   )
-  const passedSet = new Set(passed.map(r => r.hoc_phan_id))
+  const nganhId = svRows[0]?.nganh_id
+
+  // Lấy luật điều kiện kèm thông tin học phần (bao gồm điều kiện số tín chỉ)
+  // LEFT JOIN để lấy cả các record chỉ có điều kiện số tín chỉ (hoc_phan_lien_quan_id = NULL)
+  const [rules] = await ex.execute(
+    `SELECT dk.*, hp.ma_hoc_phan, hp.ten_hoc_phan
+     FROM DieuKienHocPhan dk
+     LEFT JOIN HocPhan hp ON hp.id = dk.hoc_phan_lien_quan_id
+     WHERE dk.hoc_phan_id = ?`,
+    [hoc_phan_id]
+  )
+  
+  // Lấy điều kiện số tín chỉ bắt buộc (nếu có)
+  const [tcCondition] = await ex.execute(
+    `SELECT MAX(so_tc_bat_buoc_toi_thieu) AS so_tc_bat_buoc_toi_thieu
+     FROM DieuKienHocPhan
+     WHERE hoc_phan_id = ? AND so_tc_bat_buoc_toi_thieu IS NOT NULL`,
+    [hoc_phan_id]
+  )
+  const soTcBatBuocToiThieu = tcCondition[0]?.so_tc_bat_buoc_toi_thieu || null
+  
+  // Debug: Log để kiểm tra
+  console.log(`🔍 Kiểm tra điều kiện tiên quyết cho học phần ID: ${hoc_phan_id}, Sinh viên ID: ${sinh_vien_id}`)
+  console.log(`📋 Số điều kiện tìm thấy: ${rules.length}`)
+  if (rules.length > 0) {
+    console.log(`📝 Điều kiện:`, rules.map(r => `${r.ten_hoc_phan} (${r.ma_hoc_phan}) - ${r.loai}`))
+  }
+  if (soTcBatBuocToiThieu) {
+    console.log(`📊 Điều kiện số tín chỉ bắt buộc: >= ${soTcBatBuocToiThieu} TC`)
+  }
+  
+  if (!rules.length && !soTcBatBuocToiThieu) {
+    console.log(`✅ Không có điều kiện tiên quyết cho học phần này`)
+    return { ok: true, missingPrereqs: [], missingTcCondition: null }
+  }
+
+  // Các HP SV đã đăng ký học (không cần đạt, chỉ cần đã học)
+  // Kiểm tra trong DangKyHocPhan (đã đăng ký) hoặc KetQuaHocTap (có điểm)
+  const [registered] = await ex.execute(
+    `SELECT DISTINCT hoc_phan_id FROM DangKyHocPhan
+     WHERE sinh_vien_id = ? AND trang_thai_dk <> 'HUY'`,
+    [sinh_vien_id]
+  )
+  const [hasScore] = await ex.execute(
+    `SELECT DISTINCT hoc_phan_id FROM KetQuaHocTap
+     WHERE sinh_vien_id = ?`,
+    [sinh_vien_id]
+  )
+  const studiedSet = new Set([
+    ...registered.map(r => r.hoc_phan_id),
+    ...hasScore.map(r => r.hoc_phan_id)
+  ])
+  console.log(`✅ Sinh viên đã học ${studiedSet.size} môn:`, Array.from(studiedSet))
 
   // Các HP SV đang đăng ký cùng đợt (cho song hành 'c')
-  const [coRegs] = await ex.execute(
+  const coRegs = dot_dang_ky_id ? await ex.execute(
     `SELECT DISTINCT lhp.hoc_phan_id
        FROM DangKyHocPhan d JOIN LopHocPhan lhp ON lhp.id = d.lop_hoc_phan_id
       WHERE d.sinh_vien_id = ? AND d.dot_dang_ky_id = ? AND d.trang_thai_dk <> 'HUY'`,
     [sinh_vien_id, dot_dang_ky_id]
-  )
-  const coSet = new Set(coRegs.map(r => r.hoc_phan_id))
+  ) : [[], []]
+  const coSet = new Set(coRegs[0].map(r => r.hoc_phan_id))
 
+  // Kiểm tra từng điều kiện và thu thập môn còn thiếu
+  const missingPrereqs = []
   for (const r of rules) {
+    // Bỏ qua các record chỉ có điều kiện số tín chỉ (hoc_phan_lien_quan_id = NULL)
+    if (!r.hoc_phan_lien_quan_id) {
+      continue
+    }
+    
+    let isSatisfied = false
+    
     if (r.loai === 'a' || r.loai === 'b') {
-      if (!passedSet.has(r.hoc_phan_lien_quan_id)) return false
+      // Học trước (a) hoặc Tiên quyết (b): chỉ cần đã học (đã đăng ký hoặc có điểm)
+      isSatisfied = studiedSet.has(r.hoc_phan_lien_quan_id)
+      console.log(`  - ${r.ten_hoc_phan} (${r.ma_hoc_phan}) - ${r.loai === 'a' ? 'Học trước' : 'Tiên quyết'}: ${isSatisfied ? '✅ Đã học' : '❌ Chưa học'}`)
     } else if (r.loai === 'c') {
-      if (!passedSet.has(r.hoc_phan_lien_quan_id) && !coSet.has(r.hoc_phan_lien_quan_id)) return false
+      // Song hành (c): đã học HOẶC đang đăng ký cùng đợt
+      isSatisfied = studiedSet.has(r.hoc_phan_lien_quan_id) || coSet.has(r.hoc_phan_lien_quan_id)
+      console.log(`  - ${r.ten_hoc_phan} (${r.ma_hoc_phan}) - Song hành: ${isSatisfied ? '✅ Đã học hoặc đang đăng ký' : '❌ Chưa đủ'}`)
+    }
+    
+    if (!isSatisfied) {
+      const loaiText = r.loai === 'a' ? 'Học trước' : r.loai === 'b' ? 'Tiên quyết' : 'Song hành'
+      missingPrereqs.push({
+        ma_hoc_phan: r.ma_hoc_phan,
+        ten_hoc_phan: r.ten_hoc_phan,
+        loai: r.loai,
+        loai_text: loaiText
+      })
     }
   }
-  return true
+
+  // Kiểm tra điều kiện số tín chỉ bắt buộc (nếu có)
+  let missingTcCondition = null
+  if (soTcBatBuocToiThieu && nganhId) {
+    // Tính tổng số tín chỉ bắt buộc mà sinh viên đã học
+    const [tcRows] = await ex.execute(
+      `SELECT COALESCE(SUM(hp.so_tin_chi), 0) AS tong_tc_bat_buoc
+       FROM DangKyHocPhan dk
+       JOIN LopHocPhan lhp ON lhp.id = dk.lop_hoc_phan_id
+       JOIN HocPhan hp ON hp.id = lhp.hoc_phan_id
+       JOIN ChuongTrinhKhung ctk ON ctk.hoc_phan_id = hp.id
+       WHERE dk.sinh_vien_id = ?
+         AND ctk.nganh_id = ?
+         AND ctk.loai_mon = 'BAT_BUOC'
+         AND dk.trang_thai_dk <> 'HUY'`,
+      [sinh_vien_id, nganhId]
+    )
+    const tongTcBatBuoc = tcRows[0]?.tong_tc_bat_buoc || 0
+    
+    console.log(`📊 Tổng số tín chỉ bắt buộc đã học: ${tongTcBatBuoc} / ${soTcBatBuocToiThieu}`)
+    
+    if (tongTcBatBuoc < soTcBatBuocToiThieu) {
+      missingTcCondition = {
+        so_tc_bat_buoc_toi_thieu: soTcBatBuocToiThieu,
+        tong_tc_bat_buoc_hien_tai: tongTcBatBuoc,
+        con_thieu: soTcBatBuocToiThieu - tongTcBatBuoc
+      }
+      console.log(`❌ Chưa đủ số tín chỉ bắt buộc: còn thiếu ${missingTcCondition.con_thieu} TC`)
+    } else {
+      console.log(`✅ Đủ số tín chỉ bắt buộc`)
+    }
+  }
+
+  const result = {
+    ok: missingPrereqs.length === 0 && !missingTcCondition,
+    missingPrereqs,
+    missingTcCondition
+  }
+  
+  console.log(`🎯 Kết quả kiểm tra: ${result.ok ? '✅ Đủ điều kiện' : '❌ Thiếu điều kiện'}`)
+  if (!result.ok) {
+    if (result.missingPrereqs.length > 0) {
+      console.log(`❌ Môn còn thiếu:`, result.missingPrereqs.map(m => `${m.ten_hoc_phan} (${m.ma_hoc_phan})`))
+    }
+    if (result.missingTcCondition) {
+      console.log(`❌ Thiếu số tín chỉ bắt buộc: còn thiếu ${result.missingTcCondition.con_thieu} TC`)
+    }
+  }
+  
+  return result
 }
 
 function getTenHocKy(hocKy) {

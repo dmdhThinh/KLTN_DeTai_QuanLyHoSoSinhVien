@@ -13,7 +13,6 @@ function NhapDiem() {
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState('');
-  const [inputLocked, setInputLocked] = useState(false); // Khóa nhập sau khi lưu
   const [showConfirm, setShowConfirm] = useState(false); // Modal xác nhận
   const [viewMode, setViewMode] = useState('input');
   const [showExportMenu, setShowExportMenu] = useState(false);
@@ -62,11 +61,8 @@ function NhapDiem() {
                 );
                 // Lưu giá trị gốc từ DB để kiểm tra sau
                 const originalCK = existingScore?.diemCuoiKy || existingScore?.diem_cuoi_ky || '';
-                return {
-                  ...sv,
-                  ketQuaId: existingScore?.id || null,
-                  originalCK: originalCK, // Lưu giá trị CK gốc từ DB
-                  // Backend trả về camelCase, cần map sang snake_case
+                // Lưu các giá trị gốc từ DB để so sánh sau khi lưu
+                const originalScores = {
                   diem_ly_thuyet_1: existingScore?.diemThuongXuyen1 || existingScore?.diem_ly_thuyet_1 || '',
                   diem_ly_thuyet_2: existingScore?.diemThuongXuyen2 || existingScore?.diem_ly_thuyet_2 || '',
                   diem_ly_thuyet_3: existingScore?.diemThuongXuyen3 || existingScore?.diem_ly_thuyet_3 || '',
@@ -75,6 +71,22 @@ function NhapDiem() {
                   diem_thuc_hanh_2: existingScore?.diemThucHanh2 || existingScore?.diem_thuc_hanh_2 || '',
                   diem_thuc_hanh_3: existingScore?.diemThucHanh3 || existingScore?.diem_thuc_hanh_3 || '',
                   diem_giua_ky: existingScore?.diemGiuaKy || existingScore?.diem_giua_ky || '',
+                  diem_cuoi_ky: originalCK,
+                };
+                return {
+                  ...sv,
+                  ketQuaId: existingScore?.id || null,
+                  originalCK: originalCK, // Lưu giá trị CK gốc từ DB
+                  originalScores: originalScores, // Lưu tất cả điểm gốc từ DB
+                  // Backend trả về camelCase, cần map sang snake_case
+                  diem_ly_thuyet_1: originalScores.diem_ly_thuyet_1,
+                  diem_ly_thuyet_2: originalScores.diem_ly_thuyet_2,
+                  diem_ly_thuyet_3: originalScores.diem_ly_thuyet_3,
+                  diem_ly_thuyet_4: originalScores.diem_ly_thuyet_4,
+                  diem_thuc_hanh_1: originalScores.diem_thuc_hanh_1,
+                  diem_thuc_hanh_2: originalScores.diem_thuc_hanh_2,
+                  diem_thuc_hanh_3: originalScores.diem_thuc_hanh_3,
+                  diem_giua_ky: originalScores.diem_giua_ky,
                   diem_cuoi_ky: originalCK,
                   diem_tong_ket: existingScore?.diemTongKet || existingScore?.diem_tong_ket || '',
                   diem_chu: existingScore?.diemChu || existingScore?.diem_chu || '',
@@ -86,6 +98,7 @@ function NhapDiem() {
                   ...sv,
                   ketQuaId: null,
                   originalCK: '',
+                  originalScores: {}, // Không có điểm gốc
                   diem_ly_thuyet_1: '',
                   diem_ly_thuyet_2: '',
                   diem_ly_thuyet_3: '',
@@ -104,10 +117,7 @@ function NhapDiem() {
             })
           );
           
-          const allSaved = sinhVienWithScores.length > 0 && sinhVienWithScores.every(
-            (sv) => sv.ketQuaId && sv.originalCK !== '' && sv.originalCK !== null && sv.originalCK !== undefined
-          );
-          setInputLocked(allSaved);
+          // Không cần set inputLocked global nữa, mỗi ô sẽ tự kiểm tra
           setSinhVienList(sinhVienWithScores);
         }
       } catch (err) {
@@ -132,16 +142,19 @@ function NhapDiem() {
   };
 
   // Kiểm tra xem cột nào được phép nhập
+  // Chỉ khóa các ô đã có điểm gốc từ DB (đã lưu trước đó), không khóa các ô trống hoặc mới nhập
   const isInputDisabled = (sv, field) => {
-    if (inputLocked) return true;
-    // Khi đã có bản ghi điểm thì khóa để không cho sửa
-    if (sv.ketQuaId) return true;
+    // Nếu đã có bản ghi điểm (ketQuaId) và ô này đã có giá trị gốc từ DB, thì khóa
+    if (sv.ketQuaId && sv.originalScores && sv.originalScores[field] && sv.originalScores[field] !== '') {
+      return true;
+    }
     return false;
   };
 
-  // Kiểm tra đã hoàn tất chưa
+  // Kiểm tra đã hoàn tất chưa (chỉ để highlight, không ảnh hưởng đến khóa)
   const isFullyLocked = (sv) => {
-    return inputLocked || !!sv.ketQuaId;
+    // Chỉ highlight nếu đã có bản ghi điểm và đã có điểm cuối kỳ
+    return !!sv.ketQuaId && sv.diem_cuoi_ky && sv.diem_cuoi_ky !== '';
   };
 
   // Hiện modal xác nhận
@@ -202,9 +215,8 @@ function NhapDiem() {
       setMessage(`✅ Đã lưu thành công ${successCount} sinh viên${errorCount > 0 ? `, ${errorCount} lỗi` : ''}!`);
       
       // Reload để cập nhật ketQuaId và điểm tính toán
+      // Sau khi reload, các ô đã lưu sẽ tự động khóa (dựa vào ketQuaId)
       await loadData();
-      // Khóa toàn bộ sau khi lưu
-      setInputLocked(true);
       
     } catch (err) {
       setMessage(' Có lỗi xảy ra khi lưu điểm!');

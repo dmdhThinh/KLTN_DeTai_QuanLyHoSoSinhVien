@@ -96,7 +96,7 @@
     gap: 24px;
 }
 
-/* 📰 bên trái: danh sách tin */
+/*  bên trái: danh sách tin */
 .news-panel {
     flex: 0 0 60%;
     background: rgba(255, 255, 255, 0.96);
@@ -160,7 +160,7 @@
     color: #4b5563;
 }
 
-/* 🔐 bên phải: form đăng nhập */
+/*  bên phải: form đăng nhập */
 .login-form {
     flex: 0 0 40%;
     background: rgba(255, 255, 255, 0.96);

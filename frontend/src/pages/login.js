@@ -97,7 +97,7 @@ export default function Login() {
       <div className="login-container">
         {/* Bên trái - danh sách tin tức */}
         <div className="news-panel fade-in-left">
-          <h2 className="news-title">📰 DANH SÁCH CÁC TIN TỨC</h2>
+          <h2 className="news-title">DANH SÁCH CÁC TIN TỨC</h2>
           <div className="news-list">
             {newsLoading ? (
               <div className="text-muted">Đang tải...</div>
@@ -127,7 +127,7 @@ export default function Login() {
 
         {/* Bên phải - form đăng nhập */}
         <div className="login-form fade-in-right">
-          <h2>🔐 ĐĂNG NHẬP</h2>
+          <h2> ĐĂNG NHẬP</h2>
           {message && <div className="alert">{message}</div>}
 
           <form onSubmit={handleSubmit}>

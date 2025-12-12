@@ -103,7 +103,7 @@ export default function LichHocLichThi() {
       </div>
     )
 
-  // ⚠️ Lỗi
+  // Lỗi
   
 
   return (

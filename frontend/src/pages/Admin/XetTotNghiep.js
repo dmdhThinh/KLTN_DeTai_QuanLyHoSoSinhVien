@@ -290,7 +290,7 @@ export default function XetTotNghiep() {
   }
 
   const handleXoaHoSoKhoaHoc = async (khoaHoc) => {
-    showConfirm(`⚠️ CẢNH BÁO: Bạn có chắc chắn muốn xóa TẤT CẢ hồ sơ tốt nghiệp của khóa ${khoaHoc}?\n\nHành động này không thể hoàn tác!`, () => {
+    showConfirm(`CẢNH BÁO: Bạn có chắc chắn muốn xóa TẤT CẢ hồ sơ tốt nghiệp của khóa ${khoaHoc}?\n\nHành động này không thể hoàn tác!`, () => {
       showPrompt(`Nhập lại khóa học để xác nhận (${khoaHoc}):`, khoaHoc, (inputValue) => {
         if (inputValue !== khoaHoc) {
           showAlert('Khóa học không khớp. Đã hủy thao tác.', 'warning')
@@ -963,7 +963,7 @@ export default function XetTotNghiep() {
                 <h5 className="modal-title">
                   {alertModal.type === 'success' ? '✅ Thành công' : 
                    alertModal.type === 'danger' ? '❌ Lỗi' : 
-                   alertModal.type === 'warning' ? '⚠️ Cảnh báo' : 
+                   alertModal.type === 'warning' ? 'Cảnh báo' : 
                    'ℹ️ Thông báo'}
                 </h5>
                 <button

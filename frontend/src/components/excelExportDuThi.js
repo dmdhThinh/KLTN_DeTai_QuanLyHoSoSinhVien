@@ -9,7 +9,7 @@ import ExcelJS from 'exceljs';
  */
 export async function exportDanhSachDuThiGK(sinhVienList, lopHocPhan, phong = '') {
   if (!sinhVienList || sinhVienList.length === 0 || !lopHocPhan) {
-    throw new Error('⚠️ Không có dữ liệu để xuất!');
+    throw new Error('Không có dữ liệu để xuất!');
   }
 
   const workbook = new ExcelJS.Workbook();
@@ -249,7 +249,7 @@ export async function exportDanhSachDuThiGK(sinhVienList, lopHocPhan, phong = ''
  */
 export async function exportDanhSachDuThiCK(sinhVienList, lopHocPhan, phong = '') {
   if (!sinhVienList || sinhVienList.length === 0 || !lopHocPhan) {
-    throw new Error('⚠️ Không có dữ liệu để xuất!');
+    throw new Error('Không có dữ liệu để xuất!');
   }
 
   const workbook = new ExcelJS.Workbook();

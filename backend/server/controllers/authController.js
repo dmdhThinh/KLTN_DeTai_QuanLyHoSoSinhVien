@@ -28,7 +28,7 @@ export async function login(req, res) {
       return res.status(401).json({ message: 'Sai tài khoản hoặc mật khẩu' })
     }
 
-    // ⚠️ Kiểm tra nếu chưa đổi mật khẩu
+    // Kiểm tra nếu chưa đổi mật khẩu
     if (!Number(acc.da_doi_mat_khau)) {
       const tempToken = jwt.sign(
         { sub: acc.id, forceChangePassword: true },

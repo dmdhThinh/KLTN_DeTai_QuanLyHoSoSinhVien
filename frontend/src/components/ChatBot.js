@@ -113,7 +113,7 @@ export default function ChatBot() {
         <div className="chatbot-window">
           <div className="chatbot-header">
             <div className="d-flex align-items-center gap-2">
-              <div className="chatbot-avatar">🤖</div>
+              
               <div>
                 <div className="fw-semibold">ChatBot</div>
                 <div className="small text-white-50">Luôn sẵn sàng hỗ trợ bạn</div>

@@ -21,6 +21,22 @@ const getCurrentSemesterAndYear = () => {
   return { semester, academicYear }
 }
 
+// Helper: Tạo danh sách option học kỳ/năm học
+const generateHocKyOptions = (list) => {
+  const hocKys = ['HK1', 'HK2', 'HK3']
+  const namHocs = [...new Set(list.map(l => l.namHoc).filter(y => y))].sort().reverse()
+  
+  const options = []
+  for (const namHoc of namHocs) {
+    for (const hocKy of hocKys) {
+      const value = `${hocKy}|${namHoc}`
+      const label = `${hocKy} (${namHoc.split('-')[0]} - ${namHoc.split('-')[1]})`
+      options.push({ value, label, hocKy, namHoc })
+    }
+  }
+  return options
+}
+
 export default function LopHocPhanList() {
   const { semester: currentSemester, academicYear: currentYear } = getCurrentSemesterAndYear()
   const [list, setList] = useState([])
@@ -30,6 +46,21 @@ export default function LopHocPhanList() {
   const [searchCode, setSearchCode] = useState('') // Tìm theo mã lớp học phần
   const [loading, setLoading] = useState(true)
   const navigate = useNavigate()
+
+  // Tạo danh sách option học kỳ/năm học
+  const hocKyOptions = generateHocKyOptions(list)
+  const selectedHocKyNamHoc = `${selectedSemester}|${selectedYear}`
+  
+  const handleHocKyNamHocChange = (value) => {
+    if (value === '') {
+      setSelectedSemester('')
+      setSelectedYear('')
+    } else {
+      const [hocKy, namHoc] = value.split('|')
+      setSelectedSemester(hocKy)
+      setSelectedYear(namHoc)
+    }
+  }
 
   // ✅ lấy ID giảng viên đang đăng nhập (giống TeacherDashboard)
   const giangVienId = getGiangVienId()
@@ -85,26 +116,15 @@ export default function LopHocPhanList() {
               <div className="col-auto">
                 <select 
                   className="form-select" 
-                  style={{ width: '150px' }}
-                  value={selectedSemester}
-                  onChange={(e) => setSelectedSemester(e.target.value)}
+                  style={{ width: '250px' }}
+                  value={selectedHocKyNamHoc}
+                  onChange={(e) => handleHocKyNamHocChange(e.target.value)}
                 >
-                  <option value="">Tất cả học kỳ</option>
-                  {[...new Set(list.map(l => l.hocKy))].filter(s => s).sort().map(sem => (
-                    <option key={sem} value={sem}>{sem}</option>
-                  ))}
-                </select>
-              </div>
-              <div className="col-auto">
-                <select 
-                  className="form-select" 
-                  style={{ width: '180px' }}
-                  value={selectedYear}
-                  onChange={(e) => setSelectedYear(e.target.value)}
-                >
-                  <option value="">Tất cả năm học</option>
-                  {[...new Set(list.map(l => l.namHoc))].filter(y => y).sort().reverse().map(year => (
-                    <option key={year} value={year}>{year}</option>
+                  <option value="">Tất cả học kỳ/năm học</option>
+                  {hocKyOptions.map((opt) => (
+                    <option key={opt.value} value={opt.value}>
+                      {opt.label}
+                    </option>
                   ))}
                 </select>
               </div>

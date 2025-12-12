@@ -316,7 +316,7 @@ export default function ImportDiemRenLuyen() {
                               <span className="text-muted">
                                 {item.so_diem > 0 ? (
                                   <span className="text-warning">
-                                    ⚠️ Có điểm nhưng chưa có hoạt động
+                                    Có điểm nhưng chưa có hoạt động
                                   </span>
                                 ) : (
                                   'Chưa có hoạt động'
@@ -363,7 +363,7 @@ export default function ImportDiemRenLuyen() {
             }`}
           >
             {importResult.lỗi && importResult.lỗi.length > 0
-              ? `⚠️ Có ${importResult.lỗi.length} dòng lỗi (Thành công: ${importResult.thành_công})`
+              ? `Có ${importResult.lỗi.length} dòng lỗi (Thành công: ${importResult.thành_công})`
               : `✅ Import thành công toàn bộ (${importResult.thành_công} dòng)`}
           </div>
           

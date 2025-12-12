@@ -197,7 +197,7 @@ export default function ImportChungChiTiengAnh() {
             }`}
           >
             {importResult.lỗi && importResult.lỗi.length > 0
-              ? `⚠️ Có ${importResult.lỗi.length} dòng lỗi (Thành công: ${importResult.thành_công})`
+              ? `Có ${importResult.lỗi.length} dòng lỗi (Thành công: ${importResult.thành_công})`
               : `✅ Import thành công toàn bộ (${importResult.thành_công} dòng)`}
           </div>
           

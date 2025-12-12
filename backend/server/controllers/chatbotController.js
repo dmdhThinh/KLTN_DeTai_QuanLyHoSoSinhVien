@@ -50,7 +50,7 @@ export async function chatWithBot(req, res) {
           monChuaDangKy
         }
       } catch (err) {
-        console.error(`⚠️ Lỗi khi lấy thông tin đăng ký học phần cho ${hk.hoc_ky} ${hk.nam_hoc}:`, err.message)
+        console.error(`Lỗi khi lấy thông tin đăng ký học phần cho ${hk.hoc_ky} ${hk.nam_hoc}:`, err.message)
       }
     }
 
@@ -343,7 +343,7 @@ Hoi: ${message}`
     
     // Kiểm tra nếu bị block vì safety
     if (candidate.finishReason === 'SAFETY') {
-      console.warn('⚠️ Response bị block vì safety:', candidate.safetyRatings)
+      console.warn('Response bị block vì safety:', candidate.safetyRatings)
       return res.json({ reply: 'Xin lỗi, câu hỏi của bạn không phù hợp với chính sách an toàn. Vui lòng thử câu hỏi khác.' })
     }
 

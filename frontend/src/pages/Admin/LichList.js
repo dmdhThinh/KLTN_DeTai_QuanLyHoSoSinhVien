@@ -556,7 +556,7 @@ const handleResetNghiToanKhoa = async (ngayNghi) => {
                                 title={
                                   cell.loai === 'thi'
                                     ? `Môn: ${cell.tenHocPhan}\nNgày thi: ${dayjs(cell.ngayHoc).format('DD/MM/YYYY')}\nCa: ${cell.ca}\nPhòng: ${cell.phong}\nGV: ${cell.tenGiangVien}`
-                                    : `Môn: ${cell.tenHocPhan}\nGV: ${cell.tenGiangVien}\nPhòng: ${cell.phong}\n${isNghi ? '⚠️ Buổi này đã nghỉ' : 'Click nút ❌ để đánh dấu nghỉ'}`
+                                    : `Môn: ${cell.tenHocPhan}\nGV: ${cell.tenGiangVien}\nPhòng: ${cell.phong}\n${isNghi ? 'Buổi này đã nghỉ' : 'Click nút ❌ để đánh dấu nghỉ'}`
                                 }
                               >
                                 <div className="fw-semibold">{cell.tenHocPhan}</div>

@@ -126,7 +126,7 @@ fetch(`https://generativelanguage.googleapis.com/v1/models?key=${GEMINI_API_KEY}
         }
       })
     } else {
-      console.log('⚠️ Không tìm thấy model nào')
+      console.log('Không tìm thấy model nào')
     }
   })
   .catch(err => {
