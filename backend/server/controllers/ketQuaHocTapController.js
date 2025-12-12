@@ -91,30 +91,79 @@ export async function create(req, res) {
       [sinh_vien_id, hoc_phan_id, hoc_ky, nam_hoc]
     );
 
-    // Nếu đã có điểm rồi và không phải admin → chặn nhập lại
-    if (existing.length > 0 && !isAdmin) {
-      return res.status(409).json({
-        message: 'Điểm đã được lưu cho sinh viên này, không thể nhập lại. Liên hệ admin nếu cần chỉnh sửa.'
-      });
-    }
-
     // Merge data cũ (nếu có) với data mới
     const oldData = existing[0] || {};
+    
+    // Nếu đã có record và không phải admin → kiểm tra xem có cố gắng sửa điểm đã có không
+    if (existing.length > 0 && !isAdmin) {
+      // Danh sách các field điểm
+      const scoreFields = [
+        'diem_ly_thuyet_1', 'diem_ly_thuyet_2', 'diem_ly_thuyet_3', 'diem_ly_thuyet_4',
+        'diem_thuc_hanh_1', 'diem_thuc_hanh_2', 'diem_thuc_hanh_3',
+        'diem_giua_ky', 'diem_cuoi_ky'
+      ];
+      
+      // Kiểm tra xem có cố gắng sửa điểm đã có (không phải NULL) không
+      // Lưu ý: Điểm 0 cũng là điểm hợp lệ, cần xử lý đúng
+      let isTryingToModifyExistingScore = false;
+      for (const field of scoreFields) {
+        const newValue = req.body[field];
+        const oldValue = oldData[field];
+        
+        // Nếu frontend gửi giá trị mới (bao gồm cả 0) VÀ điểm cũ đã có (không phải NULL)
+        // → Cố gắng sửa điểm đã có → Chặn
+        // Lưu ý: newValue có thể là 0 (số) hoặc "0" (string), cần kiểm tra đúng
+        const hasNewValue = newValue !== undefined && newValue !== null && newValue !== '';
+        const hasOldValue = oldValue !== null && oldValue !== undefined && oldValue !== '';
+        
+        if (hasNewValue && hasOldValue) {
+          // Kiểm tra xem giá trị mới có khác giá trị cũ không
+          const newNum = Number(newValue);
+          const oldNum = Number(oldValue);
+          if (!isNaN(newNum) && !isNaN(oldNum) && newNum !== oldNum) {
+            isTryingToModifyExistingScore = true;
+            break;
+          }
+        }
+      }
+      
+      if (isTryingToModifyExistingScore) {
+        return res.status(409).json({
+          message: 'Điểm đã được lưu cho sinh viên này, không thể sửa lại. Chỉ có thể cập nhật các cột còn trống (NULL). Liên hệ admin nếu cần chỉnh sửa.'
+        });
+      }
+    }
+    
+    // Merge: Nếu frontend gửi giá trị mới → dùng giá trị mới (bao gồm cả 0)
+    // Nếu frontend không gửi (undefined) → giữ giá trị cũ (nếu có)
+    // Nếu frontend gửi null hoặc rỗng → dùng null (xóa điểm - chỉ admin mới được)
+    // Lưu ý: Điểm 0 cũng là điểm hợp lệ, cần xử lý đúng (không dùng || vì 0 || null = null)
+    const mergeScore = (newValue, oldValue) => {
+      if (newValue !== undefined) {
+        // Frontend gửi giá trị mới
+        if (newValue === null || newValue === '') {
+          return null; // Xóa điểm (chỉ admin)
+        }
+        return Number(newValue); // Bao gồm cả 0
+      }
+      // Frontend không gửi → giữ giá trị cũ
+      return oldValue ?? null;
+    };
     
     let data = {
       sinh_vien_id,
       hoc_phan_id,
       hoc_ky,
       nam_hoc,
-      diem_ly_thuyet_1: req.body.diem_ly_thuyet_1 ?? oldData.diem_ly_thuyet_1 ?? null,
-      diem_ly_thuyet_2: req.body.diem_ly_thuyet_2 ?? oldData.diem_ly_thuyet_2 ?? null,
-      diem_ly_thuyet_3: req.body.diem_ly_thuyet_3 ?? oldData.diem_ly_thuyet_3 ?? null,
-      diem_ly_thuyet_4: req.body.diem_ly_thuyet_4 ?? oldData.diem_ly_thuyet_4 ?? null,
-      diem_thuc_hanh_1: req.body.diem_thuc_hanh_1 ?? oldData.diem_thuc_hanh_1 ?? null,
-      diem_thuc_hanh_2: req.body.diem_thuc_hanh_2 ?? oldData.diem_thuc_hanh_2 ?? null,
-      diem_thuc_hanh_3: req.body.diem_thuc_hanh_3 ?? oldData.diem_thuc_hanh_3 ?? null,
-      diem_giua_ky: req.body.diem_giua_ky ?? oldData.diem_giua_ky ?? null,
-      diem_cuoi_ky: req.body.diem_cuoi_ky ?? oldData.diem_cuoi_ky ?? null,
+      diem_ly_thuyet_1: mergeScore(req.body.diem_ly_thuyet_1, oldData.diem_ly_thuyet_1),
+      diem_ly_thuyet_2: mergeScore(req.body.diem_ly_thuyet_2, oldData.diem_ly_thuyet_2),
+      diem_ly_thuyet_3: mergeScore(req.body.diem_ly_thuyet_3, oldData.diem_ly_thuyet_3),
+      diem_ly_thuyet_4: mergeScore(req.body.diem_ly_thuyet_4, oldData.diem_ly_thuyet_4),
+      diem_thuc_hanh_1: mergeScore(req.body.diem_thuc_hanh_1, oldData.diem_thuc_hanh_1),
+      diem_thuc_hanh_2: mergeScore(req.body.diem_thuc_hanh_2, oldData.diem_thuc_hanh_2),
+      diem_thuc_hanh_3: mergeScore(req.body.diem_thuc_hanh_3, oldData.diem_thuc_hanh_3),
+      diem_giua_ky: mergeScore(req.body.diem_giua_ky, oldData.diem_giua_ky),
+      diem_cuoi_ky: mergeScore(req.body.diem_cuoi_ky, oldData.diem_cuoi_ky),
     };
     
     const auto = tinhDiemTongKetIUH(data);

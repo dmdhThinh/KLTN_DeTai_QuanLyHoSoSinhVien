@@ -365,7 +365,7 @@ export default function AdminLayout({ children, title = '', activeMenu = '' }) {
                     <li><a href="/admin/diem-ren-luyen" className={`nav-link ${location.pathname.includes('/diem-ren-luyen') ? 'active' : ''}`}><i className="bi bi-award me-2"></i> Điểm rèn luyện</a></li>
                     <li><a href="/admin/xet-hoc-bong" className={`nav-link ${location.pathname.includes('/xet-hoc-bong') ? 'active' : ''}`}><i className="bi bi-trophy me-2"></i> Xét học bổng</a></li>
                     <li><a href="/admin/xet-tot-nghiep" className={`nav-link ${location.pathname.includes('/xet-tot-nghiep') ? 'active' : ''}`}><i className="bi bi-mortarboard me-2"></i> Xét tốt nghiệp</a></li>
-                  </ul>
+        </ul>
                 </div>
               </div>
             </div>
@@ -387,7 +387,7 @@ export default function AdminLayout({ children, title = '', activeMenu = '' }) {
                   </ul>
                 </div>
               </div>
-            </div>
+        </div>
 
             {/* Chứng chỉ */}
             <div className="accordion-item">
@@ -442,8 +442,8 @@ export default function AdminLayout({ children, title = '', activeMenu = '' }) {
                   pointerEvents: 'none'
                 }}
               ></i>
-              <input
-                type="text"
+            <input
+              type="text"
                 className="form-control"
                 placeholder="Tìm kiếm menu..."
                 value={searchQuery}
@@ -548,8 +548,8 @@ export default function AdminLayout({ children, title = '', activeMenu = '' }) {
               >
                 <div className="text-muted small me-2">
                   Xin chào, <b style={{ color: '#495057' }}>admin01</b>
-                </div>
-                <div
+            </div>
+            <div
                   className="rounded-circle d-flex align-items-center justify-content-center"
                   style={{ 
                     width: '40px', 
