@@ -104,7 +104,7 @@ export async function createGiangVien(req, res) {
       // cập nhật liên kết tài khoản vào GiangVien
       await pool.query('UPDATE GiangVien SET tai_khoan_id = ? WHERE id = ?', [accountId, item.id])
     } catch (err) {
-      console.error('⚠️ Lỗi khi tạo tài khoản giảng viên:', err)
+      console.error('Lỗi khi tạo tài khoản giảng viên:', err)
     }
 
     res.status(201).json(item)

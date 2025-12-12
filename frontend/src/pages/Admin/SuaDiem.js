@@ -189,7 +189,7 @@ function SuaDiem() {
   const handleSaveAll = () => {
     setConfirmModal({
       show: true,
-      message: '⚠️ Bạn có chắc chắn muốn cập nhật điểm cho tất cả sinh viên?',
+      message: 'Bạn có chắc chắn muốn cập nhật điểm cho tất cả sinh viên?',
       onConfirm: async () => {
         setSaving(true);
     setMessage("");
@@ -262,7 +262,7 @@ function SuaDiem() {
         )}
 
         <div className="alert alert-warning">
-          <strong>⚠️ Lưu ý:</strong> Admin có thể sửa điểm bất kỳ lúc nào, kể cả khi điểm đã bị khóa. 
+          <strong>Lưu ý:</strong> Admin có thể sửa điểm bất kỳ lúc nào, kể cả khi điểm đã bị khóa. 
           Chỉ được sửa điểm trong cùng học kỳ và năm học.
         </div>
 

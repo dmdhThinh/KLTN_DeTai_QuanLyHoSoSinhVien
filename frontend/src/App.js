@@ -68,6 +68,7 @@ import ThongBaoChiTiet from './pages/SinhVien/ThongBaoChiTiet'
 
 import ChuongTrinhKhung from './pages/SinhVien/ChuongTrinhKhung.js'
 import DKHP from './pages/SinhVien/dkhp.js'
+
 import QuanLyDotDangKy from './pages/Admin/QuanLyDotDangKy.js'
 import SuaDiem from './pages/Admin/SuaDiem.js'
 import CongNo from './pages/SinhVien/CongNo.js'
@@ -110,7 +111,7 @@ function App() {
     // Nếu có role nhưng không có token hợp lệ, clear auth
     // (getRole() và getToken() đã tự động validate và clear, nhưng đảm bảo chắc chắn)
     if (role && !token) {
-      console.warn('⚠️ App: Có role nhưng không có token hợp lệ, clear auth')
+      console.warn('App: Có role nhưng không có token hợp lệ, clear auth')
       clearAuth(role)
     }
   }, [])
@@ -306,6 +307,7 @@ function App() {
         <Route path="/admin/thongbao" element={<PrivateRoute allowRoles={['Quản trị']}><ThongBaoList /></PrivateRoute>} />
         <Route path="/admin/thongbao/new" element={<PrivateRoute allowRoles={['Quản trị']}><AddThongBao /></PrivateRoute>} />
         <Route path="/admin/thongbao/edit/:id" element={<PrivateRoute allowRoles={['Quản trị']}><EditThongBao /></PrivateRoute>}/>
+
         <Route path="/admin/dot-dang-ky" element={<PrivateRoute allowRoles={['Quản trị']}><QuanLyDotDangKy /></PrivateRoute>} />
         <Route path="/admin/sua-diem/:lopHocPhanId" element={<PrivateRoute allowRoles={['Quản trị']}><SuaDiem /></PrivateRoute>} />
          <Route path="/admin/diem-ren-luyen" element={<PrivateRoute allowRoles={['Quản trị']}><ImportDiemRenLuyen /></PrivateRoute>} />

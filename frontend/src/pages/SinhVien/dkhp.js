@@ -93,10 +93,40 @@ export default function DkhpPage() {
   const [messageType, setMessageType] = useState(''); // 'success' hoặc 'error'
   const sinhVienId = getSinhVienId();
   
-  // Dropdown chọn học kỳ, năm học
+  // Dropdown chọn học kỳ, năm học (gộp thành 1 combobox)
   const [selectedHocKy, setSelectedHocKy] = useState('HK1');
   const [selectedNamHoc, setSelectedNamHoc] = useState('2025-2026');
   const [autoSetFromDot, setAutoSetFromDot] = useState(false); // Flag để tránh set lại nhiều lần
+  
+  // Tạo danh sách các học kỳ/năm học để hiển thị trong combobox
+  const generateHocKyOptions = () => {
+    const hocKys = ['HK1', 'HK2', 'HK3'];
+    const namHocs = ['2024-2025', '2025-2026', '2026-2027'];
+    const options = [];
+    
+    // Tạo options theo thứ tự: HK3 -> HK2 -> HK1 của năm mới nhất trước
+    for (let i = namHocs.length - 1; i >= 0; i--) {
+      for (let j = hocKys.length - 1; j >= 0; j--) {
+        const value = `${hocKys[j]}|${namHocs[i]}`;
+        const label = `${hocKys[j]} (${namHocs[i].split('-')[0]} - ${namHocs[i].split('-')[1]})`;
+        options.push({ value, label, hocKy: hocKys[j], namHoc: namHocs[i] });
+      }
+    }
+    
+    return options;
+  };
+  
+  const hocKyOptions = generateHocKyOptions();
+  
+  // Giá trị combobox hiện tại (dạng "HK1|2025-2026")
+  const selectedHocKyNamHoc = `${selectedHocKy}|${selectedNamHoc}`;
+  
+  // Hàm xử lý khi chọn combobox
+  const handleHocKyNamHocChange = (value) => {
+    const [hocKy, namHoc] = value.split('|');
+    setSelectedHocKy(hocKy);
+    setSelectedNamHoc(namHoc);
+  };
   
   // Filter checkbox
   const [hideConflictClasses, setHideConflictClasses] = useState(false);
@@ -138,14 +168,48 @@ const loadClassDetail = async (lop) => {
 };
 
 
-  // Tự động set học kỳ/năm học từ đợt đăng ký (chỉ 1 lần khi có đợt)
+  // Load đợt đăng ký và tự động set học kỳ/năm học (chỉ 1 lần khi mount)
   useEffect(() => {
-    if (dot && dot.hoc_ky && dot.nam_hoc && !autoSetFromDot) {
-      setSelectedHocKy(dot.hoc_ky);
-      setSelectedNamHoc(dot.nam_hoc);
-      setAutoSetFromDot(true);
+    if (!sinhVienId) {
+      setLoading(false);
+      return;
     }
-  }, [dot, autoSetFromDot]);
+
+    const loadDot = async () => {
+      try {
+        let d = null;
+        try {
+          d = await apiFetch('/api/dkhp/dot/current');
+        } catch (e) {
+          // Không có đợt thì thôi, vẫn load dữ liệu xem chơi
+        }
+        setDot(d);
+        
+        // Tự động set học kỳ/năm học từ đợt đăng ký (chỉ 1 lần khi chưa set)
+        if (d && d.hoc_ky && d.nam_hoc && !autoSetFromDot) {
+          // Set học kỳ/năm học ngay lập tức
+          setSelectedHocKy(d.hoc_ky);
+          setSelectedNamHoc(d.nam_hoc);
+          setAutoSetFromDot(true);
+        }
+      } catch (err) {
+        console.error('Lỗi load đợt đăng ký:', err);
+        setAutoSetFromDot(true); // Đánh dấu đã load xong (dù có lỗi)
+      }
+    };
+
+    // Chỉ load đợt 1 lần khi component mount
+    if (!autoSetFromDot) {
+      loadDot();
+    }
+  }, [sinhVienId, autoSetFromDot]);
+
+  // Reset selectedHP khi đổi học kỳ/năm học
+  useEffect(() => {
+    setSelectedHP(null);
+    setSelectedClass(null);
+    setClassDetail({ header: null, lich: [] });
+  }, [selectedHocKy, selectedNamHoc]);
 
   // Load dữ liệu khi thay đổi học kỳ/năm học
   useEffect(() => {
@@ -155,16 +219,17 @@ const loadClassDetail = async (lop) => {
     }
 
     const load = async () => {
+      setLoading(true); // Set loading khi bắt đầu load
       try {
+        // Lấy lại đợt đăng ký để có dot_dang_ky_id mới nhất
         let d = null;
         try {
           d = await apiFetch('/api/dkhp/dot/current');
         } catch (e) {
-          // Không có đợt thì thôi, vẫn load dữ liệu xem chơi
+          // Không có đợt thì thôi
         }
-        setDot(d);
 
-        // Sử dụng học kỳ/năm học từ dropdown (hoặc từ đợt nếu đã auto set)
+        // Sử dụng học kỳ/năm học từ dropdown
         const [avail, regs] = await Promise.all([
           apiFetch(`/api/dkhp/available?sinh_vien_id=${sinhVienId}&hoc_ky=${selectedHocKy}&nam_hoc=${selectedNamHoc}&dot_dang_ky_id=${d?.id || ''}`),
           apiFetch(`/api/dkhp/my?sinh_vien_id=${sinhVienId}&hoc_ky=${selectedHocKy}&nam_hoc=${selectedNamHoc}&dot_dang_ky_id=${d?.id || ''}`)
@@ -183,9 +248,16 @@ const loadClassDetail = async (lop) => {
     load();
   }, [sinhVienId, selectedHocKy, selectedNamHoc]);
 
-  // Load danh sách môn theo loại đăng ký
+  // Load danh sách môn theo loại đăng ký (chỉ load khi đã có học kỳ/năm học hợp lệ)
   useEffect(() => {
-    if (!sinhVienId) return;
+    if (!sinhVienId || !selectedHocKy || !selectedNamHoc) return;
+    
+    // Nếu có đợt đăng ký, đợi cho đến khi đã set học kỳ từ đợt xong
+    // Nếu không có đợt, load ngay với học kỳ hiện tại
+    if (dot && !autoSetFromDot) {
+      // Có đợt nhưng chưa set học kỳ từ đợt → đợi
+      return;
+    }
 
     const loadPending = async () => {
       try {
@@ -194,15 +266,26 @@ const loadClassDetail = async (lop) => {
         if (loaiDangKy === 'HOC_LAI') {
           // Lấy danh sách môn rớt
           pendRes = await apiFetch(`/api/dkhp/mon-rot?sinh_vien_id=${sinhVienId}&hoc_ky=${selectedHocKy}&nam_hoc=${selectedNamHoc}`);
+          console.log('📋 Môn học lại:', pendRes);
         } else if (loaiDangKy === 'HOC_CAI_THIEN') {
           // Lấy danh sách môn cải thiện
           pendRes = await apiFetch(`/api/dkhp/mon-cai-thien?sinh_vien_id=${sinhVienId}&hoc_ky=${selectedHocKy}&nam_hoc=${selectedNamHoc}`);
+          console.log('📋 Môn cải thiện:', pendRes);
         } else {
           // HOC_MOI: Lấy TẤT CẢ môn của học kỳ (cho phép học vượt)
           pendRes = await apiFetch(`/api/dkhp/all-courses?sinh_vien_id=${sinhVienId}&hoc_ky=${selectedHocKy}&nam_hoc=${selectedNamHoc}`);
         }
         const items = normalizePendingList(pendRes);
-        setPendingHP(items);
+        // Map dữ liệu để đảm bảo có field tc và bat_buoc
+        const mappedItems = items.map(item => ({
+          ...item,
+          tc: item.tc || item.so_tin_chi || 0, // Map so_tin_chi thành tc
+          bat_buoc: item.bat_buoc !== undefined ? item.bat_buoc : null // Môn học lại/cải thiện có thể không có bat_buoc
+        }));
+        console.log('📦 Items sau normalize và map:', mappedItems);
+        setPendingHP(mappedItems);
+        // Reset selectedHP sau khi load xong danh sách môn mới
+        setSelectedHP(null);
         if (loaiDangKy === 'HOC_MOI') {
           if (pendRes.tong_tc !== undefined) {
             setHpTotals({
@@ -225,16 +308,39 @@ const loadClassDetail = async (lop) => {
     };
 
     loadPending();
-  }, [sinhVienId, loaiDangKy, selectedHocKy, selectedNamHoc]);
+  }, [sinhVienId, loaiDangKy, selectedHocKy, selectedNamHoc, dot, autoSetFromDot]);
 
   // Đăng ký
   const handleRegister = async (lhp) => {
     // Kiểm tra trùng lịch
     if (lhp.xung_dot_lich) {
-      setMessage('⚠️ CẢNH BÁO: Lớp học phần này trùng lịch với các môn bạn đã đăng ký! Vui lòng chọn lớp học phần khác.');
+      setMessage('CẢNH BÁO: Lớp học phần này trùng lịch với các môn bạn đã đăng ký! Vui lòng chọn lớp học phần khác.');
       setMessageType('error');
       setTimeout(() => setMessage(''), 5000);
       return;
+    }
+
+    // Kiểm tra điều kiện tiên quyết và số tín chỉ
+    if (!lhp.du_dieu_kien) {
+      const errorMessages = [];
+      
+      if (lhp.missing_prereqs && lhp.missing_prereqs.length > 0) {
+        const missingList = lhp.missing_prereqs.map(m => 
+          `${m.ten_hoc_phan} (${m.ma_hoc_phan}) - ${m.loai_text}`
+        ).join(', ');
+        errorMessages.push(`Cần hoàn thành: ${missingList}`);
+      }
+      
+      if (lhp.missing_tc_condition) {
+        errorMessages.push(`Bạn cần ít nhất ${lhp.missing_tc_condition.so_tc_bat_buoc_toi_thieu} tín chỉ bắt buộc. Hiện tại bạn có ${lhp.missing_tc_condition.tong_tc_bat_buoc_hien_tai} TC, còn thiếu ${lhp.missing_tc_condition.con_thieu} TC.`);
+      }
+      
+      if (errorMessages.length > 0) {
+        setMessage(`Bạn chưa đủ điều kiện đăng ký môn này. ${errorMessages.join(' ')}`);
+        setMessageType('error');
+        setTimeout(() => setMessage(''), 10000);
+        return;
+      }
     }
 
     try {
@@ -290,14 +396,21 @@ const loadClassDetail = async (lop) => {
       // Lấy message rõ ràng từ backend nếu có
       let msg = 'Lỗi đăng ký';
       try {
-        const data = await err.response?.json();
-        if (data?.message) msg = data.message;
+        // apiFetch throw Error với text từ response, có thể là JSON string
+        const errorText = err.message || err.toString();
+        try {
+          const data = JSON.parse(errorText);
+          if (data?.message) msg = data.message;
+        } catch {
+          // Nếu không parse được JSON, dùng message gốc
+          if (errorText) msg = errorText;
+        }
       } catch (_) {
         if (err.message) msg = err.message;
       }
       setMessage(msg);
       setMessageType('error');
-      setTimeout(() => setMessage(''), 5000);
+      setTimeout(() => setMessage(''), 8000); // Tăng thời gian hiển thị để user đọc được danh sách môn
     }
   };
 
@@ -355,7 +468,7 @@ const loadClassDetail = async (lop) => {
       
       // Hiển thị modal lỗi
       setErrorModal({
-        title: '⚠️ Không thể hủy đăng ký',
+        title: 'Không thể hủy đăng ký',
         message: errorMessage
       });
     }
@@ -389,8 +502,9 @@ const loadClassDetail = async (lop) => {
   };
 
   // Nhóm môn chờ đăng ký thành 2 loại: Bắt buộc / Tự chọn (giống trang Chương trình khung)
-  const monChoDangKyBatBuoc = pendingHP.filter((hp) => hp.bat_buoc);
-  const monChoDangKyTuChon = pendingHP.filter((hp) => !hp.bat_buoc);
+  // Lưu ý: Môn học lại/cải thiện có thể không có field bat_buoc, nên hiển thị tất cả trong phần "Tự chọn"
+  const monChoDangKyBatBuoc = pendingHP.filter((hp) => hp.bat_buoc === true);
+  const monChoDangKyTuChon = pendingHP.filter((hp) => hp.bat_buoc !== true || hp.bat_buoc === null || hp.bat_buoc === undefined);
 
   // Hàm render 1 dòng môn chờ đăng ký
   const renderPendingRow = (hp, idx) => (
@@ -410,7 +524,7 @@ const loadClassDetail = async (lop) => {
       <td>{idx + 1}</td>
       <td>{hp.ma_hoc_phan}</td>
       <td>{hp.ten_hoc_phan}</td>
-      <td>{hp.tc}</td>
+      <td>{hp.tc || hp.so_tin_chi || ''}</td>
       <td>
         {hp.bat_buoc ? (
           <span className="badge bg-danger">Bắt buộc</span>
@@ -435,34 +549,24 @@ const loadClassDetail = async (lop) => {
         )}
         
         
-        {/* Header: Dropdown chọn học kỳ, năm học */}
+        {/* Header: Combobox chọn học kỳ, năm học */}
         <div className="row mb-4 align-items-center">
           <div className="col-md-6">
             <div className="d-flex gap-3 align-items-center">
               <label className="fw-bold" style={{ minWidth: '120px' }}>Đợt đăng ký</label>
               
-              {/* Dropdown Học kỳ */}
+              {/* Combobox gộp Học kỳ + Năm học */}
               <select 
                 className="form-select" 
-                style={{ width: '150px' }}
-                value={selectedHocKy}
-                onChange={(e) => setSelectedHocKy(e.target.value)}
+                style={{ width: '250px' }}
+                value={selectedHocKyNamHoc}
+                onChange={(e) => handleHocKyNamHocChange(e.target.value)}
               >
-                <option value="HK1">HK1</option>
-                <option value="HK2">HK2</option>
-                <option value="HK3">HK3</option>
-              </select>
-              
-              {/* Dropdown Năm học */}
-              <select 
-                className="form-select" 
-                style={{ width: '180px' }}
-                value={selectedNamHoc}
-                onChange={(e) => setSelectedNamHoc(e.target.value)}
-              >
-                <option value="2024-2025">2024 - 2025</option>
-                <option value="2025-2026">2025 - 2026</option>
-                <option value="2026-2027">2026 - 2027</option>
+                {hocKyOptions.map((opt) => (
+                  <option key={opt.value} value={opt.value}>
+                    {opt.label}
+                  </option>
+                ))}
               </select>
             </div>
           </div>
@@ -544,7 +648,11 @@ const loadClassDetail = async (lop) => {
                   </thead>
                   <tbody>
                     {pendingHP.length === 0 ? (
-                      <tr><td colSpan="6" className="text-center text-muted">Không có môn chờ đăng ký</td></tr>
+                      <tr><td colSpan="6" className="text-center text-muted">
+                        {loaiDangKy === 'HOC_LAI' ? 'Không có môn rớt để học lại' : 
+                         loaiDangKy === 'HOC_CAI_THIEN' ? 'Không có môn để cải thiện' : 
+                         'Không có môn chờ đăng ký'}
+                      </td></tr>
                     ) : (
                       <>
                         {monChoDangKyBatBuoc.length > 0 && (
@@ -560,11 +668,13 @@ const loadClassDetail = async (lop) => {
 
                         {monChoDangKyTuChon.length > 0 && (
                           <>
-                            <tr className="table-secondary">
-                              <td colSpan="6">
-                                <strong>HỌC PHẦN TỰ CHỌN</strong>
-                              </td>
-                            </tr>
+                            {monChoDangKyBatBuoc.length > 0 && (
+                              <tr className="table-secondary">
+                                <td colSpan="6">
+                                  <strong>HỌC PHẦN TỰ CHỌN</strong>
+                                </td>
+                              </tr>
+                            )}
                             {monChoDangKyTuChon.map((hp, idx) =>
                               renderPendingRow(hp, idx + monChoDangKyBatBuoc.length)
                             )}
@@ -616,10 +726,13 @@ const loadClassDetail = async (lop) => {
           .filter(l => !hideConflictClasses || !l.xung_dot_lich)
           .map((l, i) => (
           <tr key={l.id}
-              className={selectedClass?.id===l.id ? 'table-warning' : (l.xung_dot_lich ? 'table-danger' : '')}
+              className={selectedClass?.id===l.id ? 'table-warning' : (l.xung_dot_lich ? 'table-danger' : (!l.du_dieu_kien ? 'table-warning' : ''))}
               onClick={() => loadClassDetail(l)}
               style={{cursor:'pointer'}}
-              title={l.xung_dot_lich ? '⚠️ Lớp này trùng lịch với các môn đã đăng ký' : ''}>
+              title={
+                l.xung_dot_lich ? 'Lớp này trùng lịch với các môn đã đăng ký' : 
+                !l.du_dieu_kien ? 'Bạn chưa đủ điều kiện đăng ký môn này' : ''
+              }>
             <td>
               <input type="radio" readOnly checked={selectedClass?.id===l.id}/>
             </td>
@@ -627,6 +740,7 @@ const loadClassDetail = async (lop) => {
             <td>
               {l.ma_lop_hoc_phan || l.ma_lhp}
               {l.xung_dot_lich && <span className="badge bg-danger ms-1">Trùng lịch</span>}
+              {!l.du_dieu_kien && <span className="badge bg-warning text-dark ms-1">Chưa đủ điều kiện</span>}
             </td>
             <td>{l.ten_lop_hoc_phan || l.ten_hoc_phan}</td>
             <td>{l.si_so_toi_da ?? ''}</td>
@@ -694,12 +808,30 @@ const loadClassDetail = async (lop) => {
       <div className="p-3">
         {selectedClass?.xung_dot_lich && (
           <div className="alert alert-danger mb-3" role="alert">
-            <strong>⚠️ CẢNH BÁO:</strong> Lớp học phần này trùng lịch với các môn bạn đã đăng ký!
+            <strong>CẢNH BÁO:</strong> Lớp học phần này trùng lịch với các môn bạn đã đăng ký!
           </div>
         )}
         {!selectedClass?.du_dieu_kien && (
           <div className="alert alert-warning mb-3" role="alert">
-            <strong>⚠️ CẢNH BÁO:</strong> Bạn chưa đủ điều kiện học môn này (chưa hoàn thành học phần tiên quyết).
+            <strong>CẢNH BÁO:</strong> Bạn chưa đủ điều kiện đăng ký môn này.
+            {selectedClass?.missing_prereqs && selectedClass.missing_prereqs.length > 0 && (
+              <>
+                <div className="mt-2">Bạn cần hoàn thành các môn sau:</div>
+                <ul className="mb-2 mt-2">
+                  {selectedClass.missing_prereqs.map((prereq, idx) => (
+                    <li key={idx}>
+                      <strong>{prereq.ten_hoc_phan}</strong> ({prereq.ma_hoc_phan}) - <span className="badge bg-info">{prereq.loai_text}</span>
+                    </li>
+                  ))}
+                </ul>
+              </>
+            )}
+            {selectedClass?.missing_tc_condition && (
+              <div className="mt-2">
+                <strong>Điều kiện số tín chỉ bắt buộc:</strong> Bạn cần ít nhất <strong>{selectedClass.missing_tc_condition.so_tc_bat_buoc_toi_thieu} tín chỉ bắt buộc</strong>.
+                Hiện tại bạn có <strong>{selectedClass.missing_tc_condition.tong_tc_bat_buoc_hien_tai} TC</strong>, còn thiếu <strong>{selectedClass.missing_tc_condition.con_thieu} TC</strong>.
+              </div>
+            )}
           </div>
         )}
         <button
@@ -820,13 +952,13 @@ const loadClassDetail = async (lop) => {
                 <div className="modal-dialog modal-dialog-centered">
                   <div className="modal-content">
                     <div className="modal-header bg-danger text-white">
-                      <h5 className="modal-title">⚠️ Xác nhận hủy đăng ký</h5>
+                      <h5 className="modal-title">Xác nhận hủy đăng ký</h5>
                       <button type="button" className="btn-close btn-close-white" onClick={() => setConfirmCancel(null)}></button>
                     </div>
                     <div className="modal-body">
                       <p className="mb-2"><strong>Bạn có chắc chắn muốn hủy đăng ký lớp học phần này?</strong></p>
                       <p className="text-muted mb-0">
-                        <small>⚠️ Hành động này không thể hoàn tác. Bạn sẽ phải đăng ký lại nếu muốn học lớp này.</small>
+                        <small>Hành động này không thể hoàn tác. Bạn sẽ phải đăng ký lại nếu muốn học lớp này.</small>
                       </p>
                     </div>
                     <div className="modal-footer">

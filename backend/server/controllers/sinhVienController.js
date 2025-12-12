@@ -262,7 +262,7 @@ export const create = async (req, res) => {
       });
       await pool.query('UPDATE SinhVien SET tai_khoan_id = ? WHERE id = ?', [accId, newId]);
     } catch (e) {
-      console.error('⚠️ Lỗi tạo tài khoản SV:', e);
+      console.error('Lỗi tạo tài khoản SV:', e);
     }
 
     return res.status(201).json({ id: newId, message: 'Tạo sinh viên + người thân thành công' });

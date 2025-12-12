@@ -359,7 +359,7 @@ export const demPhanHoiMoiCuaSinhVien = async (req, res) => {
 }
 
 /**
- * ⚠️ DEPRECATED CONTROLLERS - Removed
+ * DEPRECATED CONTROLLERS - Removed
  * 
  * Old endpoints removed:
  * - PUT /api/yeu-cau-tu-van/:id/danh-dau-da-xem-gv

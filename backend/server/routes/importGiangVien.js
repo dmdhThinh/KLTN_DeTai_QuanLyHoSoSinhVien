@@ -135,7 +135,7 @@ router.post('/teachers', upload.single('file'), async (req, res) => {
           })
           await pool.query('UPDATE GiangVien SET tai_khoan_id = ? WHERE id = ?', [acc.id, rs.insertId])
         } catch (accErr) {
-          console.error(`⚠️ Lỗi tạo tài khoản GV ${ma_gv}:`, accErr.message)
+          console.error(`Lỗi tạo tài khoản GV ${ma_gv}:`, accErr.message)
         }
       } catch (err) {
         errors.push({ dòng: i + 2, lỗi: err.message })

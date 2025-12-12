@@ -105,9 +105,13 @@ export default function ChuongTrinhKhung() {
                                 item.diem_tong_ket !== null || 
                                 (item.dat && item.dat !== 'Chưa đạt')
 
-                  const dat = (item.diem_tong_ket !== null && item.diem_tong_ket >= 4.0) ||
-                              item.dat === 'Đạt'
-                  const rot = item.diem_tong_ket !== null && item.diem_tong_ket < 4.0
+                  // Kiểm tra đạt: điểm >= 4.0 VÀ dat = 'Đạt'
+                  const dat = (item.diem_tong_ket !== null && item.diem_tong_ket >= 4.0 && item.dat === 'Đạt') ||
+                              (item.dat === 'Đạt' && item.diem_tong_ket !== null)
+                  
+                  // Kiểm tra rớt: có điểm VÀ (điểm < 4.0 HOẶC dat = 'Không đạt')
+                  const rot = item.diem_tong_ket !== null && 
+                              (item.diem_tong_ket < 4.0 || item.dat === 'Không đạt')
 
                   return (
                     <tr key={index}>

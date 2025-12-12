@@ -92,7 +92,7 @@ try {
   console.log()
 } catch (err) {
   if (err.code === 'NoSuchBucketPolicy') {
-    console.warn('⚠️  No bucket policy found')
+    console.warn(' No bucket policy found')
     console.warn('💡 You may need to add a policy for public-read access')
     console.log()
   } else {

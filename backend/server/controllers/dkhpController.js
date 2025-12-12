@@ -78,7 +78,7 @@ export async function registerLHP(req, res) {
       console.log(`[DKHP] Kiểm tra học lại: ${duocHocLai}`)
       if (!duocHocLai) {
         return res.status(400).json({ 
-          message: '⚠️ Bạn chưa rớp môn này nên không được học lại. Vui lòng chọn "HỌC Mới".' 
+          message: 'Bạn chưa rớp môn này nên không được học lại. Vui lòng chọn "HỌC Mới".' 
         })
       }
     } else if (loai === 'HOC_CAI_THIEN') {
@@ -87,7 +87,7 @@ export async function registerLHP(req, res) {
       console.log(`[DKHP] Kiểm tra cải thiện: ${duocCaiThien}`)
       if (!duocCaiThien) {
         return res.status(400).json({ 
-          message: '⚠️ Bạn chưa học môn này hoặc đã đạt điểm A (>=8.5). Không được học cải thiện.' 
+          message: 'Bạn chưa học môn này hoặc đã đạt điểm A (>=8.5). Không được học cải thiện.' 
         })
       }
     }

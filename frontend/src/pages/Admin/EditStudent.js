@@ -171,7 +171,7 @@ export default function EditStudent() {
         } else {
           const errorData = await res.json().catch(() => ({ message: 'Unknown error' }))
           console.error('❌ Upload ảnh thất bại:', errorData)
-          setAlertModal({ show: true, message: `⚠️ Upload ảnh thất bại: ${errorData.message}. Thông tin sinh viên vẫn sẽ được lưu.`, type: 'warning' })
+          setAlertModal({ show: true, message: `Upload ảnh thất bại: ${errorData.message}. Thông tin sinh viên vẫn sẽ được lưu.`, type: 'warning' })
         }
       }
 

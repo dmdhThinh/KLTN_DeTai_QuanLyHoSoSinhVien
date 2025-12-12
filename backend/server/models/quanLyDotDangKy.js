@@ -227,7 +227,7 @@ async function autoUpdateStatus() {
     `);
 
   } catch (err) {
-    console.error('⚠️ Lỗi tự động cập nhật trạng thái đợt đăng ký:', err);
+    console.error('Lỗi tự động cập nhật trạng thái đợt đăng ký:', err);
     // Không throw lỗi ở đây để không chặn luồng chính
   }
 }

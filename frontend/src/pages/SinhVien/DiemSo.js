@@ -97,7 +97,7 @@ export default function DiemSo() {
                 body: JSON.stringify({ sinhVienId })
               })
             } catch (err) {
-              console.error('⚠️ Không thể cập nhật điểm tích lũy tự động:', err)
+              console.error('Không thể cập nhật điểm tích lũy tự động:', err)
             }
           }
         }

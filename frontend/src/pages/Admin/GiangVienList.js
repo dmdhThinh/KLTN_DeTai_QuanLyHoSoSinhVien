@@ -374,7 +374,7 @@ export default function GiangVienList() {
             }`}
           >
             {importResult.lỗi && importResult.lỗi.length > 0
-              ? `⚠️ Có ${importResult.lỗi.length} dòng lỗi`
+              ? `Có ${importResult.lỗi.length} dòng lỗi`
               : '✅ Import thành công — không có lỗi'}
           </div>
           <div className="card-body p-0">

@@ -9,11 +9,11 @@ import ExcelJS from 'exceljs';
  */
 export async function exportDiemToExcel(sinhVienList, lopHocPhan, loaiBang) {
   if (!sinhVienList || sinhVienList.length === 0 || !lopHocPhan) {
-    throw new Error('⚠️ Không có dữ liệu để xuất!');
+    throw new Error('Không có dữ liệu để xuất!');
   }
 
   if (!loaiBang) {
-    throw new Error('⚠️ Vui lòng chọn loại bảng điểm để xuất!');
+    throw new Error('Vui lòng chọn loại bảng điểm để xuất!');
   }
 
   const workbook = new ExcelJS.Workbook();
@@ -94,7 +94,7 @@ export async function exportDiemToExcel(sinhVienList, lopHocPhan, loaiBang) {
       ];
       break;
     default:
-      throw new Error('⚠️ Loại bảng điểm không hợp lệ!');
+      throw new Error('Loại bảng điểm không hợp lệ!');
   }
 
   const totalCols = columns.length;

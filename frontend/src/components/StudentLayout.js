@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react'
 import { useLocation } from 'react-router-dom'
 import 'bootstrap-icons/font/bootstrap-icons.css'
 import { clearAuth, getSinhVienById, getSinhVienId, getUnreadCount, getUnreadMessageCount } from '../api'
+import ChatBot from './ChatBot'
 
 export default function StudentLayout({ children, title = '' }) {
   const location = useLocation()
@@ -68,7 +69,8 @@ export default function StudentLayout({ children, title = '' }) {
     { name: 'Đăng ký học phần', path: '/dkhp', icon: 'bi-calendar-check' },
     { name: 'Công nợ', path: '/congno', icon: 'bi-cash-coin' },
     { name: 'Điểm rèn luyện', path: '/diem-ren-luyen', icon: 'bi-award' },
-    { name: 'Học bổng', path: '/hoc-bong', icon: 'bi-trophy' }
+    { name: 'Học bổng', path: '/hoc-bong', icon: 'bi-trophy' },
+    { name: 'Yêu cầu tư vấn', path: '/yeu-cau-tu-van', icon: 'bi-question-circle' }
   ]
 
   const filteredMenuItems = searchQuery
@@ -192,8 +194,13 @@ export default function StudentLayout({ children, title = '' }) {
             </a>
           </li>
           <li>
+            <a href="/chuongtrinhkhung" className={`nav-link ${location.pathname === '/chuongtrinhkhung' ? 'active' : ''}`}>
+              <i className="bi bi-diagram-3 me-2"></i> Chương trình khung
+            </a>
+          </li>
+          <li>
             <a href="/lich" className={`nav-link ${location.pathname === '/lich' ? 'active' : ''}`}>
-              <i className="bi bi-calendar-week me-2"></i> Lịch học lịch thi
+              <i className="bi bi-calendar-week me-2"></i> Lịch theo tuần
             </a>
           </li>
           <li>
@@ -201,11 +208,7 @@ export default function StudentLayout({ children, title = '' }) {
               <i className="bi bi-journal-text me-2"></i> Kết quả học tập
             </a>
           </li>
-          <li>
-            <a href="/chuongtrinhkhung" className={`nav-link ${location.pathname === '/chuongtrinhkhung' ? 'active' : ''}`}>
-              <i className="bi bi-diagram-3 me-2"></i> Chương trình khung
-            </a>
-          </li>
+          
           <li>
             <a href="/dkhp" className={`nav-link ${location.pathname === '/dkhp' ? 'active' : ''}`}>
               <i className="bi bi-calendar-check me-2"></i> Đăng ký học phần
@@ -214,6 +217,11 @@ export default function StudentLayout({ children, title = '' }) {
           <li>
             <a href="/congno" className={`nav-link ${location.pathname === '/congno' ? 'active' : ''}`}>
               <i className="bi bi-cash-coin me-2"></i> Công nợ
+            </a>
+          </li>
+          <li>
+            <a href="/yeu-cau-tu-van" className={`nav-link ${location.pathname === '/yeu-cau-tu-van' ? 'active' : ''}`}>
+              <i className="bi bi-question-circle me-2"></i> Yêu cầu tư vấn
             </a>
           </li>
           <li>
@@ -226,6 +234,7 @@ export default function StudentLayout({ children, title = '' }) {
               <i className="bi bi-trophy me-2"></i> Học bổng
             </a>
           </li>
+          
         </ul>
 
       </aside>
@@ -498,6 +507,9 @@ export default function StudentLayout({ children, title = '' }) {
           {children}
         </div>
       </main>
+      
+      {/* ChatBot Component */}
+      <ChatBot />
     </div>
   )
 }

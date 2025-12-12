@@ -27,7 +27,7 @@ function validateToken(token) {
     const now = Math.floor(Date.now() / 1000) // Current time in seconds
     return exp > now // Token còn hợp lệ nếu exp > now
   } catch (err) {
-    console.warn('⚠️ validateToken: Lỗi decode token', err)
+    console.warn('validateToken: Lỗi decode token', err)
     return false
   }
 }
@@ -95,7 +95,7 @@ export function getToken() {
       return token
     } else if (token && !validateToken(token)) {
       // Token hết hạn, xóa nó
-      console.warn('⚠️ Token hết hạn, xóa token và role')
+      console.warn('Token hết hạn, xóa token và role')
       clearAuth(sessionRole)
     }
   }
@@ -114,7 +114,7 @@ export function getToken() {
         return token
       } else {
         // Token hết hạn, xóa nó
-        console.warn(`⚠️ Token của role ${role} hết hạn, xóa token và role`)
+        console.warn(`Token của role ${role} hết hạn, xóa token và role`)
         clearAuth(role)
       }
     }
@@ -138,10 +138,10 @@ export function getRole() {
     }
     // Nếu không có token hoặc token hết hạn, xóa sessionRole và tìm role khác
     if (token && !validateToken(token)) {
-      console.warn('⚠️ getRole: Token hết hạn, xóa token và role', sessionRole)
+      console.warn('getRole: Token hết hạn, xóa token và role', sessionRole)
       clearAuth(sessionRole)
     } else {
-      console.warn('⚠️ getRole: sessionRole không có token, xóa và tìm lại', sessionRole)
+      console.warn('getRole: sessionRole không có token, xóa và tìm lại', sessionRole)
       sessionStorage.removeItem(SESSION_ROLE_KEY)
     }
   }
@@ -167,12 +167,12 @@ export function getRole() {
       return roleValue
     } else if (roleValue && token && !validateToken(token)) {
       // Token hết hạn, xóa nó
-      console.warn(`⚠️ getRole: Token của role ${role} hết hạn, xóa token và role`)
+      console.warn(`getRole: Token của role ${role} hết hạn, xóa token và role`)
       clearAuth(role)
     }
   }
 
-  console.warn('⚠️ getRole: Không tìm thấy role hợp lệ')
+  console.warn('getRole: Không tìm thấy role hợp lệ')
   return null
 }
 
@@ -193,7 +193,7 @@ export function getSinhVienId() {
     return parseInt(localId, 10)
   }
 
-  console.warn('⚠️ getSinhVienId: Không tìm thấy ID')
+  console.warn('getSinhVienId: Không tìm thấy ID')
   return null
 }
 
@@ -228,7 +228,7 @@ export async function apiFetch(path, options = {}) {
     // Xử lý 401/403 - token không hợp lệ hoặc hết hạn
     if (res.status === 401 || res.status === 403) {
       const role = getRole()
-      console.warn('⚠️ API trả về 401/403, clear auth và redirect về login')
+      console.warn('API trả về 401/403, clear auth và redirect về login')
       if (role) {
         clearAuth(role)
       }

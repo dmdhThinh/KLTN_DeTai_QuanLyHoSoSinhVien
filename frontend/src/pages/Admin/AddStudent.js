@@ -333,14 +333,14 @@ const onSubmit = async (e) => {
         if (!res.ok) {
           const errorData = await res.json().catch(() => ({ message: 'Unknown error' }));
           console.error('❌ Upload ảnh thất bại:', errorData);
-          setAlertModal({ show: true, message: `⚠️ Sinh viên đã được tạo nhưng upload ảnh thất bại: ${errorData.message || 'Lỗi không xác định'}`, type: 'warning' });
+          setAlertModal({ show: true, message: `Sinh viên đã được tạo nhưng upload ảnh thất bại: ${errorData.message || 'Lỗi không xác định'}`, type: 'warning' });
         } else {
           const data = await res.json();
           console.log('✅ Upload ảnh thành công:', data);
         }
       } catch (err) {
         console.error('❌ Lỗi upload ảnh:', err);
-        setAlertModal({ show: true, message: `⚠️ Sinh viên đã được tạo nhưng upload ảnh thất bại: ${err.message}`, type: 'warning' });
+        setAlertModal({ show: true, message: `Sinh viên đã được tạo nhưng upload ảnh thất bại: ${err.message}`, type: 'warning' });
       }
     } else {
       console.log('ℹ️ Không có ảnh để upload hoặc không có ID sinh viên');

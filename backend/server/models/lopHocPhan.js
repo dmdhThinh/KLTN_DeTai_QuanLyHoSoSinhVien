@@ -276,11 +276,22 @@ export async function addStudentToClass(lopHocPhanId, mssv) {
       throw new Error(`Sinh viên đã đăng ký môn này ở lớp ${existRows[0].ma_lop_hoc_phan}`);
     }
 
-    // 5. Insert
+    // 4.5. Lấy đợt đăng ký đang mở (nếu có) để gán dot_dang_ky_id
+    const [dotRows] = await conn.execute(
+      `SELECT id FROM DotDangKy 
+       WHERE trang_thai = 'DANG_MO' 
+         AND hoc_ky = ? 
+         AND nam_hoc = ?
+       ORDER BY thoi_gian_mo DESC LIMIT 1`,
+      [lhp.hoc_ky, lhp.nam_hoc]
+    );
+    const dotDangKyId = dotRows.length > 0 ? dotRows[0].id : null;
+
+    // 5. Insert (bao gồm dot_dang_ky_id nếu có)
     await conn.execute(
-      `INSERT INTO DangKyHocPhan (sinh_vien_id, lop_hoc_phan_id, hoc_phan_id, thoi_diem_dk, trang_thai_dk, loai_dang_ky)
-       VALUES (?, ?, ?, NOW(), 'THANH_CONG', 'HOC_MOI')`, // Mặc định HOC_MOI, admin có thể sửa sau nếu cần
-      [sinhVienId, lopHocPhanId, lhp.hoc_phan_id]
+      `INSERT INTO DangKyHocPhan (sinh_vien_id, lop_hoc_phan_id, hoc_phan_id, thoi_diem_dk, trang_thai_dk, loai_dang_ky, dot_dang_ky_id)
+       VALUES (?, ?, ?, NOW(), 'THANH_CONG', 'HOC_MOI', ?)`, // Mặc định HOC_MOI, admin có thể sửa sau nếu cần
+      [sinhVienId, lopHocPhanId, lhp.hoc_phan_id, dotDangKyId]
     );
 
     await conn.commit();

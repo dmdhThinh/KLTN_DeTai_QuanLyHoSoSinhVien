@@ -671,13 +671,13 @@ export default function YeuCauTuVan() {
           <div className="modal-dialog modal-dialog-centered">
             <div className="modal-content">
               <div className="modal-header bg-warning text-dark">
-                <h5 className="modal-title">⚠️ Xác nhận hủy yêu cầu</h5>
+                <h5 className="modal-title">Xác nhận hủy yêu cầu</h5>
                 <button type="button" className="btn-close" onClick={() => setConfirmCancel(null)}></button>
               </div>
               <div className="modal-body">
                 <p className="mb-2"><strong>Bạn có chắc muốn hủy yêu cầu này?</strong></p>
                 <p className="text-muted mb-0">
-                  <small>⚠️ Hành động này không thể hoàn tác.</small>
+                  <small>Hành động này không thể hoàn tác.</small>
                 </p>
               </div>
               <div className="modal-footer">

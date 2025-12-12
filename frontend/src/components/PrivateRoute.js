@@ -10,7 +10,7 @@ export default function PrivateRoute({ allowRoles, children }) {
   const token = getToken()
   
   // Debug log
-  console.log('🔐 PrivateRoute - Role:', role, 'Token:', token ? 'Có' : 'Không', 'URL:', window.location.pathname)
+  console.log(' PrivateRoute - Role:', role, 'Token:', token ? 'Có' : 'Không', 'URL:', window.location.pathname)
   
   // Kiểm tra cả token và role
   if (!role || !token) {

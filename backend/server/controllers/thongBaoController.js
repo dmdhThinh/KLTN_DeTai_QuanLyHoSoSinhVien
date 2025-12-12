@@ -89,7 +89,7 @@ export async function addThongBao(req, res) {
         // Decode từ latin1 sang UTF-8
         ten_file_goc = Buffer.from(ten_file_goc, 'latin1').toString('utf8')
       } catch (e) {
-        console.warn('⚠️ Không decode được filename:', e.message)
+        console.warn('Không decode được filename:', e.message)
       }
     }
 
@@ -154,7 +154,7 @@ export async function updateThongBao(req, res) {
         // Decode từ latin1 sang UTF-8
         ten_file_goc = Buffer.from(ten_file_goc, 'latin1').toString('utf8')
       } catch (e) {
-        console.warn('⚠️ Không decode được filename:', e.message)
+        console.warn('Không decode được filename:', e.message)
       }
     }
 
