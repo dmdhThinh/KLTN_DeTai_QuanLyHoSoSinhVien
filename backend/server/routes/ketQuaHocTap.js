@@ -8,7 +8,7 @@ const router = Router();
 router.get('/chart-data', KetQuaHocTapController.getChartData);
 router.get('/by-sinhvien', KetQuaHocTapController.getBySinhVien);
 
-router.post('/', KetQuaHocTapController.create);
+router.post('/', authenticateToken, KetQuaHocTapController.create);
 router.get('/', KetQuaHocTapController.getAll);
 router.get('/:id', KetQuaHocTapController.getById);
 // Thêm middleware authenticateToken cho route update để lấy thông tin user

@@ -13,7 +13,7 @@ function NhapDiem() {
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState('');
-  const [trangThaiDot, setTrangThaiDot] = useState(null); // Trạng thái đợt nhập điểm từ DB
+  const [inputLocked, setInputLocked] = useState(false); // Khóa nhập sau khi lưu
   const [showConfirm, setShowConfirm] = useState(false); // Modal xác nhận
   const [viewMode, setViewMode] = useState('input');
   const [showExportMenu, setShowExportMenu] = useState(false);
@@ -34,10 +34,6 @@ function NhapDiem() {
         // Lấy thông tin lớp học phần
         const lhpData = await apiFetch(`/api/lophocphan/${lopHocPhanId}`);
         setLopHocPhan(lhpData);
-
-        // Lấy trạng thái đợt nhập điểm
-        const dotData = await apiFetch(`/api/dot-nhap-diem/trang-thai?hocKy=${lhpData.hocKy}&namHoc=${lhpData.namHoc}`);
-        setTrangThaiDot(dotData?.trang_thai || 'CHUA_MO');
 
         // Lấy danh sách sinh viên đã đăng ký từ API mới
         const svData = await apiFetch(`/api/dkhp/lop-hoc-phan/${lopHocPhanId}`);
@@ -108,6 +104,10 @@ function NhapDiem() {
             })
           );
           
+          const allSaved = sinhVienWithScores.length > 0 && sinhVienWithScores.every(
+            (sv) => sv.ketQuaId && sv.originalCK !== '' && sv.originalCK !== null && sv.originalCK !== undefined
+          );
+          setInputLocked(allSaved);
           setSinhVienList(sinhVienWithScores);
         }
       } catch (err) {
@@ -131,65 +131,17 @@ function NhapDiem() {
     setSinhVienList(newList);
   };
 
-  // Kiểm tra xem cột nào được phép nhập (dựa vào trạng thái đợt từ DB)
+  // Kiểm tra xem cột nào được phép nhập
   const isInputDisabled = (sv, field) => {
-    // Nếu chưa có trạng thái đợt hoặc chưa mở → Khóa tất cả
-    if (!trangThaiDot || trangThaiDot === 'CHUA_MO' || trangThaiDot === 'DA_KHOA') {
-      return true;
-    }
-
-    // Đợt 1 đang mở → Cho nhập TX, TH, GK | KHÔNG cho nhập CK
-    if (trangThaiDot === 'DOT_1_DANG_MO') {
-      if (field === 'diem_cuoi_ky') return true; // KHÔNG cho nhập CK
-      
-      // Nếu đã lưu Đợt 1 (có ketQuaId) → Khóa tất cả TX, TH, GK
-      if (sv.ketQuaId) {
-        return true;
-      }
-      
-      return false; // Cho nhập TX, TH, GK (chưa lưu lần đầu)
-    }
-
-    // Đợt 1 đã đóng → Khóa tất cả (chờ đợt 2)
-    if (trangThaiDot === 'DOT_1_DA_DONG') {
-      return true;
-    }
-
-    // Đợt 2 đang mở → Chỉ cho nhập CK | Khóa TX, TH, GK
-    if (trangThaiDot === 'DOT_2_DANG_MO') {
-      if (field === 'diem_cuoi_ky') {
-        // Kiểm tra xem SV đã hoàn tất (có cả ketQuaId và CK đã được load từ DB)
-        // Nếu đang nhập lần đầu thì sv.originalCK sẽ là rỗng
-        const isSavedInDB = sv.ketQuaId && sv.originalCK !== '' && sv.originalCK !== null && sv.originalCK !== undefined;
-        if (isSavedInDB) return true; // Đã lưu CK rồi → khóa
-        // Chưa lưu → Cho nhập
-        return false;
-      }
-      
-      // TX, TH, GK: Nếu đã có bản ghi → Khóa
-      if (sv.ketQuaId) return true;
-      
-      // Nếu chưa có bản ghi → Cho nhập (sinh viên đăng ký muộn)
-      return false;
-    }
-
-    return true;
-  };
-
-  // Helper: Kiểm tra sinh viên đã hoàn tất chưa
-  const getDotNhap = (sv) => {
-    // Sử dụng originalCK (giá trị từ DB) thay vì diem_cuoi_ky (có thể đang sửa)
-    const hasCK = sv.originalCK !== '' && sv.originalCK !== null && sv.originalCK !== undefined;
-    const hasSavedRecord = sv.ketQuaId !== null && sv.ketQuaId !== undefined;
-
-    if (hasCK && hasSavedRecord) return 'HOAN_TAT';
-    if (hasSavedRecord && !hasCK) return 'DOT_2';
-    return 'DOT_1';
+    if (inputLocked) return true;
+    // Khi đã có bản ghi điểm thì khóa để không cho sửa
+    if (sv.ketQuaId) return true;
+    return false;
   };
 
   // Kiểm tra đã hoàn tất chưa
   const isFullyLocked = (sv) => {
-    return getDotNhap(sv) === 'HOAN_TAT';
+    return inputLocked || !!sv.ketQuaId;
   };
 
   // Hiện modal xác nhận
@@ -205,7 +157,6 @@ function NhapDiem() {
     setMessage("");
     let successCount = 0;
     let errorCount = 0;
-    let skippedCount = 0;
 
     try {
       for (const sv of sinhVienList) {
@@ -215,13 +166,8 @@ function NhapDiem() {
                           sv.diem_ly_thuyet_4 || sv.diem_thuc_hanh_1 || sv.diem_thuc_hanh_2 || 
                           sv.diem_thuc_hanh_3 || sv.diem_giua_ky || sv.diem_cuoi_ky;
         if (!hasAnyData) {
-          skippedCount++;
           continue;
         }
-        
-        // Logic: Nếu đang đợt 2 VÀ đã có điểm từ đợt 1 → CHỈ cập nhật CK
-        const isDot2AndHasRecord = trangThaiDot === 'DOT_2_DANG_MO' && sv.ketQuaId;
-        
         let scoreData = {
           sinh_vien_id: sv.sinh_vien_id,
           hoc_phan_id: lopHocPhan.hocPhanId,
@@ -229,23 +175,16 @@ function NhapDiem() {
           nam_hoc: lopHocPhan.namHoc,
         };
         
-        if (isDot2AndHasRecord) {
-          // Đợt 2: CHỈ gửi điểm cuối kỳ (nếu có)
-          if (sv.diem_cuoi_ky) {
-            scoreData.diem_cuoi_ky = sv.diem_cuoi_ky;
-          }
-        } else {
-          // Đợt 1 hoặc tạo mới: gửi đầy đủ (chỉ field có giá trị)
-          if (sv.diem_ly_thuyet_1) scoreData.diem_ly_thuyet_1 = sv.diem_ly_thuyet_1;
-          if (sv.diem_ly_thuyet_2) scoreData.diem_ly_thuyet_2 = sv.diem_ly_thuyet_2;
-          if (sv.diem_ly_thuyet_3) scoreData.diem_ly_thuyet_3 = sv.diem_ly_thuyet_3;
-          if (sv.diem_ly_thuyet_4) scoreData.diem_ly_thuyet_4 = sv.diem_ly_thuyet_4;
-          if (sv.diem_thuc_hanh_1) scoreData.diem_thuc_hanh_1 = sv.diem_thuc_hanh_1;
-          if (sv.diem_thuc_hanh_2) scoreData.diem_thuc_hanh_2 = sv.diem_thuc_hanh_2;
-          if (sv.diem_thuc_hanh_3) scoreData.diem_thuc_hanh_3 = sv.diem_thuc_hanh_3;
-          if (sv.diem_giua_ky) scoreData.diem_giua_ky = sv.diem_giua_ky;
-          if (sv.diem_cuoi_ky) scoreData.diem_cuoi_ky = sv.diem_cuoi_ky;
-        }
+        // Gửi đầy đủ điểm (chỉ field có giá trị)
+        if (sv.diem_ly_thuyet_1) scoreData.diem_ly_thuyet_1 = sv.diem_ly_thuyet_1;
+        if (sv.diem_ly_thuyet_2) scoreData.diem_ly_thuyet_2 = sv.diem_ly_thuyet_2;
+        if (sv.diem_ly_thuyet_3) scoreData.diem_ly_thuyet_3 = sv.diem_ly_thuyet_3;
+        if (sv.diem_ly_thuyet_4) scoreData.diem_ly_thuyet_4 = sv.diem_ly_thuyet_4;
+        if (sv.diem_thuc_hanh_1) scoreData.diem_thuc_hanh_1 = sv.diem_thuc_hanh_1;
+        if (sv.diem_thuc_hanh_2) scoreData.diem_thuc_hanh_2 = sv.diem_thuc_hanh_2;
+        if (sv.diem_thuc_hanh_3) scoreData.diem_thuc_hanh_3 = sv.diem_thuc_hanh_3;
+        if (sv.diem_giua_ky) scoreData.diem_giua_ky = sv.diem_giua_ky;
+        if (sv.diem_cuoi_ky) scoreData.diem_cuoi_ky = sv.diem_cuoi_ky;
 
         try {
           // Luôn dùng UPSERT (POST) - backend tự xử lý
@@ -264,6 +203,8 @@ function NhapDiem() {
       
       // Reload để cập nhật ketQuaId và điểm tính toán
       await loadData();
+      // Khóa toàn bộ sau khi lưu
+      setInputLocked(true);
       
     } catch (err) {
       setMessage(' Có lỗi xảy ra khi lưu điểm!');
@@ -350,32 +291,6 @@ function NhapDiem() {
               </span>
             </div>
             
-            {/* Thông báo trạng thái đợt */}
-            {trangThaiDot === 'CHUA_MO' && (
-              <div className="alert alert-warning">
-                ⏸ <strong>Đợt nhập điểm chưa mở.</strong> Vui lòng chờ phòng Đào tạo mở đợt nhập điểm.
-              </div>
-            )}
-            {trangThaiDot === 'DOT_1_DANG_MO' && (
-              <div className="alert alert-success">
-                 <strong>Đợt 1 đang mở:</strong> Nhập điểm TX1-4, TH1-3, GK (KHÔNG nhập CK)
-              </div>
-            )}
-            {trangThaiDot === 'DOT_1_DA_DONG' && (
-              <div className="alert alert-secondary">
-                 <strong>Đợt 1 đã đóng.</strong> Chờ mở đợt 2 để nhập điểm cuối kỳ.
-              </div>
-            )}
-            {trangThaiDot === 'DOT_2_DANG_MO' && (
-              <div className="alert alert-success">
-                 <strong>Đợt 2 đang mở:</strong> Chỉ nhập điểm Cuối kỳ (TX, TH, GK đã khóa)
-              </div>
-            )}
-            {trangThaiDot === 'DA_KHOA' && (
-              <div className="alert alert-danger">
-                 <strong>Đã khóa điểm.</strong> Không thể nhập/sửa điểm nữa.
-              </div>
-            )}
           </>
         )}
 
@@ -540,8 +455,8 @@ function NhapDiem() {
                             value={sv.diem_cuoi_ky}
                             onChange={(e) => handleScoreChange(index, 'diem_cuoi_ky', e.target.value)}
                             disabled={isInputDisabled(sv, 'diem_cuoi_ky')}
-                            style={{ backgroundColor: isInputDisabled(sv, 'diem_cuoi_ky') ? '#e9ecef' : getDotNhap(sv) === 'DOT_1' ? '#fff3cd' : 'white', borderColor: isInputDisabled(sv, 'diem_cuoi_ky') ? '#28a745' : getDotNhap(sv) === 'DOT_2' ? '#ffc107' : '#ced4da' }}
-                            title={isInputDisabled(sv, 'diem_cuoi_ky') ? ' Đã lưu điểm' : getDotNhap(sv) === 'DOT_2' ? '⚡ Đợt 2: Chỉ nhập CK' : '⏳ Đợt 1: Chưa được nhập CK'}
+                            style={{ backgroundColor: isInputDisabled(sv, 'diem_cuoi_ky') ? '#e9ecef' : 'white' }}
+                            title={isInputDisabled(sv, 'diem_cuoi_ky') ? ' Đã khóa' : ''}
                           />
                         </td>
                         <td className="text-center fw-bold">{sv.diem_tong_ket || '-'}</td>
@@ -555,21 +470,10 @@ function NhapDiem() {
               <div className="mt-3 d-flex justify-content-between align-items-center">
                 <div className="small mb-0">
                   <p className="mb-2"><strong> Hướng dẫn nhập điểm:</strong></p>
-                  <div className="d-flex gap-4">
-                    <div>
-                      <span className="badge bg-primary">Đợt 1</span>
-                      <p className="mb-0 mt-1 text-muted">Nhập TX1-4, TH1-3, GK<br/> KHÔNG nhập CK (ô màu vàng)</p>
-                    </div>
-                    <div>
-                      <span className="badge bg-warning text-dark">Đợt 2</span>
-                      <p className="mb-0 mt-1 text-muted">Chỉ nhập CK (ô viền vàng)<br/> TX, TH, GK đã khóa</p>
-                    </div>
-                    <div>
-                      <span className="badge bg-success">Hoàn tất</span>
-                      <p className="mb-0 mt-1 text-muted">Đã nhập đủ 2 đợt<br/> Tất cả đã khóa</p>
-                    </div>
-                  </div>
-                  <p className="mb-0 mt-2 text-danger"><strong> Không thể sửa điểm sau khi lưu!</strong></p>
+                  <p className="mb-0 text-muted">
+                    - Nhập đầy đủ điểm thành phần cho từng sinh viên trước khi bấm "Lưu tất cả điểm".<br/>
+                    - Sau khi lưu, hệ thống khóa chỉnh sửa; cần thay đổi hãy liên hệ Admin.
+                  </p>
                 </div>
                 <div className="d-flex gap-2">
                   <button 

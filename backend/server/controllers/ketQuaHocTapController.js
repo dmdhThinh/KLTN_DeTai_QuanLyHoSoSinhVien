@@ -74,6 +74,8 @@ function tinhDiemTongKetIUH(data) {
 export async function create(req, res) {
   try {
     const { sinh_vien_id, hoc_phan_id, hoc_ky, nam_hoc } = req.body;
+    const user = req.user || {};
+    const isAdmin = user.role === 'Quản trị';
     
     // Lấy số tín chỉ của môn học
     const [hocPhan] = await pool.execute(
@@ -88,7 +90,14 @@ export async function create(req, res) {
        WHERE sinh_vien_id = ? AND hoc_phan_id = ? AND hoc_ky = ? AND nam_hoc = ?`,
       [sinh_vien_id, hoc_phan_id, hoc_ky, nam_hoc]
     );
-    
+
+    // Nếu đã có điểm rồi và không phải admin → chặn nhập lại
+    if (existing.length > 0 && !isAdmin) {
+      return res.status(409).json({
+        message: 'Điểm đã được lưu cho sinh viên này, không thể nhập lại. Liên hệ admin nếu cần chỉnh sửa.'
+      });
+    }
+
     // Merge data cũ (nếu có) với data mới
     const oldData = existing[0] || {};
     
@@ -173,32 +182,19 @@ export async function getById(req, res) {
 export async function update(req, res) {
   const { id } = req.params;
   try {
+    const user = req.user;
+    const isAdmin = user && user.role === 'Quản trị';
+
+    if (!isAdmin) {
+      return res.status(403).json({
+        message: 'Chỉ admin mới được phép sửa điểm đã lưu.'
+      });
+    }
+
     // 1️⃣ Lấy bản ghi hiện có
     const current = await KetQuaHocTapModel.getKetQuaHocTapById(id);
     if (!current) {
       return res.status(404).json({ message: 'Không tìm thấy điểm số để sửa' });
-    }
-    
-    // 2️⃣ Kiểm tra quyền sửa điểm
-    const user = req.user; // Từ middleware authenticateToken
-    const isAdmin = user && user.role === 'Quản trị';
-    
-    // Nếu không phải admin, kiểm tra trạng thái đợt nhập điểm
-    if (!isAdmin) {
-      const { hoc_ky, nam_hoc } = current;
-      const [dotNhapDiem] = await pool.execute(
-        'SELECT trang_thai FROM DotNhapDiem WHERE hoc_ky = ? AND nam_hoc = ?',
-        [hoc_ky, nam_hoc]
-      );
-      
-      const trangThai = dotNhapDiem[0]?.trang_thai || 'CHUA_MO';
-      
-      // Nếu đã khóa thì không cho sửa (trừ admin)
-      if (trangThai === 'DA_KHOA') {
-        return res.status(403).json({ 
-          message: 'Điểm đã bị khóa. Chỉ admin mới có quyền sửa điểm đã khóa.' 
-        });
-      }
     }
     
     // 3️⃣ Nếu là admin, kiểm tra học kỳ tương ứng (nếu có trong request body)

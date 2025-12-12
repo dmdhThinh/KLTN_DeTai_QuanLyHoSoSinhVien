@@ -9,7 +9,7 @@ export default function AdminLayout({ children, title = '', activeMenu = '' }) {
   const [openAccordions, setOpenAccordions] = useState({
     nguoiDung: location.pathname.includes('/accounts') || location.pathname.includes('/students') || location.pathname.includes('/teachers'),
     heThong: location.pathname.includes('/khoa') || location.pathname.includes('/nganh') || location.pathname.includes('/lop') || location.pathname.includes('/thongbao'),
-    hocPhan: location.pathname.includes('/hocphan') || location.pathname.includes('/lophocphan') || location.pathname.includes('/quan-ly-lich-hoc') || location.pathname.includes('/lich') || location.pathname.includes('/dot-dang-ky') || location.pathname.includes('/dot-nhap-diem'),
+    hocPhan: location.pathname.includes('/hocphan') || location.pathname.includes('/lophocphan') || location.pathname.includes('/quan-ly-lich-hoc') || location.pathname.includes('/lich') || location.pathname.includes('/dot-dang-ky'),
     daoTao: location.pathname.includes('/diem-ren-luyen') || location.pathname.includes('/xet-hoc-bong') || location.pathname.includes('/xet-tot-nghiep'),
     taiChinh: location.pathname.includes('/hoc-phi'),
     chungChi: location.pathname.includes('/chung-chi-tieng-anh')
@@ -40,7 +40,6 @@ export default function AdminLayout({ children, title = '', activeMenu = '' }) {
     { name: 'Quản lý lịch học', path: '/admin/quan-ly-lich-hoc', icon: 'bi-calendar-week' },
     { name: 'Quản lý buổi học', path: '/admin/lich', icon: 'bi-calendar-event' },
     { name: 'Đợt đăng ký học phần', path: '/admin/dot-dang-ky', icon: 'bi-calendar-check' },
-    { name: 'Đợt nhập điểm', path: '/admin/dot-nhap-diem', icon: 'bi-clipboard-check' },
     { name: 'Quản lý học phí', path: '/admin/hoc-phi', icon: 'bi-cash-coin' },
     { name: 'Điểm rèn luyện', path: '/admin/diem-ren-luyen', icon: 'bi-award' },
     { name: 'Import chứng chỉ TA', path: '/admin/chung-chi-tieng-anh', icon: 'bi-file-earmark-arrow-up' },
@@ -345,7 +344,6 @@ export default function AdminLayout({ children, title = '', activeMenu = '' }) {
                     <li><a href="/admin/quan-ly-lich-hoc" className={`nav-link ${location.pathname.includes('/quan-ly-lich-hoc') ? 'active' : ''}`}><i className="bi bi-calendar-week me-2"></i> Quản lý lịch học</a></li>
                     <li><a href="/admin/lich" className={`nav-link ${location.pathname.includes('/lich') && !location.pathname.includes('/quan-ly-lich-hoc') ? 'active' : ''}`}><i className="bi bi-calendar-event me-2"></i> Quản lý buổi học</a></li>
                     <li><a href="/admin/dot-dang-ky" className={`nav-link ${location.pathname.includes('/dot-dang-ky') ? 'active' : ''}`}><i className="bi bi-calendar-check me-2"></i> Đợt đăng ký học phần</a></li>
-                    <li><a href="/admin/dot-nhap-diem" className={`nav-link ${location.pathname.includes('/dot-nhap-diem') ? 'active' : ''}`}><i className="bi bi-clipboard-check me-2"></i> Đợt nhập điểm</a></li>
                   </ul>
                 </div>
               </div>
