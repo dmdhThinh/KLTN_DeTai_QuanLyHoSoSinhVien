@@ -4,6 +4,8 @@ import AdminLayout from '../../components/AdminLayout'
 import { apiFetch } from '../../api'
 import { ConfirmModal, AlertModal } from '../../components/Modal'
 
+const API_BASE = process.env.REACT_APP_API_BASE || ''
+
 export default function GiangVienList() {
   const navigate = useNavigate()
   const [list, setList] = useState([])
@@ -133,14 +135,20 @@ export default function GiangVienList() {
     formData.append('file', file)
 
     try {
-      const res = await fetch('/api/import/teachers', {
+      const res = await fetch(`${API_BASE}/api/import/teachers`, {
         method: 'POST',
         body: formData
       })
-      const data = await res.json()
-      if (!res.ok) throw new Error(data.message || 'Import thất bại')
+      const text = await res.text()
+      let data = null
+      try {
+        data = text ? JSON.parse(text) : null
+      } catch (_) {
+        data = null
+      }
+      if (!res.ok) throw new Error(data?.message || text || 'Import thất bại')
 
-      setImportResult(data)
+      setImportResult(data || { message: 'Import thành công', lỗi: [] })
       loadGiangViens()
     } catch (err) {
       setImportResult({
@@ -154,7 +162,7 @@ export default function GiangVienList() {
 
   const handleDownloadTemplate = async () => {
     try {
-      const response = await fetch('/api/import/teachers/template')
+      const response = await fetch(`${API_BASE}/api/import/teachers/template`)
       if (!response.ok) throw new Error('Không thể tải file mẫu')
       const blob = await response.blob()
       const url = window.URL.createObjectURL(blob)

@@ -2,12 +2,23 @@ import { Router } from 'express'
 import multer from 'multer'
 import XLSX from 'xlsx'
 import { pool } from '../config/db.js'
-import path from 'path'
-import fs from 'fs'
 import { createAccount } from '../models/taikhoan.js'
 
 const router = Router()
-const upload = multer({ dest: 'uploads/' })
+const upload = multer({
+  storage: multer.memoryStorage(),
+  fileFilter: (req, file, cb) => {
+    const allowed = [
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      'application/vnd.ms-excel',
+      'text/csv'
+    ]
+    if (!allowed.includes(file.mimetype)) {
+      return cb(new Error('Chỉ chấp nhận file CSV hoặc Excel (.xlsx)'))
+    }
+    cb(null, true)
+  }
+})
 
 // =======================================
 // 📄 1️⃣ API: Tải file mẫu nhập giảng viên
@@ -30,10 +41,12 @@ router.get('/teachers/template', (req, res) => {
   const ws = XLSX.utils.aoa_to_sheet(wsData)
   XLSX.utils.book_append_sheet(wb, ws, 'GiangVienMau')
 
-  const filePath = path.join('uploads', 'MauNhapGiangVien.xlsx')
-  XLSX.writeFile(wb, filePath)
-
-  res.download(filePath, 'MauNhapGiangVien.xlsx', () => fs.unlinkSync(filePath))
+  const buffer = XLSX.write(wb, { type: 'buffer', bookType: 'xlsx' })
+  const filename = 'MauNhapGiangVien.xlsx'
+  res.setHeader('Content-Disposition', `attachment; filename="${filename}"; filename*=UTF-8''${encodeURIComponent(filename)}`)
+  res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+  res.setHeader('Content-Length', buffer.length)
+  res.send(buffer)
 })
 
 // =======================================
@@ -43,7 +56,7 @@ router.post('/teachers', upload.single('file'), async (req, res) => {
   try {
     if (!req.file) return res.status(400).json({ message: 'Không có file nào được tải lên' })
 
-    const workbook = XLSX.readFile(req.file.path)
+    const workbook = XLSX.read(req.file.buffer, { type: 'buffer', cellDates: true })
     const sheetName = workbook.SheetNames[0]
     const sheet = XLSX.utils.sheet_to_json(workbook.Sheets[sheetName])
 
@@ -142,7 +155,6 @@ router.post('/teachers', upload.single('file'), async (req, res) => {
       }
     }
 
-    fs.unlinkSync(req.file.path)
     res.json({
       message: `Đã xử lý ${sheet.length} dòng.`,
       thành_công: successCount,
