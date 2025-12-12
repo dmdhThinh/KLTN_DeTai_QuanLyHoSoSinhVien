@@ -139,14 +139,26 @@ router.post('/teachers', upload.single('file'), async (req, res) => {
 
         // ✅ 2. Tạo tài khoản tự động
         try {
-          const acc = await createAccount({
-            username: ma_gv,
-            ho_ten: ho_ten, // ✅ Đã thêm họ tên vào tài khoản
-            password: '123456',
-            role: 'Giảng viên',
-            trang_thai: 'Hoạt động'
-          })
-          await pool.query('UPDATE GiangVien SET tai_khoan_id = ? WHERE id = ?', [acc.id, rs.insertId])
+          // Kiểm tra xem tài khoản đã tồn tại chưa
+          const [existingAcc] = await pool.query('SELECT id FROM TaiKhoan WHERE username = ?', [ma_gv])
+          let taiKhoanId
+          
+          if (existingAcc.length > 0) {
+            // Tài khoản đã tồn tại, sử dụng ID hiện có
+            taiKhoanId = existingAcc[0].id
+          } else {
+            // Tạo tài khoản mới
+            taiKhoanId = await createAccount({
+              username: ma_gv,
+              ho_ten: ho_ten, // ✅ Đã thêm họ tên vào tài khoản
+              password: '123456',
+              role: 'Giảng viên',
+              trang_thai: 'Hoạt động'
+            })
+          }
+          
+          // Cập nhật tai_khoan_id vào bảng GiangVien
+          await pool.query('UPDATE GiangVien SET tai_khoan_id = ? WHERE id = ?', [taiKhoanId, rs.insertId])
         } catch (accErr) {
           console.error(`Lỗi tạo tài khoản GV ${ma_gv}:`, accErr.message)
         }
