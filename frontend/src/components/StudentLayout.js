@@ -321,32 +321,6 @@ export default function StudentLayout({ children, title = '' }) {
                 </div>
               )}
             </div>
-            {/* ChatBot Button */}
-            <button
-              onClick={() => {
-                window.dispatchEvent(new Event('openChatBot'))
-              }}
-              className="d-flex align-items-center gap-2 px-3 py-2 rounded-pill border-0"
-              style={{ 
-                backgroundColor: '#f8f9fa',
-                color: '#495057',
-                border: '1px solid #e9ecef',
-                transition: 'background-color 0.2s, border-color 0.2s',
-                cursor: 'pointer'
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.backgroundColor = '#e7f3ff'
-                e.currentTarget.style.borderColor = '#b3d9ff'
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.backgroundColor = '#f8f9fa'
-                e.currentTarget.style.borderColor = '#e9ecef'
-              }}
-              title="Mở ChatBot"
-            >
-              <i className="bi bi-robot" style={{ fontSize: '18px', color: '#667eea' }}></i>
-              <span className="fw-semibold" style={{ fontSize: '14px' }}>ChatBot</span>
-            </button>
             <a 
               href="/yeu-cau-tu-van"
               className="d-flex align-items-center gap-2 px-3 py-2 text-decoration-none rounded-pill position-relative"

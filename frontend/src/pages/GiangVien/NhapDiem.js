@@ -4,6 +4,7 @@ import { apiFetch } from "../../api";
 import TeacherLayout from "../../components/TeacherLayout";
 import { exportDiemToExcel } from '../../components/excelExport';
 import { exportDanhSachDuThiGK, exportDanhSachDuThiCK } from '../../components/excelExportDuThi';
+import { downloadDiemTemplate, importDiemFromExcel } from '../../components/excelImport';
 
 function NhapDiem() {
   const { lopHocPhanId } = useParams();
@@ -16,6 +17,7 @@ function NhapDiem() {
   const [showConfirm, setShowConfirm] = useState(false); // Modal xác nhận
   const [viewMode, setViewMode] = useState('input');
   const [showExportMenu, setShowExportMenu] = useState(false);
+  const [importErrors, setImportErrors] = useState([]); // Lỗi khi import Excel
 
   // Nếu không có lopHocPhanId (truy cập trực tiếp /teacher/nhapdiem), điều hướng về danh sách lớp học phần
   useEffect(() => {
@@ -134,10 +136,33 @@ function NhapDiem() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [lopHocPhanId]);
 
-  // Cập nhật điểm cho một sinh viên
+  // Cập nhật điểm cho một sinh viên với validation
   const handleScoreChange = (svIndex, field, value) => {
     const newList = [...sinhVienList];
-    newList[svIndex][field] = value;
+    
+    // Validate: chỉ cho phép số từ 0 đến 10
+    if (value === '' || value === null || value === undefined) {
+      newList[svIndex][field] = '';
+      setSinhVienList(newList);
+      return;
+    }
+    
+    const numValue = Number(value);
+    if (isNaN(numValue)) {
+      // Không phải số, giữ nguyên giá trị cũ
+      return;
+    }
+    
+    // Kiểm tra khoảng 0-10
+    if (numValue < 0) {
+      newList[svIndex][field] = 0;
+    } else if (numValue > 10) {
+      newList[svIndex][field] = 10;
+    } else {
+      // Giữ tối đa 1 chữ số thập phân
+      newList[svIndex][field] = Math.round(numValue * 10) / 10;
+    }
+    
     setSinhVienList(newList);
   };
 
@@ -173,14 +198,8 @@ function NhapDiem() {
 
     try {
       for (const sv of sinhVienList) {
-        
-        // Skip nếu sinh viên không có dữ liệu gì để lưu
-        const hasAnyData = sv.diem_ly_thuyet_1 || sv.diem_ly_thuyet_2 || sv.diem_ly_thuyet_3 || 
-                          sv.diem_ly_thuyet_4 || sv.diem_thuc_hanh_1 || sv.diem_thuc_hanh_2 || 
-                          sv.diem_thuc_hanh_3 || sv.diem_giua_ky || sv.diem_cuoi_ky;
-        if (!hasAnyData) {
-          continue;
-        }
+        // Chỉ lưu các điểm MỚI NHẬP (chưa bị khóa - chưa có trong originalScores)
+        // Cho phép cập nhật các cột NULL trong database
         let scoreData = {
           sinh_vien_id: sv.sinh_vien_id,
           hoc_phan_id: lopHocPhan.hocPhanId,
@@ -188,19 +207,51 @@ function NhapDiem() {
           nam_hoc: lopHocPhan.namHoc,
         };
         
-        // Gửi đầy đủ điểm (chỉ field có giá trị)
-        if (sv.diem_ly_thuyet_1) scoreData.diem_ly_thuyet_1 = sv.diem_ly_thuyet_1;
-        if (sv.diem_ly_thuyet_2) scoreData.diem_ly_thuyet_2 = sv.diem_ly_thuyet_2;
-        if (sv.diem_ly_thuyet_3) scoreData.diem_ly_thuyet_3 = sv.diem_ly_thuyet_3;
-        if (sv.diem_ly_thuyet_4) scoreData.diem_ly_thuyet_4 = sv.diem_ly_thuyet_4;
-        if (sv.diem_thuc_hanh_1) scoreData.diem_thuc_hanh_1 = sv.diem_thuc_hanh_1;
-        if (sv.diem_thuc_hanh_2) scoreData.diem_thuc_hanh_2 = sv.diem_thuc_hanh_2;
-        if (sv.diem_thuc_hanh_3) scoreData.diem_thuc_hanh_3 = sv.diem_thuc_hanh_3;
-        if (sv.diem_giua_ky) scoreData.diem_giua_ky = sv.diem_giua_ky;
-        if (sv.diem_cuoi_ky) scoreData.diem_cuoi_ky = sv.diem_cuoi_ky;
+        let hasNewData = false; // Kiểm tra xem có điểm mới để lưu không
+        
+        // Hàm helper: chỉ thêm điểm nếu ô đó CHƯA BỊ KHÓA (chưa có trong originalScores)
+        // Lưu ý: Điểm 0 cũng là điểm hợp lệ, cần xử lý đúng
+        const addScoreIfNotLocked = (field, value) => {
+          // Kiểm tra xem ô này có bị khóa không
+          const isLocked = isInputDisabled(sv, field);
+          
+          // Nếu ô đã bị khóa → bỏ qua
+          if (isLocked) {
+            return;
+          }
+          
+          // Kiểm tra giá trị: cho phép cả 0 (điểm 0 là hợp lệ)
+          // Chỉ bỏ qua nếu: null, undefined, hoặc chuỗi rỗng
+          if (value === null || value === undefined || value === '') {
+            return;
+          }
+          
+          // Convert sang number và validate
+          const numValue = Number(value);
+          if (!isNaN(numValue) && numValue >= 0 && numValue <= 10) {
+            scoreData[field] = numValue; // Lưu cả điểm 0
+            hasNewData = true;
+          }
+        };
+        
+        // Chỉ thêm các điểm mới nhập (chưa bị khóa)
+        addScoreIfNotLocked('diem_ly_thuyet_1', sv.diem_ly_thuyet_1);
+        addScoreIfNotLocked('diem_ly_thuyet_2', sv.diem_ly_thuyet_2);
+        addScoreIfNotLocked('diem_ly_thuyet_3', sv.diem_ly_thuyet_3);
+        addScoreIfNotLocked('diem_ly_thuyet_4', sv.diem_ly_thuyet_4);
+        addScoreIfNotLocked('diem_thuc_hanh_1', sv.diem_thuc_hanh_1);
+        addScoreIfNotLocked('diem_thuc_hanh_2', sv.diem_thuc_hanh_2);
+        addScoreIfNotLocked('diem_thuc_hanh_3', sv.diem_thuc_hanh_3);
+        addScoreIfNotLocked('diem_giua_ky', sv.diem_giua_ky);
+        addScoreIfNotLocked('diem_cuoi_ky', sv.diem_cuoi_ky);
+        
+        // Chỉ gửi request nếu có điểm mới để lưu
+        if (!hasNewData) {
+          continue;
+        }
 
         try {
-          // Luôn dùng UPSERT (POST) - backend tự xử lý
+          // UPSERT (POST) - backend sẽ merge: giữ lại điểm cũ, cập nhật các cột NULL
           await apiFetch('/api/ket-qua-hoc-tap', {
             method: 'POST',
             body: JSON.stringify(scoreData),
@@ -214,8 +265,8 @@ function NhapDiem() {
 
       setMessage(`✅ Đã lưu thành công ${successCount} sinh viên${errorCount > 0 ? `, ${errorCount} lỗi` : ''}!`);
       
-      // Reload để cập nhật ketQuaId và điểm tính toán
-      // Sau khi reload, các ô đã lưu sẽ tự động khóa (dựa vào ketQuaId)
+      // Reload để cập nhật originalScores và điểm tính toán
+      // Sau khi reload, các ô đã lưu sẽ tự động khóa (dựa vào originalScores)
       await loadData();
       
     } catch (err) {
@@ -262,6 +313,116 @@ function NhapDiem() {
     }
   };
 
+  // Tải template Excel
+  const handleDownloadTemplate = async () => {
+    try {
+      if (!sinhVienList || sinhVienList.length === 0) {
+        setMessage('❌ Không có danh sách sinh viên để tạo template!');
+        return;
+      }
+      await downloadDiemTemplate(sinhVienList, lopHocPhan);
+      setMessage('✅ Đã tải template Excel thành công!');
+      setTimeout(() => setMessage(''), 3000);
+    } catch (err) {
+      setMessage(err.message || '❌ Có lỗi khi tải template!');
+      console.error('Download template error:', err);
+    }
+  };
+
+  // Import điểm từ Excel
+  const handleImportExcel = async (event) => {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    // Reset input để có thể chọn lại file cùng tên
+    event.target.value = '';
+
+    // Kiểm tra định dạng file
+    if (!file.name.endsWith('.xlsx') && !file.name.endsWith('.xls')) {
+      setMessage('❌ File phải có định dạng .xlsx hoặc .xls!');
+      return;
+    }
+
+    try {
+      setLoading(true);
+      setMessage('');
+      setImportErrors([]);
+
+      const result = await importDiemFromExcel(file, sinhVienList);
+
+      if (result.errors && result.errors.length > 0) {
+        setImportErrors(result.errors);
+        setMessage(`⚠️ Import thành công ${result.data.length} sinh viên, nhưng có ${result.errors.length} lỗi. Xem chi tiết bên dưới.`);
+      } else {
+        setMessage(`✅ Đã import thành công sinh viên!`);
+      }
+
+      // Cập nhật điểm vào danh sách sinh viên
+      // CHỈ cập nhật các ô CHƯA BỊ KHÓA (chưa có điểm gốc từ DB)
+      if (result.data && result.data.length > 0) {
+        const updatedList = [...sinhVienList];
+        const skippedFields = []; // Để thống kê các ô bị bỏ qua
+        
+        result.data.forEach(importedItem => {
+          const index = updatedList.findIndex(sv => sv.sinh_vien_id === importedItem.sinh_vien_id);
+          if (index !== -1) {
+            const sv = updatedList[index];
+            
+            // Danh sách các trường điểm
+            const diemFields = [
+              { key: 'diem_ly_thuyet_1', value: importedItem.diem_ly_thuyet_1 },
+              { key: 'diem_ly_thuyet_2', value: importedItem.diem_ly_thuyet_2 },
+              { key: 'diem_ly_thuyet_3', value: importedItem.diem_ly_thuyet_3 },
+              { key: 'diem_ly_thuyet_4', value: importedItem.diem_ly_thuyet_4 },
+              { key: 'diem_thuc_hanh_1', value: importedItem.diem_thuc_hanh_1 },
+              { key: 'diem_thuc_hanh_2', value: importedItem.diem_thuc_hanh_2 },
+              { key: 'diem_thuc_hanh_3', value: importedItem.diem_thuc_hanh_3 },
+              { key: 'diem_giua_ky', value: importedItem.diem_giua_ky },
+              { key: 'diem_cuoi_ky', value: importedItem.diem_cuoi_ky }
+            ];
+
+            diemFields.forEach(({ key, value }) => {
+              // Chỉ cập nhật nếu:
+              // 1. Có giá trị trong file import
+              // 2. Ô đó CHƯA BỊ KHÓA (chưa có điểm gốc từ DB)
+              if (value !== null && value !== undefined && value !== '') {
+                // Kiểm tra xem ô này có bị khóa không
+                const isLocked = isInputDisabled(sv, key);
+                
+                if (isLocked) {
+                  // Ô đã bị khóa, bỏ qua và ghi nhận
+                  skippedFields.push(`${sv.ma_sv} - ${key}`);
+                } else {
+                  // Ô chưa bị khóa, cho phép cập nhật
+                  updatedList[index][key] = value;
+                }
+              }
+            });
+          }
+        });
+
+        setSinhVienList(updatedList);
+        
+        // Thông báo nếu có ô bị bỏ qua
+        if (skippedFields.length > 0) {
+          const skippedCount = skippedFields.length;
+          const existingErrors = result.errors || [];
+          setImportErrors([
+            ...existingErrors,
+            `⚠️ Đã bỏ qua ${skippedCount} ô điểm đã bị khóa (đã lưu trước đó)`
+          ]);
+        }
+      }
+
+      setTimeout(() => setMessage(''), 5000);
+    } catch (err) {
+      setMessage(err.message || '❌ Có lỗi khi import file Excel!');
+      console.error('Import error:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <TeacherLayout>
       <div className="container-fluid mt-4">
@@ -286,9 +447,34 @@ function NhapDiem() {
             </div>
           </div>
           
-          <button className="btn btn-outline-secondary" onClick={() => navigate('/teacher/lophocphan')}>
-            ← Quay lại danh sách lớp
-          </button>
+          <div className="d-flex gap-2 align-items-center">
+            {/* Nút Excel - chỉ hiển thị khi ở chế độ nhập điểm */}
+            {viewMode === 'input' && (
+              <>
+                <button 
+                  className="btn btn-outline-primary" 
+                  onClick={handleDownloadTemplate}
+                  disabled={loading || !sinhVienList || sinhVienList.length === 0}
+                  title="Tải file Excel mẫu để nhập điểm"
+                >
+                  <i className="bi bi-download me-1"></i> Tải template Excel
+                </button>
+                <label className="btn btn-outline-info" style={{ cursor: 'pointer', marginBottom: 0 }}>
+                  <i className="bi bi-upload me-1"></i> Import từ Excel
+                  <input
+                    type="file"
+                    accept=".xlsx,.xls"
+                    onChange={handleImportExcel}
+                    style={{ display: 'none' }}
+                    disabled={loading || !sinhVienList || sinhVienList.length === 0}
+                  />
+                </label>
+              </>
+            )}
+            <button className="btn btn-outline-secondary" onClick={() => navigate('/teacher/lophocphan')}>
+              ← Quay lại danh sách lớp
+            </button>
+          </div>
         </div>
 
         {lopHocPhan && (
@@ -484,7 +670,9 @@ function NhapDiem() {
                   <p className="mb-2"><strong> Hướng dẫn nhập điểm:</strong></p>
                   <p className="mb-0 text-muted">
                     - Nhập đầy đủ điểm thành phần cho từng sinh viên trước khi bấm "Lưu tất cả điểm".<br/>
-                    - Sau khi lưu, hệ thống khóa chỉnh sửa; cần thay đổi hãy liên hệ Admin.
+                    - Điểm phải từ 0 đến 10 (có thể nhập số thập phân, ví dụ: 7.5).<br/>
+                    - Sau khi lưu, hệ thống khóa chỉnh sửa; cần thay đổi hãy liên hệ Admin.<br/>
+                    - Import Excel chỉ cập nhật các ô chưa bị khóa (chưa lưu trước đó).
                   </p>
                 </div>
                 <div className="d-flex gap-2">
@@ -495,9 +683,20 @@ function NhapDiem() {
                   >
                     {saving ? ' Đang lưu...' : ' Lưu tất cả điểm'}
                   </button>
-                  
                 </div>
               </div>
+              
+              {/* Hiển thị lỗi import nếu có */}
+              {importErrors.length > 0 && (
+                <div className="mt-3 alert alert-warning">
+                  
+                  <ul className="mb-0 mt-2" style={{ maxHeight: '200px', overflowY: 'auto' }}>
+                    {importErrors.map((error, idx) => (
+                      <li key={idx} className="small">{error}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
             </>
           )}
 

@@ -4,19 +4,6 @@ import '../styles/ChatBot.css'
 
 export default function ChatBot() {
   const [isOpen, setIsOpen] = useState(false)
-  
-  // 监听全局事件来打开聊天机器人
-  useEffect(() => {
-    const handleOpenChatBot = () => {
-      setIsOpen(true)
-    }
-    
-    window.addEventListener('openChatBot', handleOpenChatBot)
-    
-    return () => {
-      window.removeEventListener('openChatBot', handleOpenChatBot)
-    }
-  }, [])
   const [messages, setMessages] = useState([
     {
       role: 'bot',
