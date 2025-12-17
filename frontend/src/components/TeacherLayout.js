@@ -1,13 +1,15 @@
 import React, { useEffect, useState } from 'react'
 import { useLocation } from 'react-router-dom'
 import 'bootstrap-icons/font/bootstrap-icons.css'
-import { clearAuth, getGiangVienId, getUnreadCountGiangVien, getUnreadMessageCountGiangVien } from '../api'
+import { clearAuth, getGiangVienId, getGiangVienById, getUnreadCountGiangVien, getUnreadMessageCountGiangVien } from '../api'
 
 export default function TeacherLayout({ children, title = '', activeMenu = '', gvName = '' }) {
   const location = useLocation()
   const [showUserMenu, setShowUserMenu] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
   const [showSearchResults, setShowSearchResults] = useState(false)
+  const [teacherData, setTeacherData] = useState(null)
+  const [avatarError, setAvatarError] = useState(false)
   const [unreadCount, setUnreadCount] = useState(0)
   const [unreadMessageCount, setUnreadMessageCount] = useState(0)
 
@@ -16,10 +18,16 @@ export default function TeacherLayout({ children, title = '', activeMenu = '', g
       try {
         const id = getGiangVienId()
         if (id) {
-          const [unreadData, unreadMsgData] = await Promise.all([
+          const [teacherData, unreadData, unreadMsgData] = await Promise.all([
+            getGiangVienById(id).catch(() => null),
             getUnreadCountGiangVien(id).catch(() => 0),
             getUnreadMessageCountGiangVien(id).catch(() => 0)
           ])
+
+          if (teacherData) {
+            setTeacherData(teacherData)
+            setAvatarError(false)
+          }
 
           // Handle unread news count
           if (unreadData) {
@@ -375,20 +383,39 @@ export default function TeacherLayout({ children, title = '', activeMenu = '', g
                 <div className="text-muted small me-2">
                   Xin chào, <b style={{ color: '#495057' }}>{gvName || 'Giảng viên'}</b>
                 </div>
-                <div
-                  className="rounded-circle d-flex align-items-center justify-content-center"
-                  style={{ 
-                    width: '40px', 
-                    height: '40px',
-                    background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                    color: 'white',
-                    fontSize: '16px',
-                    fontWeight: '600',
-                    flexShrink: 0
-                  }}
-                >
-                  {gvName ? gvName.charAt(0).toUpperCase() : 'G'}
-                </div>
+                {teacherData?.anhThe && !avatarError ? (
+                  <img
+                    src={teacherData.anhThe}
+                    alt="Ảnh đại diện"
+                    className="rounded-circle"
+                    style={{ 
+                      width: '40px', 
+                      height: '40px',
+                      objectFit: 'cover',
+                      flexShrink: 0,
+                      border: '2px solid white',
+                      boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+                    }}
+                    onError={() => {
+                      setAvatarError(true)
+                    }}
+                  />
+                ) : (
+                  <div
+                    className="rounded-circle d-flex align-items-center justify-content-center"
+                    style={{ 
+                      width: '40px', 
+                      height: '40px',
+                      background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                      color: 'white',
+                      fontSize: '16px',
+                      fontWeight: '600',
+                      flexShrink: 0
+                    }}
+                  >
+                    {gvName ? gvName.charAt(0).toUpperCase() : 'G'}
+                  </div>
+                )}
                 <i className={`bi bi-chevron-down ms-1`} style={{ fontSize: '12px', color: '#6c757d', transition: 'transform 0.2s', transform: showUserMenu ? 'rotate(180deg)' : 'rotate(0deg)' }}></i>
               </div>
               
