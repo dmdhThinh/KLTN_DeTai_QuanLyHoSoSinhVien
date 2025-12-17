@@ -66,16 +66,7 @@ export async function listAvailableLHP({ sinh_vien_id, hoc_ky, nam_hoc, dot_dang
   `
   // Thứ tự params phải khớp với query: ...lhpIds (IN clause), sinh_vien_id, hoc_ky, nam_hoc
   const conflictParams = [...lhpIds, sinh_vien_id, hoc_ky, nam_hoc]
-  console.log('🔍 [TRÙNG LỊCH] Kiểm tra trùng lịch:')
-  console.log('   - Sinh viên ID:', sinh_vien_id)
-  console.log('   - Học kỳ:', hoc_ky)
-  console.log('   - Năm học:', nam_hoc)
-  console.log('   - Số lớp cần check:', lhpIds.length)
   const [conflictRows] = await pool.execute(conflictSql, conflictParams)
-  console.log('   - Số xung đột tìm được:', conflictRows.length)
-  if (conflictRows.length > 0) {
-    console.log('   - Chi tiết xung đột:', conflictRows)
-  }
   const conflictedLhpIds = new Set(conflictRows.map(r => r.conflicted_lhp_id))
   
   // Tạo map để lưu thông tin chi tiết về lớp bị trùng
@@ -146,21 +137,15 @@ export async function listAvailableLHP({ sinh_vien_id, hoc_ky, nam_hoc, dot_dang
       tongTcBatBuoc = tcRows[0]?.tong_tc_bat_buoc || 0
     }
     
-    // Lấy các HP SV đã học (không cần đạt, chỉ cần đã đăng ký hoặc có điểm)
-    const [registered] = await pool.execute(
-      `SELECT DISTINCT hoc_phan_id FROM DangKyHocPhan
-       WHERE sinh_vien_id = ? AND trang_thai_dk <> 'HUY'`,
-      [sinh_vien_id]
-    )
+    // Lấy các HP SV đã HỌC XONG (có điểm trong KetQuaHocTap)
+    // KHÔNG quan tâm đạt hay rớt, CHỈ cần đã có điểm
+    // KHÔNG check trong DangKyHocPhan vì có thể đang đăng ký nhưng chưa có điểm
     const [hasScore] = await pool.execute(
       `SELECT DISTINCT hoc_phan_id FROM KetQuaHocTap
        WHERE sinh_vien_id = ?`,
       [sinh_vien_id]
     )
-    const studiedSet = new Set([
-      ...registered.map(r => r.hoc_phan_id),
-      ...hasScore.map(r => r.hoc_phan_id)
-    ])
+    const studiedSet = new Set(hasScore.map(r => r.hoc_phan_id))
 
     // Lấy các HP SV đang đăng ký cùng đợt (cho song hành)
     const coRegParams = [sinh_vien_id]
@@ -390,15 +375,7 @@ export async function registerLHP({
     }
 
     // 5) Tiên quyết/song hành và điều kiện số tín chỉ
-    console.log(`\n🔍 [ĐĂNG KÝ] Kiểm tra điều kiện tiên quyết cho lớp học phần ID: ${lop_hoc_phan_id}`)
-    console.log(`   - Học phần ID: ${lhp.hoc_phan_id}`)
-    console.log(`   - Tên học phần: ${lhp.ten_hoc_phan}`)
-    console.log(`   - Sinh viên ID: ${sinh_vien_id}`)
-    console.log(`   - Đợt đăng ký ID: ${dot.id}`)
-    
     const prereqResult = await safeCheckPrereq({ conn, sinh_vien_id, hoc_phan_id: lhp.hoc_phan_id, dot_dang_ky_id: dot.id })
-    
-    console.log(`   - Kết quả kiểm tra: ${prereqResult.ok ? '✅ Đủ điều kiện' : '❌ Thiếu điều kiện'}`)
     
     if (!prereqResult.ok) {
       const errorMessages = []
@@ -597,38 +574,19 @@ async function checkPrereq({ conn, sinh_vien_id, hoc_phan_id, dot_dang_ky_id }) 
   )
   const soTcBatBuocToiThieu = tcCondition[0]?.so_tc_bat_buoc_toi_thieu || null
   
-  // Debug: Log để kiểm tra
-  console.log(`🔍 Kiểm tra điều kiện tiên quyết cho học phần ID: ${hoc_phan_id}, Sinh viên ID: ${sinh_vien_id}`)
-  console.log(`📋 Số điều kiện tìm thấy: ${rules.length}`)
-  if (rules.length > 0) {
-    console.log(`📝 Điều kiện:`, rules.map(r => `${r.ten_hoc_phan} (${r.ma_hoc_phan}) - ${r.loai}`))
-  }
-  if (soTcBatBuocToiThieu) {
-    console.log(`📊 Điều kiện số tín chỉ bắt buộc: >= ${soTcBatBuocToiThieu} TC`)
-  }
-  
   if (!rules.length && !soTcBatBuocToiThieu) {
-    console.log(`✅ Không có điều kiện tiên quyết cho học phần này`)
     return { ok: true, missingPrereqs: [], missingTcCondition: null }
   }
 
-  // Các HP SV đã đăng ký học (không cần đạt, chỉ cần đã học)
-  // Kiểm tra trong DangKyHocPhan (đã đăng ký) hoặc KetQuaHocTap (có điểm)
-  const [registered] = await ex.execute(
-    `SELECT DISTINCT hoc_phan_id FROM DangKyHocPhan
-     WHERE sinh_vien_id = ? AND trang_thai_dk <> 'HUY'`,
-    [sinh_vien_id]
-  )
+  // Các HP SV đã HỌC XONG (có điểm trong KetQuaHocTap)
+  // KHÔNG quan tâm đạt hay rớt, CHỈ cần đã có điểm
+  // KHÔNG check trong DangKyHocPhan vì có thể đang đăng ký nhưng chưa có điểm
   const [hasScore] = await ex.execute(
     `SELECT DISTINCT hoc_phan_id FROM KetQuaHocTap
      WHERE sinh_vien_id = ?`,
     [sinh_vien_id]
   )
-  const studiedSet = new Set([
-    ...registered.map(r => r.hoc_phan_id),
-    ...hasScore.map(r => r.hoc_phan_id)
-  ])
-  console.log(`✅ Sinh viên đã học ${studiedSet.size} môn:`, Array.from(studiedSet))
+  const studiedSet = new Set(hasScore.map(r => r.hoc_phan_id))
 
   // Các HP SV đang đăng ký cùng đợt (cho song hành 'c')
   const coRegs = dot_dang_ky_id ? await ex.execute(
@@ -650,13 +608,11 @@ async function checkPrereq({ conn, sinh_vien_id, hoc_phan_id, dot_dang_ky_id }) 
     let isSatisfied = false
     
     if (r.loai === 'a' || r.loai === 'b') {
-      // Học trước (a) hoặc Tiên quyết (b): chỉ cần đã học (đã đăng ký hoặc có điểm)
+      // Học trước (a) hoặc Tiên quyết (b): phải đã học xong (có điểm)
       isSatisfied = studiedSet.has(r.hoc_phan_lien_quan_id)
-      console.log(`  - ${r.ten_hoc_phan} (${r.ma_hoc_phan}) - ${r.loai === 'a' ? 'Học trước' : 'Tiên quyết'}: ${isSatisfied ? '✅ Đã học' : '❌ Chưa học'}`)
     } else if (r.loai === 'c') {
-      // Song hành (c): đã học HOẶC đang đăng ký cùng đợt
+      // Song hành (c): đã học xong (có điểm) HOẶC đang đăng ký cùng đợt
       isSatisfied = studiedSet.has(r.hoc_phan_lien_quan_id) || coSet.has(r.hoc_phan_lien_quan_id)
-      console.log(`  - ${r.ten_hoc_phan} (${r.ma_hoc_phan}) - Song hành: ${isSatisfied ? '✅ Đã học hoặc đang đăng ký' : '❌ Chưa đủ'}`)
     }
     
     if (!isSatisfied) {
@@ -688,37 +644,20 @@ async function checkPrereq({ conn, sinh_vien_id, hoc_phan_id, dot_dang_ky_id }) 
     )
     const tongTcBatBuoc = tcRows[0]?.tong_tc_bat_buoc || 0
     
-    console.log(`📊 Tổng số tín chỉ bắt buộc đã học: ${tongTcBatBuoc} / ${soTcBatBuocToiThieu}`)
-    
     if (tongTcBatBuoc < soTcBatBuocToiThieu) {
       missingTcCondition = {
         so_tc_bat_buoc_toi_thieu: soTcBatBuocToiThieu,
         tong_tc_bat_buoc_hien_tai: tongTcBatBuoc,
         con_thieu: soTcBatBuocToiThieu - tongTcBatBuoc
       }
-      console.log(`❌ Chưa đủ số tín chỉ bắt buộc: còn thiếu ${missingTcCondition.con_thieu} TC`)
-    } else {
-      console.log(`✅ Đủ số tín chỉ bắt buộc`)
     }
   }
 
-  const result = {
+  return {
     ok: missingPrereqs.length === 0 && !missingTcCondition,
     missingPrereqs,
     missingTcCondition
   }
-  
-  console.log(`🎯 Kết quả kiểm tra: ${result.ok ? '✅ Đủ điều kiện' : '❌ Thiếu điều kiện'}`)
-  if (!result.ok) {
-    if (result.missingPrereqs.length > 0) {
-      console.log(`❌ Môn còn thiếu:`, result.missingPrereqs.map(m => `${m.ten_hoc_phan} (${m.ma_hoc_phan})`))
-    }
-    if (result.missingTcCondition) {
-      console.log(`❌ Thiếu số tín chỉ bắt buộc: còn thiếu ${result.missingTcCondition.con_thieu} TC`)
-    }
-  }
-  
-  return result
 }
 
 function getTenHocKy(hocKy) {
@@ -773,14 +712,19 @@ export async function listPendingCourses({ sinh_vien_id, hoc_ky, nam_hoc, dot_da
 
   const hocKyCtdt = targetHocKy || hoc_ky
   
-  // Lấy danh sách học phần đã đăng ký THÀNH CÔNG (để loại ra)
-  // Filter: chỉ lấy HP thuộc ngành của SV HOẶC HP chung (nganh_id IS NULL)
+  // Lấy danh sách học phần đã đăng ký (loại bỏ khỏi danh sách chờ đăng ký)
+  // 1. Môn đã đăng ký THÀNH CÔNG ở các kỳ TRƯỚC
+  // 2. Môn đang đăng ký ở kỳ HIỆN TẠI (trạng thái khác HUY)
   const [registered] = await pool.execute(
     `SELECT DISTINCT lhp.hoc_phan_id
      FROM DangKyHocPhan d
      JOIN LopHocPhan lhp ON lhp.id = d.lop_hoc_phan_id
-     WHERE d.sinh_vien_id = ? AND d.trang_thai_dk = 'THANH_CONG'`,
-    [sinh_vien_id]
+     WHERE d.sinh_vien_id = ?
+       AND (
+         (d.trang_thai_dk = 'THANH_CONG' AND NOT (lhp.hoc_ky = ? AND lhp.nam_hoc = ?))
+         OR (lhp.hoc_ky = ? AND lhp.nam_hoc = ? AND d.trang_thai_dk <> 'HUY')
+       )`,
+    [sinh_vien_id, hoc_ky, nam_hoc, hoc_ky, nam_hoc]
   )
   const registeredHPIds = registered.map(r => r.hoc_phan_id)
   
@@ -847,6 +791,22 @@ export async function listAllCoursesBySemester({ sinh_vien_id, hoc_ky, nam_hoc }
   const sv = svRows[0]
   if (!sv) return { items: [], tong_tc: 0, tong_tc_bat_buoc: 0, tong_tc_tu_chon: 0 }
 
+  // Lấy danh sách học phần đã đăng ký (loại bỏ khỏi danh sách chờ đăng ký)
+  // 1. Môn đã đăng ký THÀNH CÔNG ở các kỳ TRƯỚC
+  // 2. Môn đang đăng ký ở kỳ HIỆN TẠI (trạng thái khác HUY)
+  const [registered] = await pool.execute(
+    `SELECT DISTINCT lhp.hoc_phan_id
+     FROM DangKyHocPhan d
+     JOIN LopHocPhan lhp ON lhp.id = d.lop_hoc_phan_id
+     WHERE d.sinh_vien_id = ?
+       AND (
+         (d.trang_thai_dk = 'THANH_CONG' AND NOT (lhp.hoc_ky = ? AND lhp.nam_hoc = ?))
+         OR (lhp.hoc_ky = ? AND lhp.nam_hoc = ? AND d.trang_thai_dk <> 'HUY')
+       )`,
+    [sinh_vien_id, hoc_ky, nam_hoc, hoc_ky, nam_hoc]
+  )
+  const registeredHPIds = registered.map(r => r.hoc_phan_id)
+
   // Lấy TẤT CẢ môn có lớp học phần mở đăng ký trong học kỳ/năm học đó
   // LEFT JOIN với ChuongTrinhKhung để lấy thông tin loại môn (nếu có)
   // Không filter theo học kỳ trong CTK để cho phép học vượt
@@ -878,17 +838,20 @@ export async function listAllCoursesBySemester({ sinh_vien_id, hoc_ky, nam_hoc }
 
   const [rows] = await pool.execute(sql, params)
 
+  // Lọc bỏ các môn đã đăng ký thành công ở các kỳ trước
+  const filteredRows = rows.filter(hp => !registeredHPIds.includes(hp.hoc_phan_id))
+
   // Tổng TC (tính từ tất cả môn, không phân biệt năm)
-  const tongTcBatBuoc = rows
+  const tongTcBatBuoc = filteredRows
     .filter(r => r.loai_mon === 'BAT_BUOC')
     .reduce((sum, r) => sum + (r.tc || 0), 0)
-  const tongTcTuChon = rows
+  const tongTcTuChon = filteredRows
     .filter(r => r.loai_mon === 'TU_CHON' || !r.loai_mon)
     .reduce((sum, r) => sum + (r.tc || 0), 0)
   const tongTc = tongTcBatBuoc + tongTcTuChon
 
-  // Trả về TẤT CẢ môn (bao gồm cả môn của các năm sau - học vượt)
-  const items = rows.map(row => ({
+  // Trả về các môn chưa đăng ký (bao gồm cả môn của các năm sau - học vượt)
+  const items = filteredRows.map(row => ({
     ...row,
     ten_hoc_ky_ctdt: row.hoc_ky_ctdt ? getTenHocKy(row.hoc_ky_ctdt) : '',
       bat_buoc: row.loai_mon === 'BAT_BUOC'
