@@ -41,8 +41,8 @@ export default function LopHocPhanList3() {
   const { semester: currentSemester, academicYear: currentYear } = getCurrentSemesterAndYear()
   const [list, setList] = useState([])
   const [filteredList, setFilteredList] = useState([])
-  const [selectedSemester, setSelectedSemester] = useState('HK2')
-  const [selectedYear, setSelectedYear] = useState('2025-2026')
+  const [selectedSemester, setSelectedSemester] = useState(currentSemester)
+  const [selectedYear, setSelectedYear] = useState(currentYear)
   const [loading, setLoading] = useState(true)
   const navigate = useNavigate()
 
