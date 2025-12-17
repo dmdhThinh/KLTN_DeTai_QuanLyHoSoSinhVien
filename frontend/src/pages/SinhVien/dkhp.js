@@ -162,10 +162,6 @@ useEffect(() => {
 
 // hàm load chi tiết lịch của 1 lớp
 const loadClassDetail = async (lop) => {
-  console.log('🔍 [DKHP] Chọn lớp:', lop);
-  console.log('   - xung_dot_lich:', lop.xung_dot_lich);
-  console.log('   - conflict_details:', lop.conflict_details);
-  console.log('   - du_dieu_kien:', lop.du_dieu_kien);
   setSelectedClass(lop);
   const rs = await apiFetch(`/api/dkhp/lich/${lop.id}`);
   setClassDetail(rs);
@@ -239,17 +235,6 @@ const loadClassDetail = async (lop) => {
         // Không truyền dot_dang_ky_id để luôn hiển thị tất cả lớp đã đăng ký trong học kỳ
         apiFetch(`/api/dkhp/my?sinh_vien_id=${sinhVienId}&hoc_ky=${selectedHocKy}&nam_hoc=${selectedNamHoc}`)
       ]);
-      console.log('📋 [DKHP] Danh sách lớp available:', avail);
-      console.log('   - Số lớp:', avail?.length);
-      if (avail && avail.length > 0) {
-        console.log('   - Lớp đầu tiên:', {
-          id: avail[0].id,
-          ma_lop_hoc_phan: avail[0].ma_lop_hoc_phan,
-          xung_dot_lich: avail[0].xung_dot_lich,
-          conflict_details: avail[0].conflict_details,
-          du_dieu_kien: avail[0].du_dieu_kien
-        });
-      }
       setAvailable(avail);
       setRegistered(regs);
       } catch (err) {

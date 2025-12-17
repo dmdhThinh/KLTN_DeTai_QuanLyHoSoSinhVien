@@ -1,8 +1,8 @@
 import { pool } from '../config/db.js'
 
 // Lấy danh sách môn KHÔNG ĐẠT (để học lại)
-// Loại bỏ các môn đã đăng ký trong HỌC KỲ + NĂM HỌC đang xem
-// CHỈ LẤY CÁC MÔN CÙNG HỌC KỲ VỚI HỌC KỲ ĐANG ĐĂNG KÝ
+// Học lại: Hiển thị TẤT CẢ môn không đạt (bất kỳ học kỳ nào)
+// CHỈ loại bỏ các môn đang đăng ký ở kỳ HIỆN TẠI (để tránh đăng ký trùng lớp)
 // Lưu ý: Môn rớt có thể có điểm >= 4.0 nhưng vẫn rớt do quy tắc bắt buộc (GK < 1 hoặc CK < 3)
 export async function getMonKhongDat(sinhVienId, hocKy, namHoc) {
   let query = `
@@ -25,7 +25,7 @@ export async function getMonKhongDat(sinhVienId, hocKy, namHoc) {
   // BỎ filter theo học kỳ - cho phép học lại môn rớt ở BẤT KỲ HỌC KỲ NÀO
   // (Sinh viên có thể học lại môn rớt ở HK1 trong HK2, hoặc bất kỳ học kỳ nào)
   
-  // Loại bỏ các môn đã đăng ký trong cùng HỌC KỲ + NĂM HỌC
+  // CHỈ loại bỏ các môn đang đăng ký ở kỳ HIỆN TẠI (để tránh đăng ký trùng lớp)
   if (hocKy && namHoc) {
     query += `
       AND hp.id NOT IN (
@@ -48,8 +48,8 @@ export async function getMonKhongDat(sinhVienId, hocKy, namHoc) {
 }
 
 // Lấy danh sách môn ĐÃ ĐẠT (để học cải thiện)
-// Loại bỏ các môn đã đăng ký trong HỌC KỲ + NĂM HỌC đang xem
-// CHỈ LẤY CÁC MÔN CÙNG HỌC KỲ VỚI HỌC KỲ ĐANG ĐĂNG KÝ
+// Học cải thiện: Hiển thị TẤT CẢ môn đã đạt (4.0 <= điểm < 8.5)
+// CHỈ loại bỏ các môn đang đăng ký ở kỳ HIỆN TẠI (để tránh đăng ký trùng lớp)
 export async function getMonDaDat(sinhVienId, hocKy, namHoc) {
   let query = `
     SELECT DISTINCT
@@ -70,13 +70,10 @@ export async function getMonDaDat(sinhVienId, hocKy, namHoc) {
   
   const params = [sinhVienId]
   
-  // Lọc theo học kỲ tương ứng (nếu đang đăng ký HK1 thì chỉ lấy môn cải thiện ở HK1)
-  if (hocKy) {
-    query += ` AND kq.hoc_ky = ?`
-    params.push(hocKy)
-  }
+  // BỎ filter theo học kỳ - cho phép cải thiện môn của BẤT KỲ HỌC KỲ NÀO
+  // (Sinh viên có thể cải thiện môn HK1 trong HK2, hoặc bất kỳ học kỳ nào)
   
-  // Loại bỏ các môn đã đăng ký trong cùng HỌC KỲ + NĂM HỌC
+  // CHỈ loại bỏ các môn đang đăng ký ở kỳ HIỆN TẠI (để tránh đăng ký trùng lớp)
   if (hocKy && namHoc) {
     query += `
       AND hp.id NOT IN (
