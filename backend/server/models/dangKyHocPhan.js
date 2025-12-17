@@ -39,26 +39,61 @@ export async function listAvailableLHP({ sinh_vien_id, hoc_ky, nam_hoc, dot_dang
   if (lhps.length === 0) return []
 
   // Tối ưu: Gom tất cả kiểm tra xung đột lịch vào 1 query duy nhất
+  // Kiểm tra trùng lịch với TẤT CẢ môn đã đăng ký trong cùng HỌC KỲ (không chỉ cùng đợt)
   const lhpIds = lhps.map(l => l.id)
-  const conflictParams = [sinh_vien_id, ...lhpIds]
-  let conflictSql = `
-    SELECT DISTINCT b.lop_hoc_phan_id AS conflicted_lhp_id
+  const conflictSql = `
+    SELECT DISTINCT 
+      b.lop_hoc_phan_id AS conflicted_lhp_id,
+      hp.ten_hoc_phan,
+      hp.ma_hoc_phan,
+      l2.ma_lop_hoc_phan,
+      a.thu,
+      a.tiet_bat_dau,
+      a.tiet_ket_thuc,
+      a.phong
     FROM DangKyHocPhan d
          JOIN LopHocPhan l2 ON l2.id = d.lop_hoc_phan_id
+         JOIN HocPhan hp ON hp.id = l2.hoc_phan_id
          JOIN LichHoc a ON a.lop_hoc_phan_id = l2.id
-    JOIN LichHoc b ON b.lop_hoc_phan_id IN (${lhpIds.map(() => '?').join(',')})
-       WHERE d.sinh_vien_id = ?
-         AND d.trang_thai_dk <> 'HUY'
-         AND a.thu = b.thu
-         AND a.tiet_bat_dau <= b.tiet_ket_thuc
+         JOIN LichHoc b ON b.lop_hoc_phan_id IN (${lhpIds.map(() => '?').join(',')})
+    WHERE d.sinh_vien_id = ?
+      AND d.trang_thai_dk <> 'HUY'
+      AND l2.hoc_ky = ?
+      AND l2.nam_hoc = ?
+      AND a.thu = b.thu
+      AND a.tiet_bat_dau <= b.tiet_ket_thuc
       AND b.tiet_bat_dau <= a.tiet_ket_thuc
   `
-    if (dot_dang_ky_id) {
-      conflictSql += ` AND d.dot_dang_ky_id = ?`
-    conflictParams.push(dot_dang_ky_id)
-  }
+  // Thứ tự params phải khớp với query: ...lhpIds (IN clause), sinh_vien_id, hoc_ky, nam_hoc
+  const conflictParams = [...lhpIds, sinh_vien_id, hoc_ky, nam_hoc]
+  console.log('🔍 [TRÙNG LỊCH] Kiểm tra trùng lịch:')
+  console.log('   - Sinh viên ID:', sinh_vien_id)
+  console.log('   - Học kỳ:', hoc_ky)
+  console.log('   - Năm học:', nam_hoc)
+  console.log('   - Số lớp cần check:', lhpIds.length)
   const [conflictRows] = await pool.execute(conflictSql, conflictParams)
+  console.log('   - Số xung đột tìm được:', conflictRows.length)
+  if (conflictRows.length > 0) {
+    console.log('   - Chi tiết xung đột:', conflictRows)
+  }
   const conflictedLhpIds = new Set(conflictRows.map(r => r.conflicted_lhp_id))
+  
+  // Tạo map để lưu thông tin chi tiết về lớp bị trùng
+  const conflictDetailMap = new Map()
+  for (const row of conflictRows) {
+    if (!conflictDetailMap.has(row.conflicted_lhp_id)) {
+      conflictDetailMap.set(row.conflicted_lhp_id, [])
+    }
+    conflictDetailMap.get(row.conflicted_lhp_id).push({
+      ten_hoc_phan: row.ten_hoc_phan,
+      ma_hoc_phan: row.ma_hoc_phan,
+      ma_lop_hoc_phan: row.ma_lop_hoc_phan,
+      thu: row.thu,
+      tiet_bat_dau: row.tiet_bat_dau,
+      tiet_ket_thuc: row.tiet_ket_thuc,
+      phong: row.phong
+    })
+  }
 
   // Tối ưu: Gom tất cả kiểm tra điều kiện tiên quyết vào 1 query duy nhất
   const uniqueHocPhanIds = [...new Set(lhps.map(l => l.hoc_phan_id))]
@@ -209,6 +244,7 @@ export async function listAvailableLHP({ sinh_vien_id, hoc_ky, nam_hoc, dot_dang
     const remain = (l.si_so_toi_da ?? 50) - (l.so_dk ?? 0)
     const daCoHocPhan = registeredHPIds.has(l.hoc_phan_id)
     const xungDotLich = conflictedLhpIds.has(l.id)
+    const conflictDetails = conflictDetailMap.get(l.id) || []
     const prereqInfo = prereqMap.get(l.hoc_phan_id) || { ok: true, missingPrereqs: [], missingTcCondition: null }
     const duDieuKien = prereqInfo.ok
 
@@ -216,6 +252,7 @@ export async function listAvailableLHP({ sinh_vien_id, hoc_ky, nam_hoc, dot_dang
       ...l,
       slot_con: remain,
       xung_dot_lich: xungDotLich,
+      conflict_details: conflictDetails, // Thêm thông tin chi tiết về trùng lịch
       du_dieu_kien: duDieuKien,
       missing_prereqs: prereqInfo.missingPrereqs, // Thêm danh sách môn cần học trước
       missing_tc_condition: prereqInfo.missingTcCondition, // Thêm thông tin điều kiện số tín chỉ
@@ -321,21 +358,36 @@ export async function registerLHP({
     const remain = (lhp.si_so_toi_da ?? 50) - so_dk
     if (remain <= 0) throw bizError('Lớp đã đủ sĩ số')
 
-    // 4) Trùng lịch (không còn lọc theo trang_thai_dk)
+    // 4) Trùng lịch - kiểm tra với TẤT CẢ môn trong cùng HỌC KỲ (không chỉ cùng đợt)
     const [conflictRows] = await conn.execute(
-      `SELECT 1
-         FROM DangKyHocPhan d
-         JOIN LopHocPhan l2 ON l2.id = d.lop_hoc_phan_id
-         JOIN LichHoc a ON a.lop_hoc_phan_id = l2.id
-         JOIN LichHoc b ON b.lop_hoc_phan_id = ?
-        WHERE d.sinh_vien_id = ? AND d.dot_dang_ky_id = ?
-          AND a.thu = b.thu
-          AND a.tiet_bat_dau <= b.tiet_ket_thuc
-          AND b.tiet_bat_dau <= a.tiet_ket_thuc
-        LIMIT 1`,
-      [lop_hoc_phan_id, sinh_vien_id, dot.id]
+      `SELECT 
+         hp.ten_hoc_phan,
+         hp.ma_hoc_phan,
+         l2.ma_lop_hoc_phan,
+         a.thu,
+         a.tiet_bat_dau,
+         a.tiet_ket_thuc,
+         a.phong
+       FROM DangKyHocPhan d
+       JOIN LopHocPhan l2 ON l2.id = d.lop_hoc_phan_id
+       JOIN HocPhan hp ON hp.id = l2.hoc_phan_id
+       JOIN LichHoc a ON a.lop_hoc_phan_id = l2.id
+       JOIN LichHoc b ON b.lop_hoc_phan_id = ?
+      WHERE d.sinh_vien_id = ?
+        AND d.trang_thai_dk <> 'HUY'
+        AND l2.hoc_ky = ?
+        AND l2.nam_hoc = ?
+        AND a.thu = b.thu
+        AND a.tiet_bat_dau <= b.tiet_ket_thuc
+        AND b.tiet_bat_dau <= a.tiet_ket_thuc
+      LIMIT 1`,
+      [lop_hoc_phan_id, sinh_vien_id, lhp.hoc_ky, lhp.nam_hoc]
     )
-    if (conflictRows.length) throw bizError('Trùng lịch với lớp đã đăng ký')
+    if (conflictRows.length) {
+      const conflict = conflictRows[0]
+      const detail = `${conflict.ten_hoc_phan} (${conflict.ma_hoc_phan}) - Lớp: ${conflict.ma_lop_hoc_phan}, Thứ ${conflict.thu}, tiết ${conflict.tiet_bat_dau}-${conflict.tiet_ket_thuc}, phòng ${conflict.phong}`
+      throw bizError(`Trùng lịch với lớp đã đăng ký: ${detail}`)
+    }
 
     // 5) Tiên quyết/song hành và điều kiện số tín chỉ
     console.log(`\n🔍 [ĐĂNG KÝ] Kiểm tra điều kiện tiên quyết cho lớp học phần ID: ${lop_hoc_phan_id}`)
