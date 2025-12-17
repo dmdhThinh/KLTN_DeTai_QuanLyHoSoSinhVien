@@ -167,9 +167,14 @@ function NhapDiem() {
   };
 
   // Kiểm tra xem cột nào được phép nhập
-  // Chỉ khóa các ô đã có điểm gốc từ DB (đã lưu trước đó), không khóa các ô trống hoặc mới nhập
+  // Logic: Khi đã lưu điểm cuối kỳ → khóa TẤT CẢ các cột
   const isInputDisabled = (sv, field) => {
-    // Nếu đã có bản ghi điểm (ketQuaId) và ô này đã có giá trị gốc từ DB, thì khóa
+    // Nếu đã có điểm cuối kỳ trong originalScores → khóa TẤT CẢ các cột
+    if (sv.originalScores && sv.originalScores.diem_cuoi_ky && sv.originalScores.diem_cuoi_ky !== '') {
+      return true;
+    }
+    
+    // Nếu chưa có điểm cuối kỳ, chỉ khóa từng cột đã lưu trước đó
     if (sv.ketQuaId && sv.originalScores && sv.originalScores[field] && sv.originalScores[field] !== '') {
       return true;
     }

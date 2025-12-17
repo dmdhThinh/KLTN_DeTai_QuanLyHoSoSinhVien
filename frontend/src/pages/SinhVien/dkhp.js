@@ -190,8 +190,8 @@ const loadClassDetail = async (lop) => {
           // Set học kỳ/năm học ngay lập tức
           setSelectedHocKy(d.hoc_ky);
           setSelectedNamHoc(d.nam_hoc);
-          setAutoSetFromDot(true);
-        }
+      setAutoSetFromDot(true);
+    }
       } catch (err) {
         console.error('Lỗi load đợt đăng ký:', err);
         setAutoSetFromDot(true); // Đánh dấu đã load xong (dù có lỗi)
@@ -400,7 +400,7 @@ const loadClassDetail = async (lop) => {
         const errorText = err.message || err.toString();
         try {
           const data = JSON.parse(errorText);
-          if (data?.message) msg = data.message;
+        if (data?.message) msg = data.message;
         } catch {
           // Nếu không parse được JSON, dùng message gốc
           if (errorText) msg = errorText;
@@ -669,11 +669,11 @@ const loadClassDetail = async (lop) => {
                         {monChoDangKyTuChon.length > 0 && (
                           <>
                             {monChoDangKyBatBuoc.length > 0 && (
-                              <tr className="table-secondary">
-                                <td colSpan="6">
-                                  <strong>HỌC PHẦN TỰ CHỌN</strong>
-                                </td>
-                              </tr>
+                            <tr className="table-secondary">
+                              <td colSpan="6">
+                                <strong>HỌC PHẦN TỰ CHỌN</strong>
+                              </td>
+                            </tr>
                             )}
                             {monChoDangKyTuChon.map((hp, idx) =>
                               renderPendingRow(hp, idx + monChoDangKyBatBuoc.length)

@@ -44,17 +44,17 @@ export async function listAvailableLHP({ sinh_vien_id, hoc_ky, nam_hoc, dot_dang
   let conflictSql = `
     SELECT DISTINCT b.lop_hoc_phan_id AS conflicted_lhp_id
     FROM DangKyHocPhan d
-    JOIN LopHocPhan l2 ON l2.id = d.lop_hoc_phan_id
-    JOIN LichHoc a ON a.lop_hoc_phan_id = l2.id
+         JOIN LopHocPhan l2 ON l2.id = d.lop_hoc_phan_id
+         JOIN LichHoc a ON a.lop_hoc_phan_id = l2.id
     JOIN LichHoc b ON b.lop_hoc_phan_id IN (${lhpIds.map(() => '?').join(',')})
-    WHERE d.sinh_vien_id = ?
-      AND d.trang_thai_dk <> 'HUY'
-      AND a.thu = b.thu
-      AND a.tiet_bat_dau <= b.tiet_ket_thuc
+       WHERE d.sinh_vien_id = ?
+         AND d.trang_thai_dk <> 'HUY'
+         AND a.thu = b.thu
+         AND a.tiet_bat_dau <= b.tiet_ket_thuc
       AND b.tiet_bat_dau <= a.tiet_ket_thuc
   `
-  if (dot_dang_ky_id) {
-    conflictSql += ` AND d.dot_dang_ky_id = ?`
+    if (dot_dang_ky_id) {
+      conflictSql += ` AND d.dot_dang_ky_id = ?`
     conflictParams.push(dot_dang_ky_id)
   }
   const [conflictRows] = await pool.execute(conflictSql, conflictParams)
@@ -839,8 +839,8 @@ export async function listAllCoursesBySemester({ sinh_vien_id, hoc_ky, nam_hoc }
   const items = rows.map(row => ({
     ...row,
     ten_hoc_ky_ctdt: row.hoc_ky_ctdt ? getTenHocKy(row.hoc_ky_ctdt) : '',
-    bat_buoc: row.loai_mon === 'BAT_BUOC'
-  }))
+      bat_buoc: row.loai_mon === 'BAT_BUOC'
+    }))
 
   return {
     items,

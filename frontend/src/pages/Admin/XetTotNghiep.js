@@ -384,7 +384,7 @@ export default function XetTotNghiep() {
         {thongKeKhoaHoc.length > 0 && (
           <div className="card shadow-sm mb-4">
             <div className="card-header bg-primary text-white">
-              <h5 className="mb-0">📊 Thống kê khóa học</h5>
+              <h5 className="mb-0">Thống kê khóa học</h5>
             </div>
             <div className="card-body">
               <div className="table-responsive">

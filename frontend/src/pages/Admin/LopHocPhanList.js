@@ -203,11 +203,11 @@ export default function LopHocPhanList() {
         <div className="d-flex align-items-center gap-2 flex-wrap">
           {/* 🔍 Tìm kiếm lớp học phần */}
           <div style={{ position: 'relative', width: 280 }}>
-            <input
-              type="text"
-              className="form-control"
-              placeholder="Tìm theo mã lớp, tên học phần, tên lớp..."
-              value={search}
+          <input
+            type="text"
+            className="form-control"
+            placeholder="Tìm theo mã lớp, tên học phần, tên lớp..."
+            value={search}
               onChange={(e) => handleSearchChange(e.target.value)}
               onFocus={() => setShowSuggestions(true)}
               onBlur={handleSearchBlur}
@@ -322,37 +322,37 @@ export default function LopHocPhanList() {
                       <td>{lop.ngayKetThuc ? new Date(lop.ngayKetThuc).toLocaleDateString('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh' }) : '—'}</td>
                       <td>
                         <div className="d-flex gap-1" style={{ whiteSpace: 'nowrap' }}>
-                          <button
+                        <button
                             className="btn btn-sm btn-outline-primary"
-                            title="Danh sách sinh viên"
-                            onClick={() => {
-                              setSelectedLop(lop)
-                              setShowModal(true)
-                            }}
-                          >
+                          title="Danh sách sinh viên"
+                          onClick={() => {
+                            setSelectedLop(lop)
+                            setShowModal(true)
+                          }}
+                        >
                             <i className="bi bi-people"></i>
-                          </button>
-                          <button
+                        </button>
+                        <button
                             className="btn btn-sm btn-outline-warning"
-                            onClick={() => navigate(`/admin/sua-diem/${lop.id}`)}
+                          onClick={() => navigate(`/admin/sua-diem/${lop.id}`)}
                             title="Sửa điểm"
-                          >
+                        >
                             <i className="bi bi-pencil-square"></i>
-                          </button>
-                          <button
+                        </button>
+                        <button
                             className="btn btn-sm btn-outline-secondary"
                             onClick={() => navigate(`/admin/lophocphan/edit/${lop.id}`, { state: lop })}
                             title="Sửa"
-                          >
+                        >
                             <i className="bi bi-pencil"></i>
-                          </button>
-                          <button
-                            className="btn btn-sm btn-outline-danger"
-                            onClick={() => setConfirmDelete(lop)}
+                        </button>
+                        <button
+                          className="btn btn-sm btn-outline-danger"
+                          onClick={() => setConfirmDelete(lop)}
                             title="Xoá"
-                          >
+                        >
                             <i className="bi bi-trash"></i>
-                          </button>
+                        </button>
                         </div>
                       </td>
                     </tr>
@@ -373,18 +373,18 @@ export default function LopHocPhanList() {
             <div className="card-footer bg-white d-flex justify-content-between align-items-center">
               <div className="text-muted">
                 Hiển thị {startIndex + 1} - {endIndex} / {filtered.length} bản ghi
-              </div>
-              <nav>
-                <ul className="pagination pagination-sm mb-0">
-                  <li className={`page-item ${currentPage === 1 ? 'disabled' : ''}`}>
-                    <button
-                      className="page-link"
-                      onClick={() => setCurrentPage(currentPage - 1)}
-                      disabled={currentPage === 1}
-                    >
+            </div>
+            <nav>
+              <ul className="pagination pagination-sm mb-0">
+                <li className={`page-item ${currentPage === 1 ? 'disabled' : ''}`}>
+                  <button
+                    className="page-link"
+                    onClick={() => setCurrentPage(currentPage - 1)}
+                    disabled={currentPage === 1}
+                  >
                       Trước
-                    </button>
-                  </li>
+                  </button>
+                </li>
                   {(() => {
                     const pages = []
                     const maxVisible = 5
@@ -429,24 +429,24 @@ export default function LopHocPhanList() {
                       pages.push(
                         <li key={totalPages} className={`page-item ${currentPage === totalPages ? 'active' : ''}`}>
                           <button className="page-link" onClick={() => setCurrentPage(totalPages)}>{totalPages}</button>
-                        </li>
+                  </li>
                       )
                     }
                     
                     return pages
                   })()}
                   <li className={`page-item ${currentPage === totalPages ? 'disabled' : ''}`}>
-                    <button
-                      className="page-link"
-                      onClick={() => setCurrentPage(currentPage + 1)}
+                  <button
+                    className="page-link"
+                    onClick={() => setCurrentPage(currentPage + 1)}
                       disabled={currentPage === totalPages}
-                    >
+                  >
                       Sau
-                    </button>
-                  </li>
-                </ul>
-              </nav>
-            </div>
+                  </button>
+                </li>
+              </ul>
+            </nav>
+          </div>
           )
         })()}
       </div>

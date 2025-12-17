@@ -244,12 +244,12 @@ export default function AddLich() {
       )
       
       if (isTrung) {
-        setMessage('')
+    setMessage('')
         setPhongError(`Phòng ${form.phong} đã được sử dụng trong ${getThuLabel(form.thu)}, ca ${form.ca}, tiết ${form.tiet_bat_dau}-${form.tiet_ket_thuc}. Vui lòng chọn phòng khác.`)
         return
       }
     }
-    
+
     // Nếu đã có lỗi phòng từ real-time check, không submit
     if (phongError) {
       return
@@ -434,13 +434,13 @@ export default function AddLich() {
                   required
                   min="1"
                 />
-              </div>
+            </div>
 
               <div className="col-md-4">
                 <label className="form-label">Tiết kết thúc *</label>
-                <input
+              <input
                   type="number"
-                  className="form-control"
+                className="form-control"
                   value={form.tiet_ket_thuc}
                   onChange={async (e) => {
                     const value = e.target.value
@@ -452,7 +452,7 @@ export default function AddLich() {
                   }}
                   required
                   min="1"
-                />
+              />
             </div>
 
               {/* Row 4 */}
