@@ -451,7 +451,7 @@ export default function QuanLyHocPhi() {
                       pages.push(
                         <li key={totalPages} className={`page-item ${currentPage === totalPages ? 'active' : ''}`}>
                           <button className="page-link" onClick={() => setPagination({ ...pagination, page: totalPages })}>{totalPages}</button>
-                        </li>
+                    </li>
                       )
                     }
                     

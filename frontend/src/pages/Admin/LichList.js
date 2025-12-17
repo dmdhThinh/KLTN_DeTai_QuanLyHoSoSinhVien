@@ -77,13 +77,13 @@ export default function LichList() {
   // 🚀 Load tất cả lớp học phần
   useEffect(() => {
     apiFetch('/api/lophocphan')
-      .then((data) => {
-        setLopHocPhans(data || [])
-      })
-      .catch((err) => {
-        console.error('❌ Error fetching LopHocPhan:', err)
-        setLopHocPhans([])
-      })
+        .then((data) => {
+          setLopHocPhans(data || [])
+        })
+        .catch((err) => {
+          console.error('❌ Error fetching LopHocPhan:', err)
+          setLopHocPhans([])
+        })
   }, [])
 
   // Filter lớp học phần theo text search
@@ -351,23 +351,23 @@ const handleResetNghiToanKhoa = async (ngayNghi) => {
             }}
           >
 
-        
+
 
         {/* Thanh chọn lớp học phần */}
         <div className="toolbar d-flex align-items-center gap-2 flex-wrap">
         <button
-          className="btn btn-success btn-sm"
-          onClick={() => navigate('/admin/lich/new')}
-        >
-          ➕ Thêm tiết học
-        </button>
+  className="btn btn-success btn-sm"
+  onClick={() => navigate('/admin/lich/new')}
+>
+  ➕ Thêm tiết học
+</button>
 
-        <button
-          className="btn btn-danger btn-sm"
-          onClick={() => setShowNghiKhoaModal(true)}
-        >
-          Nghỉ toàn khoa
-        </button>
+<button
+  className="btn btn-danger btn-sm"
+  onClick={() => setShowNghiKhoaModal(true)}
+>
+  Nghỉ toàn khoa
+</button>
 
         {/* Danh sách nghỉ toàn khoa */}
         {danhSachNghiToanKhoa.length > 0 && (

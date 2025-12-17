@@ -250,7 +250,7 @@ export default function EditLich() {
       
       <div className="d-flex justify-content-center">
         <div className="card shadow-sm w-100" style={{ maxWidth: 1370 }}>
-          <div className="card-body">
+        <div className="card-body">
             
             <form onSubmit={handleSubmit} className="row g-3">
 
@@ -267,19 +267,19 @@ export default function EditLich() {
 
               <div className="col-md-4">
                 <label className="form-label">Ngày học *</label>
-                <input
-                  type="date"
-                  className="form-control"
+              <input
+                type="date"
+                className="form-control"
                   value={form.ngay_hoc}
                   onChange={(e) => handleNgayHocChange(e.target.value)}
                   required
                 />
                 {form.ngay_hoc && form.thu && (
-                  <small className="text-muted">
+              <small className="text-muted">
                     Thứ: {form.thu === '2' ? 'Thứ 2' : form.thu === '3' ? 'Thứ 3' : form.thu === '4' ? 'Thứ 4' : form.thu === '5' ? 'Thứ 5' : form.thu === '6' ? 'Thứ 6' : form.thu === '7' ? 'Thứ 7' : 'Chủ nhật'}
-                  </small>
+              </small>
                 )}
-              </div>
+            </div>
 
               <div className="col-md-4">
                 <label className="form-label">Ca *</label>
@@ -301,13 +301,13 @@ export default function EditLich() {
                   <option value="chiều">Chiều</option>
                   <option value="tối">Tối</option>
                 </select>
-              </div>
+            </div>
 
               {/* Cột 2 */}
               <div className="col-md-4">
                 <label className="form-label">Phòng</label>
-                <input
-                  type="text"
+              <input
+                type="text"
                   className={`form-control ${phongError ? 'is-invalid' : ''}`}
                   value={form.phong}
                   onChange={async (e) => {
@@ -328,7 +328,7 @@ export default function EditLich() {
                     {phongError}
                   </div>
                 )}
-              </div>
+            </div>
 
               <div className="col-md-4">
                 <label className="form-label">Tiết bắt đầu *</label>
@@ -365,44 +365,44 @@ export default function EditLich() {
                   }}
                   required
                   min="1"
-                />
-              </div>
+              />
+            </div>
 
               {/* Hàng 2 */}
               <div className="col-md-4">
-                <label className="form-label">Cơ sở</label>
-                <input
-                  type="text"
-                  className="form-control"
+              <label className="form-label">Cơ sở</label>
+              <input
+                type="text"
+                className="form-control"
                   value={form.co_so}
                   onChange={(e) => handleChange('co_so', e.target.value)}
-                />
-              </div>
+              />
+            </div>
 
               <div className="col-md-4">
                 <label className="form-label">Loại *</label>
-                <select
-                  className="form-select"
+              <select
+                className="form-select"
                   value={form.loai}
                   onChange={(e) => handleChange('loai', e.target.value)}
                   required
-                >
-                  <option value="lythuyet">Lý thuyết</option>
-                  <option value="thuchanh">Thực hành</option>
-                  <option value="tructuyen">Trực tuyến</option>
-                  <option value="thi">Thi</option>
-                </select>
-              </div>
+              >
+                <option value="lythuyet">Lý thuyết</option>
+                <option value="thuchanh">Thực hành</option>
+                <option value="tructuyen">Trực tuyến</option>
+                <option value="thi">Thi</option>
+              </select>
+            </div>
 
               <div className="col-12 d-flex justify-content-end mt-4">
                 <button type="button" className="btn btn-secondary me-2" onClick={() => navigate('/admin/lich')}>
                   Hủy
                 </button>
-                <button type="submit" className="btn btn-primary" disabled={saving}>
+              <button type="submit" className="btn btn-primary" disabled={saving}>
                   {saving ? 'Đang lưu...' : 'Lưu thay đổi'}
-                </button>
-              </div>
-            </form>
+              </button>
+            </div>
+          </form>
           </div>
         </div>
       </div>

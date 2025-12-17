@@ -93,23 +93,13 @@ export async function createGiangVien(req, res) {
 
     // ✅ tự tạo tài khoản cho giảng viên mới
     try {
-      // Kiểm tra xem tài khoản đã tồn tại chưa
-      const [existingAcc] = await pool.query('SELECT id FROM TaiKhoan WHERE username = ?', [item.ma_gv])
-      let accountId
-      
-      if (existingAcc.length > 0) {
-        // Tài khoản đã tồn tại, sử dụng ID hiện có
-        accountId = existingAcc[0].id
-      } else {
-        // Tạo tài khoản mới
-        accountId = await createAccount({
-          username: item.ma_gv,
-          ho_ten: item.ho_ten,           // dùng mã giảng viên làm tên đăng nhập
-          password: '123456',             // mật khẩu mặc định
-          role: 'Giảng viên',             // vai trò
-          trang_thai: 'Hoạt động'
-        })
-      }
+      const accountId = await createAccount({
+        username: item.ma_gv,
+         ho_ten: item.ho_ten,           // dùng mã giảng viên làm tên đăng nhập
+        password: '123456',             // mật khẩu mặc định
+        role: 'Giảng viên',             // vai trò
+        trang_thai: 'Hoạt động'
+      })
 
       // cập nhật liên kết tài khoản vào GiangVien
       await pool.query('UPDATE GiangVien SET tai_khoan_id = ? WHERE id = ?', [accountId, item.id])

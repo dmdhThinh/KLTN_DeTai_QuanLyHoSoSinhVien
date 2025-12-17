@@ -62,7 +62,23 @@ export async function getAll({ q = '', page = 1, limit = 10 } = {}) {
 
 export async function getById(id) {
   const [rows] = await pool.query(
-    `SELECT gv.*, k.ten_khoa AS tenKhoa, n.ten_nganh AS tenNganh
+    `SELECT 
+      gv.id,
+      gv.ma_gv AS maGv,
+      gv.ho_ten AS hoTen,
+      gv.email,
+      gv.so_dien_thoai AS soDienThoai,
+      gv.gioi_tinh AS gioiTinh,
+      DATE_FORMAT(gv.ngay_sinh, '%Y-%m-%d') AS ngaySinh,
+      gv.dia_chi AS diaChi,
+      gv.khoa_id AS khoaId,
+      gv.nganh_id AS nganhId,
+      gv.lop_id AS lopId,
+      gv.hoc_vi AS hocVi,
+      gv.anh_the AS anhThe,
+      gv.tai_khoan_id AS taiKhoanId,
+      k.ten_khoa AS tenKhoa,
+      n.ten_nganh AS tenNganh
      FROM GiangVien gv
      LEFT JOIN Khoa k ON gv.khoa_id = k.id
      LEFT JOIN Nganh n ON gv.nganh_id = n.id

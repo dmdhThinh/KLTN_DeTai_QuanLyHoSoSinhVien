@@ -208,7 +208,7 @@ export default function StudentLayout({ children, title = '' }) {
               <i className="bi bi-journal-text me-2"></i> Kết quả học tập
             </a>
           </li>
-          
+
           <li>
             <a href="/dkhp" className={`nav-link ${location.pathname === '/dkhp' ? 'active' : ''}`}>
               <i className="bi bi-calendar-check me-2"></i> Đăng ký học phần
@@ -342,7 +342,7 @@ export default function StudentLayout({ children, title = '' }) {
               <div className="position-relative">
                 <i className="bi bi-chat-dots" style={{ fontSize: '18px', color: '#6c757d' }}></i>
                 {unreadMessageCount > 0 && (
-                  <span 
+                <span
                     className="position-absolute translate-middle badge rounded-pill bg-danger"
                     style={{
                       top: '-5px',
@@ -353,9 +353,9 @@ export default function StudentLayout({ children, title = '' }) {
                     }}
                   >
                     {unreadMessageCount > 99 ? '99+' : unreadMessageCount}
-                  </span>
-                )}
-              </div>
+                </span>
+              )}
+            </div>
               <span className="fw-semibold" style={{ fontSize: '14px' }}>Tin nhắn</span>
             </a>
             <a 
@@ -379,7 +379,7 @@ export default function StudentLayout({ children, title = '' }) {
               <div className="position-relative">
                 <i className="bi bi-megaphone" style={{ fontSize: '18px', color: '#fd7e14' }}></i>
                 {unreadCount > 0 && (
-                  <span 
+                <span
                     className="position-absolute translate-middle badge rounded-pill bg-danger"
                     style={{
                       top: '-5px',
@@ -390,9 +390,9 @@ export default function StudentLayout({ children, title = '' }) {
                     }}
                   >
                     {unreadCount > 99 ? '99+' : unreadCount}
-                  </span>
-                )}
-              </div>
+                </span>
+              )}
+            </div>
               <span className="fw-semibold" style={{ fontSize: '14px' }}>Tin tức</span>
             </a>
 
@@ -433,7 +433,7 @@ export default function StudentLayout({ children, title = '' }) {
                 ) : (
                   <div
                     className="rounded-circle d-flex align-items-center justify-content-center"
-                    style={{ 
+                  style={{ 
                       width: '40px', 
                       height: '40px',
                       background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
@@ -482,7 +482,7 @@ export default function StudentLayout({ children, title = '' }) {
                     <span style={{ fontSize: '14px' }}>Đổi mật khẩu</span>
                   </a>
                   <hr className="my-1" style={{ margin: '4px 0' }} />
-                  <button
+                  <button 
                     onClick={() => {
                       clearAuth()
                       window.location.href = '/login'
