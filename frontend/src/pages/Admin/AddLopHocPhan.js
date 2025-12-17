@@ -52,6 +52,23 @@ export default function AddLopHocPhan() {
     loadGiangViens()
   }, [])
 
+  // 🧮 Tự động tính số tuần học
+  useEffect(() => {
+    if (ngayBatDau && ngayKetThuc) {
+      const start = new Date(ngayBatDau)
+      const end = new Date(ngayKetThuc)
+      
+      if (end >= start) {
+        const diffTime = Math.abs(end - start)
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
+        const weeks = Math.ceil(diffDays / 7)
+        setSoTuanHoc(weeks.toString())
+      } else {
+        setSoTuanHoc('')
+      }
+    }
+  }, [ngayBatDau, ngayKetThuc])
+
   // 🧩 Load data
   const loadNganhs = async () => {
     try {

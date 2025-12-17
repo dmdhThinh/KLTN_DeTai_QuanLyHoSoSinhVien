@@ -94,7 +94,7 @@ export default function DkhpPage() {
   const sinhVienId = getSinhVienId();
   
   // Dropdown chọn học kỳ, năm học (gộp thành 1 combobox)
-  const [selectedHocKy, setSelectedHocKy] = useState('HK1');
+  const [selectedHocKy, setSelectedHocKy] = useState('HK2');
   const [selectedNamHoc, setSelectedNamHoc] = useState('2025-2026');
   const [autoSetFromDot, setAutoSetFromDot] = useState(false); // Flag để tránh set lại nhiều lần
   
@@ -162,6 +162,10 @@ useEffect(() => {
 
 // hàm load chi tiết lịch của 1 lớp
 const loadClassDetail = async (lop) => {
+  console.log('🔍 [DKHP] Chọn lớp:', lop);
+  console.log('   - xung_dot_lich:', lop.xung_dot_lich);
+  console.log('   - conflict_details:', lop.conflict_details);
+  console.log('   - du_dieu_kien:', lop.du_dieu_kien);
   setSelectedClass(lop);
   const rs = await apiFetch(`/api/dkhp/lich/${lop.id}`);
   setClassDetail(rs);
@@ -229,13 +233,25 @@ const loadClassDetail = async (lop) => {
           // Không có đợt thì thôi
         }
 
-        // Sử dụng học kỳ/năm học từ dropdown
-        const [avail, regs] = await Promise.all([
-          apiFetch(`/api/dkhp/available?sinh_vien_id=${sinhVienId}&hoc_ky=${selectedHocKy}&nam_hoc=${selectedNamHoc}&dot_dang_ky_id=${d?.id || ''}`),
-          apiFetch(`/api/dkhp/my?sinh_vien_id=${sinhVienId}&hoc_ky=${selectedHocKy}&nam_hoc=${selectedNamHoc}&dot_dang_ky_id=${d?.id || ''}`)
-        ]);
-        setAvailable(avail);
-        setRegistered(regs);
+      // Sử dụng học kỳ/năm học từ dropdown
+      const [avail, regs] = await Promise.all([
+        apiFetch(`/api/dkhp/available?sinh_vien_id=${sinhVienId}&hoc_ky=${selectedHocKy}&nam_hoc=${selectedNamHoc}&dot_dang_ky_id=${d?.id || ''}`),
+        // Không truyền dot_dang_ky_id để luôn hiển thị tất cả lớp đã đăng ký trong học kỳ
+        apiFetch(`/api/dkhp/my?sinh_vien_id=${sinhVienId}&hoc_ky=${selectedHocKy}&nam_hoc=${selectedNamHoc}`)
+      ]);
+      console.log('📋 [DKHP] Danh sách lớp available:', avail);
+      console.log('   - Số lớp:', avail?.length);
+      if (avail && avail.length > 0) {
+        console.log('   - Lớp đầu tiên:', {
+          id: avail[0].id,
+          ma_lop_hoc_phan: avail[0].ma_lop_hoc_phan,
+          xung_dot_lich: avail[0].xung_dot_lich,
+          conflict_details: avail[0].conflict_details,
+          du_dieu_kien: avail[0].du_dieu_kien
+        });
+      }
+      setAvailable(avail);
+      setRegistered(regs);
       } catch (err) {
         console.error(err);
         setMessage('Lỗi tải dữ liệu: ' + (err.message || 'Unknown error'));
@@ -312,11 +328,8 @@ const loadClassDetail = async (lop) => {
 
   // Đăng ký
   const handleRegister = async (lhp) => {
-    // Kiểm tra trùng lịch
+    // Kiểm tra trùng lịch - không cần hiển thị message vì đã có cảnh báo chi tiết ở dưới
     if (lhp.xung_dot_lich) {
-      setMessage('CẢNH BÁO: Lớp học phần này trùng lịch với các môn bạn đã đăng ký! Vui lòng chọn lớp học phần khác.');
-      setMessageType('error');
-      setTimeout(() => setMessage(''), 5000);
       return;
     }
 
@@ -368,9 +381,9 @@ const loadClassDetail = async (lop) => {
       );
       setAvailable(avail);
 
-      // registered: các lớp SV đã đăng ký trong kỳ này
+      // registered: các lớp SV đã đăng ký trong kỳ này (không filter theo đợt)
       const regs = await apiFetch(
-        `/api/dkhp/my?sinh_vien_id=${sinhVienId}&hoc_ky=${selectedHocKy}&nam_hoc=${selectedNamHoc}&dot_dang_ky_id=${dot?.id || ''}`
+        `/api/dkhp/my?sinh_vien_id=${sinhVienId}&hoc_ky=${selectedHocKy}&nam_hoc=${selectedNamHoc}`
       );
       setRegistered(regs);
 
@@ -430,7 +443,8 @@ const loadClassDetail = async (lop) => {
       // 2) Refetch lại 2 danh sách để đồng bộ số "Đã đăng ký"/slot
       const [avail, regs] = await Promise.all([
         apiFetch(`/api/dkhp/available?sinh_vien_id=${sinhVienId}&hoc_ky=${selectedHocKy}&nam_hoc=${selectedNamHoc}&dot_dang_ky_id=${dot?.id || ''}`),
-        apiFetch(`/api/dkhp/my?sinh_vien_id=${sinhVienId}&hoc_ky=${selectedHocKy}&nam_hoc=${selectedNamHoc}&dot_dang_ky_id=${dot?.id || ''}`)
+        // Không filter theo đợt để luôn hiển thị tất cả lớp đã đăng ký
+        apiFetch(`/api/dkhp/my?sinh_vien_id=${sinhVienId}&hoc_ky=${selectedHocKy}&nam_hoc=${selectedNamHoc}`)
       ]);
       setAvailable(avail);
       setRegistered(regs);
@@ -809,6 +823,20 @@ const loadClassDetail = async (lop) => {
         {selectedClass?.xung_dot_lich && (
           <div className="alert alert-danger mb-3" role="alert">
             <strong>CẢNH BÁO:</strong> Lớp học phần này trùng lịch với các môn bạn đã đăng ký!
+            {selectedClass?.conflict_details && selectedClass.conflict_details.length > 0 && (
+              <>
+                <div className="mt-2">Các môn bị trùng lịch:</div>
+                <ul className="mb-0 mt-2">
+                  {selectedClass.conflict_details.map((conflict, idx) => (
+                    <li key={idx}>
+                      <strong>{conflict.ten_hoc_phan}</strong> ({conflict.ma_hoc_phan}) - Lớp: {conflict.ma_lop_hoc_phan}
+                      <br/>
+                      <span className="text-muted">Thứ {conflict.thu}, tiết {conflict.tiet_bat_dau}-{conflict.tiet_ket_thuc}, phòng {conflict.phong}</span>
+                    </li>
+                  ))}
+                </ul>
+              </>
+            )}
           </div>
         )}
         {!selectedClass?.du_dieu_kien && (
@@ -837,6 +865,7 @@ const loadClassDetail = async (lop) => {
         <button
           className="btn btn-success"
           disabled={
+            !dot ||
             !selectedClass?.du_dieu_kien ||
             selectedClass?.xung_dot_lich ||
             (selectedClass?.slot_con != null
